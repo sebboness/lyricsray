@@ -1,7 +1,7 @@
 // Add to your app/api/analyze-song/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getLyrics, getSong } from "genius-lyrics-api";
+import { getLyrics, getSong, getSongById, searchSong } from "genius-lyrics-api";
 
 interface AnalyzeSongRequest {
     childAge: string;
@@ -103,7 +103,26 @@ async function analyzeLyricsWithClaude(lyrics: string, childAge: string): Promis
 async function fetchLyricsFromGenius(songName: string, artistName: string): Promise<string> {
     // This is a placeholder - you'll need to implement Genius API integration
     // For now, return a mock response
-    throw new Error('Song not found in our database. Please try pasting the lyrics directly.');
+
+    const accessToken = "blah";
+
+    var songs = await searchSong({
+        artist: artistName,
+        title: songName,
+        apiKey: accessToken
+    });
+
+    console.log("Searched songs", songs);
+
+    if (!songs || songs.length === 0)
+        return Promise.reject(`Song ${songName} by ${artistName} not found`);
+
+    var song = await getSongById(songs[0].id, accessToken);
+
+    if (!song)
+        return Promise.reject(`Song ${songName} by ${artistName} not found`);
+
+    return Promise.resolve(song.lyrics);
 }
 
 export async function POST(request: NextRequest) {
@@ -147,6 +166,8 @@ export async function POST(request: NextRequest) {
                 });
             }
         }
+
+        console.log("lyricsToAnalyze", lyricsToAnalyze);
 
         // Analyze lyrics with Claude
         const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, childAge);

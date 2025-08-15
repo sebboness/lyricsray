@@ -18,6 +18,14 @@ declare module 'genius-lyrics-api' {
     export const getSong = (options: Options): Promise<Song | null> => {}
 
     /**
+     * Accepts a valid Genius song ID. IDs can be found using the searchSong method.
+     * Returns a promise that resolves to an object of type song.
+     * @param id The Genius identifier for a song
+     * @param access_token The access token
+     */
+    export const getSongById = (id: (number | string), access_token: string): Promise<Song | null> => {}
+
+    /**
      * Returns a promise that resolves to an array of type searchResult. Returns null if no matches are found.
      * @param options Search options
      */
