@@ -46,10 +46,11 @@ interface FormData {
 
 interface SongSearchResult {
     id: string;
-    title: string;
     artist: string;
     album?: string;
+    lyrics: string;
     thumbnail?: string;
+    title: string;
 }
 
 interface AnalysisResult {
@@ -122,7 +123,7 @@ export default function Home() {
                 setSearchResults(data.songs);
                 if (data.songs.length === 1) {
                     // If only one result, proceed directly to analysis
-                    analyzeSongById(data.songs[0].id);
+                    analyzeLyricsDirectly(data.songs[0].lyrics);
                 } else {
                     // Show modal for multiple results
                     setShowSongModal(true);
@@ -148,7 +149,7 @@ export default function Home() {
         }
     };
 
-    const analyzeSongById = async (songId: string) => {
+    const analyzeLyricsDirectly = async (lyrics: string | undefined | null) => {
         setIsLoading(true);
         setShowSongModal(false);
         
@@ -160,38 +161,7 @@ export default function Home() {
                 },
                 body: JSON.stringify({
                     childAge: formData.childAge,
-                    songId: songId,
-                    inputMethod: 'search'
-                }),
-            });
-
-            const data: AnalysisResult = await response.json();
-            setResult(data);
-        } catch (error) {
-            console.error('Error analyzing song:', error);
-            setResult({
-                appropriate: false,
-                analysis: '',
-                recommendedAge: '',
-                error: 'Failed to analyze song. Please try again.'
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const analyzeLyricsDirectly = async () => {
-        setIsLoading(true);
-        
-        try {
-            const response = await fetch('/api/analyze-song', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    childAge: formData.childAge,
-                    lyrics: formData.lyrics,
+                    lyrics: lyrics || formData.lyrics,
                     inputMethod: 'lyrics'
                 }),
             });
@@ -218,12 +188,12 @@ export default function Home() {
         if (formData.inputMethod === 'search') {
             await searchSongs();
         } else {
-            await analyzeLyricsDirectly();
+            await analyzeLyricsDirectly(null);
         }
     };
 
     const handleSongSelect = (song: SongSearchResult) => {
-        analyzeSongById(song.id);
+        analyzeLyricsDirectly(song.lyrics);
     };
 
     const handleCloseModal = () => {
