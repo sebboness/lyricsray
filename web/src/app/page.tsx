@@ -247,13 +247,13 @@ export default function Home() {
                         </Typography>
                     </Box>
                     
-                    <Typography variant="body1" color="text.secondary" paragraph>
+                    <Typography variant="body1" color="text.secondary" component="p">
                         LyricsRay helps you determine whether a song is appropriate for your child 
                         based on its lyrics content. Using advanced AI analysis, we evaluate songs for explicit 
                         language, mature themes, and age-appropriate content.
                     </Typography>
                     
-                    <Typography variant="body1" color="text.secondary" paragraph>
+                    <Typography variant="body1" color="text.secondary" component="p">
                         Choose to search for a song by title and artist, or paste lyrics directly if you already have them. 
                         We will analyze the content and provide you with a detailed assessment and age recommendation.
                     </Typography>
@@ -339,8 +339,10 @@ export default function Home() {
                                                 placeholder="e.g., Pharrell Williams"
                                                 required={formData.inputMethod === 'search'}
                                                 fullWidth
-                                                InputProps={{
-                                                    startAdornment: <RecordVoiceOver sx={{ color: 'action.active', mr: 1 }} />
+                                                slotProps={{
+                                                    input: {
+                                                        startAdornment: <RecordVoiceOver sx={{ color: 'action.active', mr: 1 }} />
+                                                    }
                                                 }}
                                             />
                                         </Grid>
