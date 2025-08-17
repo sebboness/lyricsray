@@ -477,6 +477,10 @@ export default function Home() {
                                         <Typography variant="body1" color="text.secondary">
                                             {result.analysis}
                                         </Typography>
+
+                                        <Typography variant="body2" color="text.secondary">
+                                            Recommended age: {result.recommendedAge}
+                                        </Typography>
                                     </CardContent>
                                 </Card>
                             </Box>

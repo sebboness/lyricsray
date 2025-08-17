@@ -55,10 +55,10 @@ export class LrcLibApi extends Api {
      * @returns A promise with a result set to an array of songs
      */
     public searchLyrics = async (songName: string, artist: string | null | undefined): Promise<SongSearchResult[]> => {
-        const _artist = artist ? ` by ${artist}` : "";
+        const _artist = artist ? `${artist} - ` : "";
         return this.get<SongSearchResult[]>("search", {
             queryParams: {
-                q: [`${songName}${_artist}`],
+                q: [`${_artist}${songName}`],
             }
         });
     }
