@@ -1,5 +1,5 @@
 data "aws_secretsmanager_secret" "secrets" {
-    name = "hexonite/${local.app}/secrets"
+    name = "hexonite/${local.app}/${local.env}/secrets"
 }
 
 data "aws_secretsmanager_secret_version" "current" {

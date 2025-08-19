@@ -1,0 +1,28 @@
+version: 1
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - 'pwd'
+            - 'nvm install 22.17.0'
+            - 'nvm use 22.17.0'
+            - 'npm install'
+            - 'echo $ENV'
+        build:
+          commands:
+            - ' >> .env.development'
+            - 'env | grep -e APP_ >> .env.development'
+            - 'env | grep -e ANTHROPIC_ >> .env.development'
+            - 'env | grep -e NEXT_PUBLIC_ >> .env.development'
+            - 'cat .env.development'
+            - 'npm run build'
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .next/cache/**/*
+          - .npm/**/*
+    appRoot: web
