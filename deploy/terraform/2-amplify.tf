@@ -57,18 +57,20 @@ resource "aws_amplify_app" "lyricsray" {
     AMPLIFY_MONOREPO_APP_ROOT = "web"
     AMPLIFY_DIFF_DEPLOY       = "false"
     ENV                       = local.env
+    # Force Next.js to use App Router consistently
+    NEXT_CONFIG_OUTPUT        = "standalone"
     _LIVE_UPDATES             = jsonencode([
       {
         name    = "Node.js version"
         pkg     = "next-version"
         type    = "internal"
-        version = "latest"
+        version = "15.3.5"
       },
       {
         name    = "Node.js version"
         pkg     = "node"
         type    = "nvm"
-        version = "22"
+        version = "20"
       }
     ])
   }
