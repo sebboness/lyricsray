@@ -62,6 +62,11 @@ Provide your analysis in the following JSON format:
 Remember to tailor your assessment to the specific age of ${childAge} years old. Consider what themes and content are generally appropriate for children of this age, and err on the side of caution if you're unsure about certain elements.`;
 
     try {
+        logger.info("anthropic", {
+            a1: process.env.ANTHROPIC_API_KEY,
+            a2: process.env.ANTHROPIC_MODEL,
+        });
+
         const client = new Anthropic({
             apiKey: process.env.ANTHROPIC_API_KEY!,
         });

@@ -86,7 +86,7 @@ export class Api {
 
             fetch(url, reqOps)
                 .then((response) => {
-                    logger.debug(`${logPrefix(this.name)} response received`)
+                    logger.debug(`${logPrefix(this.name)} response received`);
 
                     response.json()
                         .then((obj: T | undefined) => {

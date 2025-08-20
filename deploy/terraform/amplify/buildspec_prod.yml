@@ -13,8 +13,8 @@ applications:
         build:
           commands:
             - ' >> .env.production'
-            - 'env | grep -e APP_ >> .env.production'
             - 'env | grep -e ANTHROPIC_ >> .env.production'
+            - 'env | grep -e APP_ >> .env.production'
             - 'env | grep -e NEXT_PUBLIC_ >> .env.production'
             - 'cat .env.production'
             - 'export NODE_ENV=production'
