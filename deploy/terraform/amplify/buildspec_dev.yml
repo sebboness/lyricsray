@@ -12,11 +12,11 @@ applications:
             - 'echo $ENV'
         build:
           commands:
-            - ' >> .env.development'
-            - 'env | grep -e ANTHROPIC_ >> .env.development'
-            - 'env | grep -e APP_ >> .env.development'
-            - 'env | grep -e NEXT_PUBLIC_ >> .env.development'
-            - 'cat .env.development'
+            - ' >> .env'
+            - 'env | grep -e ANTHROPIC_ >> .env'
+            - 'env | grep -e APP_ >> .env'
+            - 'env | grep -e NEXT_PUBLIC_ >> .env'
+            - 'cat .env'
             - 'export NODE_ENV=production'
             - 'export NEXT_TELEMETRY_DISABLED=1'
             - 'rm -rf .next'
