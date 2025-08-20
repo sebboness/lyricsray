@@ -5,8 +5,8 @@ applications:
         preBuild:
           commands:
             - 'pwd'
-            - 'nvm install 22.17.0'
-            - 'nvm use 22.17.0'
+            - 'nvm install 20.19.4'
+            - 'nvm use 20.19.4'
             - 'npm cache clean --force'
             - 'npm install'
             - 'echo $ENV'
