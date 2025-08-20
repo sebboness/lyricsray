@@ -28,9 +28,14 @@ resource "aws_iam_role_policy" "amplify_policy" {
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
         ]
-        Resource = "arn:aws:logs:*:*:*"
+        Resource = [
+          "arn:aws:logs:*:*:*",
+          aws_cloudwatch_log_group.amplify_app_logs.arn
+        ]
       },
       {
         Effect = "Allow"
@@ -41,6 +46,12 @@ resource "aws_iam_role_policy" "amplify_policy" {
       }
     ]
   })
+
+  depends_on = [
+    aws_iam_role.amplify_role,
+    aws_cloudwatch_log_group.amplify_app_logs,
+    aws_cloudwatch_log_group.amplify_ssr_logs
+  ]
 }
 
 # Amplify App
@@ -105,6 +116,28 @@ resource "aws_amplify_app" "lyricsray" {
   }
 }
 
+# CloudWatch Log Group for Amplify SSR logs
+resource "aws_cloudwatch_log_group" "amplify_ssr_logs" {
+  name              = "/aws/amplify/apps/${local.app}/${local.env}"
+  retention_in_days = 14
+  
+  tags = {
+    app = local.app
+    env = local.env
+  }
+}
+
+# Also create a general app log group
+resource "aws_cloudwatch_log_group" "amplify_app_logs" {
+  name              = "/aws/amplify/${local.app}/${local.env}"
+  retention_in_days = 14
+  
+  tags = {
+    app = local.app
+    env = local.env
+  }
+}
+
 # Main branch (prod) or development branch (dev)
 resource "aws_amplify_branch" "main" {
   app_id      = aws_amplify_app.lyricsray.id
@@ -118,6 +151,8 @@ resource "aws_amplify_branch" "main" {
       ENVIRONMENT           = local.env
       NEXT_PUBLIC_ENV       = local.env
       NODE_ENV              = local.env == "prod" ? "production" : "development"
+      LOG_LEVEL             = local.env == "prod" ? "info" : "debug"
+      NEXT_LOG_LEVEL        = "debug"
     },
     # Add secret environment variables
     {

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { Model, TextBlock } from '@anthropic-ai/sdk/resources';
 import { logPrefix } from '@/util/log';
+import { logger } from '@/logger/logger';
 
 interface AnalyzeSongRequest {
     childAge: number;
@@ -76,11 +77,11 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
             model: process.env.ANTHROPIC_MODEL as Model,
         })
         .catch(async (err) => {
-            console.log(`${logPrefix(logName)} Claude fetch threw error`, err);
+            logger.error(`${logPrefix(logName)} Claude fetch threw error`, err);
             throw err;
         });
 
-        console.debug(`${logPrefix(logName)} Claude response`, response);
+        logger.info(`${logPrefix(logName)} Claude response`, response);
 
         if (!response) {
             throw new Error("Claude API error: Nothing returned");
@@ -115,7 +116,10 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
                 recommendedAge: analysis.recommendedAge
             };
         } catch (parseError) {
-            console.error(`${logName} Error parsing Claude response:`, parseError);
+            logger.error(`${logName} Error parsing Claude response:`, {
+                parseError,
+                responseText,
+            });
 
             // Fallback if JSON parsing fails
             return {
@@ -126,7 +130,7 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
         }
 
     } catch (error) {
-        console.error(`${logName} Error calling Claude API:`, error);
+        logger.error(`${logName} Error calling Claude API:`, error);
         throw new Error('Failed to analyze lyrics with Claude AI');
     }
 }
@@ -164,7 +168,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(response);
 
     } catch (error) {
-        console.error(`${logPrefix(logName)} Error analyzing song:`, error);
+        logger.error(`${logPrefix(logName)} Error analyzing song:`, error);
         return NextResponse.json(
             { 
                 error: 'Internal server error. Please try again.',

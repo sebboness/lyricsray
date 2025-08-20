@@ -17,6 +17,8 @@ applications:
             - 'env | grep -e ANTHROPIC_ >> .env.development'
             - 'env | grep -e NEXT_PUBLIC_ >> .env.development'
             - 'cat .env.development'
+            - 'export NODE_ENV=production'
+            - 'export NEXT_TELEMETRY_DISABLED=1'
             - 'rm -rf .next'
             - 'npm run build'
       artifacts:

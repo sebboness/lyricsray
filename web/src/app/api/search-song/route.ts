@@ -1,5 +1,6 @@
 // app/api/search-song/route.ts
 
+import { logger } from '@/logger/logger';
 import { LrcLibApi, SongSearchResult as LrcLibSongSearchResult } from '@/services/lrclib';
 import { logPrefix } from '@/util/log';
 import { NextRequest, NextResponse } from 'next/server';
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
         const api = LrcLibApi.getInstance();
         const results = await api.searchLyrics(songName.trim(), artist.trim());
 
-        console.debug(`${logPrefix(logName)} found songs`, results);
+        logger.info(`${logPrefix(logName)} found songs with lyrics`, results.filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics).length);
 
         // Transform Genius API response to our format
         const songs: SongSearchResult[] = results
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(response);
 
     } catch (error) {
-        console.error('Error in search-song endpoint:', error);
+        logger.error('Error in search-song endpoint:', error);
         return NextResponse.json(
             { error: 'Failed to search songs. Please try pasting lyrics directly.' },
             { status: 500 }

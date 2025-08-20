@@ -5,4 +5,4 @@ import moment from "moment";
  * @param name Name of the module
  * @returns Formatted log prefix with date and module
  */
-export const logPrefix = (name: string) => `[${moment().toISOString()}] ${name}: `;
+export const logPrefix = (name: string) => `[${moment().toISOString()}] ${name}:`;
