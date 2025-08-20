@@ -25,7 +25,7 @@ export interface SearchSongResponse {
     error?: string;
 }
 
-const module = "LrcLib";
+const logName = "LrcLib";
 
 /**
  * Wrapper for the LrcLib lyrics search API.
@@ -34,7 +34,7 @@ export class LrcLibApi extends Api {
     private static instance: LrcLibApi;
 
     constructor() {
-        super(baseUrl, module);
+        super(baseUrl, logName);
     }
 
     /**

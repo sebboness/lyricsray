@@ -17,7 +17,7 @@ interface AnalyzeSongResponse {
     error?: string;
 }
 
-const module = "analyze-song";
+const logName = "analyze-song";
 
 async function analyzeLyricsWithClaude(lyrics: string, childAge: number): Promise<{
     appropriate: boolean;
@@ -76,11 +76,11 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
             model: process.env.ANTHROPIC_MODEL as Model,
         })
         .catch(async (err) => {
-            console.log(`${logPrefix(module)} Claude fetch threw error`, err);
+            console.log(`${logPrefix(logName)} Claude fetch threw error`, err);
             throw err;
         });
 
-        console.debug(`${logPrefix(module)} Claude response`, response);
+        console.debug(`${logPrefix(logName)} Claude response`, response);
 
         if (!response) {
             throw new Error("Claude API error: Nothing returned");
@@ -115,6 +115,8 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
                 recommendedAge: analysis.recommendedAge
             };
         } catch (parseError) {
+            console.error(`${logName} Error parsing Claude response:`, parseError);
+
             // Fallback if JSON parsing fails
             return {
                 appropriate: false,
@@ -124,7 +126,7 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
         }
 
     } catch (error) {
-        console.error('Error calling Claude API:', error);
+        console.error(`${logName} Error calling Claude API:`, error);
         throw new Error('Failed to analyze lyrics with Claude AI');
     }
 }
@@ -141,8 +143,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        let lyricsToAnalyze: string;
-
         if (!lyrics.trim()) {
             return NextResponse.json(
                 { error: 'Lyrics are required' },
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        lyricsToAnalyze = lyrics.trim();
+        const lyricsToAnalyze = lyrics.trim();
 
         // Analyze lyrics with Claude
         const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, childAge);
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(response);
 
     } catch (error) {
-        console.error(`${logPrefix(module)} Error analyzing song:`, error);
+        console.error(`${logPrefix(logName)} Error analyzing song:`, error);
         return NextResponse.json(
             { 
                 error: 'Internal server error. Please try again.',

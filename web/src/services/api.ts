@@ -63,7 +63,7 @@ export class Api {
             // Build API URL
             const url = toFetchUrl(baseUrl, endpoint, opts.queryParams)
 
-            let noCache = false;
+            const noCache = false;
 
             // Initialize fetch request
             const reqOps: RequestInit = {

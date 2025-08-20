@@ -23,7 +23,7 @@ interface SearchSongResponse {
     error?: string;
 }
 
-const module = "search-song";
+const logName = "search-song";
 
 export async function POST(request: NextRequest) {
     try {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         const api = LrcLibApi.getInstance();
         const results = await api.searchLyrics(songName.trim(), artist.trim());
 
-        console.debug(`${logPrefix(module)} found songs`, results);
+        console.debug(`${logPrefix(logName)} found songs`, results);
 
         // Transform Genius API response to our format
         const songs: SongSearchResult[] = results
