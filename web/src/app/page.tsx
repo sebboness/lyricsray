@@ -34,7 +34,6 @@ import {
     Note,
     CheckCircle,
     Error,
-    Security,
     RecordVoiceOver,
     Close,
     DarkMode,
