@@ -159,7 +159,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                 </AppBar>
 
                 {/* Main Content with padding to account for fixed navbar */}
-                <Box sx={{ flex: 1, pt: 0 }}>
+                <Box sx={{ flex: 1, pt: 0, my: 4 }}>
                     {children}
                 </Box>
 

@@ -583,7 +583,9 @@ export default function Home() {
                                         fontWeight: 600,
                                     }}
                                 >
-                                    Remember: You know your child best. Use LyricsRay as a tool to inform your decisions, but always trust your parental instincts and family values when determining what&apos;s right for your children.
+                                    Remember: You know your child best. Use LyricsRay as a tool to inform your 
+                                    decisions, but always trust your parental instincts and family values when 
+                                    determining what&apos;s right for your children.
                                 </Typography>
                             </Box>
                         )}
