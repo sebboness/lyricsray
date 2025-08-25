@@ -134,7 +134,6 @@ export const getTheme = (darkMode: boolean) => createTheme({
                 root: {
                     transition: 'all 0.3s ease-in-out',
                     '&:hover': {
-                        transform: 'translateY(-4px)',
                         boxShadow: darkMode
                             ? '0 12px 40px rgba(255, 0, 255, 0.2)'
                             : '0 8px 30px rgba(139, 0, 255, 0.15)',

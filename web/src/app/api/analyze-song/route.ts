@@ -12,7 +12,7 @@ interface AnalyzeSongRequest {
 }
 
 interface AnalyzeSongResponse {
-    appropriate: boolean;
+    appropriate: number;
     analysis: string;
     recommendedAge: string;
     error?: string;
@@ -21,13 +21,13 @@ interface AnalyzeSongResponse {
 const logName = "analyze-song";
 
 async function analyzeLyricsWithClaude(lyrics: string, childAge: number): Promise<{
-    appropriate: boolean;
+    appropriate: number;
     analysis: string;
     recommendedAge: string;
 }> {
     const prompt = `You are tasked with analyzing song lyrics for age-appropriateness for a specific child's age. Your goal is to provide a thoughtful assessment considering various factors that may impact the suitability of the content for young listeners.
 
-Here are the lyrics you need to analyze:
+Here are the lyrics to analyze:
 
 <lyrics>
 ${lyrics}
@@ -54,12 +54,12 @@ Instructions for analysis:
 Provide your analysis in the following JSON format:
 
 {
-	"appropriate": boolean,
+	"appropriate": "integer: Level of appropriateness, 1 through 3, where 1 = appropriate, 2 = exercise caution, 3 = not appropriate",
 	"analysis": "Brief explanation of your assessment, including specific concerns if any",
-	"recommendedAge": "Minimum recommended age (e.g., '13+', 'All ages', '16+')"
+	"recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16')"
 }
 
-Remember to tailor your assessment to the specific age of ${childAge} years old. Consider what themes and content are generally appropriate for children of this age, and err on the side of caution if you're unsure about certain elements.`;
+Please tailor your assessment to the age of ${childAge} years old. Consider what themes and content are generally appropriate for children of this age, and err on the side of caution if you're unsure about certain elements.`;
 
     try {
         const client = new Anthropic({
@@ -123,7 +123,7 @@ Remember to tailor your assessment to the specific age of ${childAge} years old.
 
             // Fallback if JSON parsing fails
             return {
-                appropriate: false,
+                appropriate: 0,
                 analysis: "Unable to parse analysis response. Please try again.",
                 recommendedAge: "Unknown"
             };

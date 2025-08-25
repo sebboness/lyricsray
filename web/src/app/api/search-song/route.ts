@@ -43,9 +43,19 @@ export async function POST(request: NextRequest) {
 
         logger.info(`${logPrefix(logName)} found songs with lyrics`, results.filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics).length);
 
+        const map = new Map();
+
         // Transform Genius API response to our format
         const songs: SongSearchResult[] = results
             .filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics)
+            .filter((hit: LrcLibSongSearchResult) => {
+                const key = `${hit.artistName} - ${hit.trackName}`;
+                if (!map.has(key)) {
+                    map.set(key, true);
+                    return true;
+                }
+                return false;
+            })
             .slice(0, 10) // Limit to 10 results
             .map((hit: LrcLibSongSearchResult) => ({
                 id: hit.id.toString(),

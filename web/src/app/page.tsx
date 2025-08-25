@@ -23,6 +23,8 @@ import {
     ListItemText,
     ListItemAvatar,
     Avatar,
+    useMediaQuery,
+    Link,
 } from '@mui/material';
 import {
     ChildCare,
@@ -33,6 +35,7 @@ import {
     Error,
     RecordVoiceOver,
     Close,
+    WarningRounded,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
@@ -54,14 +57,56 @@ interface SongSearchResult {
 }
 
 interface AnalysisResult {
-    appropriate: boolean;
+    appropriate: number;
     analysis: string;
     recommendedAge: string;
     error?: string;
 }
 
+interface AppropriateData {
+    icon: React.JSX.Element;
+    color: string;
+    text: string;
+}
+
+/**
+ * Gets display data based on appropriateness level
+ * @param appropriate The appropriateness level as an integer
+ * @returns Data based on appropriateness level
+ */
+const getAppropriateData = (appropriate: number): AppropriateData => {
+    let icon = <></>;
+    let color = '';
+    let text = '';
+
+    switch (appropriate) {
+        case 1:
+            icon = <CheckCircle sx={{ color: 'success.main', fontSize: 36 }} />;
+            color = 'success.main';
+            text = 'Appropriate for your child';
+            break;
+        case 2:
+            icon = <WarningRounded sx={{ color: 'warning.main', fontSize: 36 }} />;
+            color = 'warning.main';
+            text = 'Contains themes that may not be appropriate for your child';
+            break;
+        case 3:
+            icon = <Error sx={{ color: 'error.main', fontSize: 36 }} />;
+            color = 'error.main';
+            text = 'May not be appropriate for your child';
+            break;
+    }
+
+    return {
+        icon,
+        color,
+        text,
+    }
+}
+
 export default function Home() {
     const theme = useTheme();
+    const darkMode = useMediaQuery('(prefers-color-scheme: dark)');
     
     const [formData, setFormData] = useState<FormData>({
         childAge: '',
@@ -76,16 +121,24 @@ export default function Home() {
     const [showSongModal, setShowSongModal] = useState<boolean>(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [scrollY, setScrollY] = useState(0);
+    const [windowW, setWindowW] = useState(window.innerWidth);
 
     // Handle scroll events
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
+        const handleWidth = () => setWindowW(window.innerWidth);
+        window.addEventListener('resize', handleWidth);
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('resize', handleWidth);
+            window.removeEventListener('scroll', handleScroll)
+        };
     }, []);
 
     // Calculate dynamic values based on scroll position
-    const logoHeight = 880;
+    const logoWidth = Math.min(1024, windowW);
+    const logoRatio = logoWidth / 1024;
+    const logoHeight = logoRatio * 880;
     const maxScroll = logoHeight * 0.8; // Start fading when 80% of logo would be scrolled past
     const scrollProgress = Math.min(scrollY / maxScroll, 1);
     const logoOpacity = Math.max(1 - scrollProgress, 0);
@@ -127,7 +180,7 @@ export default function Home() {
             
             if (data.error) {
                 setResult({
-                    appropriate: false,
+                    appropriate: 0,
                     analysis: '',
                     recommendedAge: '',
                     error: data.error
@@ -146,7 +199,7 @@ export default function Home() {
                 }
             } else {
                 setResult({
-                    appropriate: false,
+                    appropriate: 0,
                     analysis: '',
                     recommendedAge: '',
                     error: 'No songs found. Please try different search terms or paste lyrics directly.'
@@ -155,7 +208,7 @@ export default function Home() {
         } catch (error) {
             console.error('Error searching songs:', error);
             setResult({
-                appropriate: false,
+                appropriate: 0,
                 analysis: '',
                 recommendedAge: '',
                 error: 'Failed to search songs. Please try again.'
@@ -184,10 +237,16 @@ export default function Home() {
 
             const data: AnalysisResult = await response.json();
             setResult(data);
+
+            setTimeout(() => {
+                const element = document.getElementsByClassName('submit-wrapper');
+                if (element && element.length)
+                    element[0].scrollIntoView({ behavior: 'smooth' });
+            }, 500);
         } catch (error) {
             console.error('Error analyzing lyrics:', error);
             setResult({
-                appropriate: false,
+                appropriate: 0,
                 analysis: '',
                 recommendedAge: '',
                 error: 'Failed to analyze lyrics. Please try again.'
@@ -222,13 +281,15 @@ export default function Home() {
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     );
 
+    const appropriatenessData = getAppropriateData(result?.appropriate || 0);
+
     return (
         <Box sx={{ position: 'relative', minHeight: '100vh' }}>
             {/* Background Logo */}
             <Box
                 sx={{
                     position: 'fixed',
-                    top: 0,
+                    top: 48,
                     left: 0,
                     right: 0,
                     height: `${logoHeight}px`,
@@ -249,7 +310,7 @@ export default function Home() {
                 sx={{ 
                     position: 'relative', 
                     zIndex: 10,
-                    pt: '800px',
+                    pt: `${logoHeight + 48}px`,
                     pb: 4,
                     transition: 'padding-top 0.1s ease-out',
                 }}
@@ -384,7 +445,7 @@ export default function Home() {
                         </Box>
 
                         {/* Submit Button */}
-                        <Box textAlign="center" mt={4}>
+                        <Box textAlign="center" mt={4} className="submit-wrapper">
                             <Button
                                 type="submit"
                                 variant="contained"
@@ -468,7 +529,7 @@ export default function Home() {
 
                 {/* Results Section */}
                 {result && (
-                    <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
+                    <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }} className='analysis-results'>
                         <Typography variant="h5" fontWeight="600" mb={3}>
                             Analysis Results
                         </Typography>
@@ -488,36 +549,46 @@ export default function Home() {
                                 <Card sx={{ mb: 2 }}>
                                     <CardContent>
                                         <Box display="flex" alignItems="center" gap={2}>
-                                            {result.appropriate ? (
-                                                <CheckCircle sx={{ color: 'success.main', fontSize: 28 }} />
-                                            ) : (
-                                                <Error sx={{ color: 'error.main', fontSize: 28 }} />
-                                            )}
-                                            <Typography 
-                                                variant="h6" 
-                                                color={result.appropriate ? 'success.main' : 'error.main'}
-                                                fontWeight="600"
-                                            >
-                                                {result.appropriate 
-                                                    ? 'Appropriate for your child' 
-                                                    : 'May not be appropriate for your child'
-                                                }
-                                            </Typography>
+                                            {(appropriatenessData.icon)}
+                                            <Box gap={2}>
+                                                <Typography 
+                                                    variant="h6" 
+                                                    color={appropriatenessData.color}
+                                                    fontWeight="600"
+                                                >
+                                                    {appropriatenessData.text}
+                                                </Typography>
+
+                                                <Typography variant="body2" color="text.secondary">
+                                                    <strong>Recommended age:</strong> {result.recommendedAge}
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     </CardContent>
                                 </Card>
                                 
-                                <Card>
-                                    <CardContent>
-                                        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                            {result.analysis}
-                                        </Typography>
-
-                                        <Typography variant="body2" color="text.secondary">
-                                            <strong>Recommended age:</strong> {result.recommendedAge}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
+                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                    {result.analysis}
+                                    <Link href="/about">
+                                        Read more about this analysis and how we do it.
+                                    </Link>
+                                </Typography>
+                                
+                                <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
+                    
+                                <Typography 
+                                    variant="h6" 
+                                    sx={{ 
+                                        fontWeight: 600,
+                                        background: darkMode 
+                                            ? 'linear-gradient(45deg, #ff00ff 30%, #00ccff 90%)'
+                                            : 'linear-gradient(45deg, #8b00ff 30%, #0066cc 90%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                    }}
+                                >
+                                    Remember: You know your child best. Use LyricsRay as a tool to inform your decisions, but always trust your parental instincts and family values when determining what&apos;s right for your children.
+                                </Typography>
                             </Box>
                         )}
                     </Paper>
