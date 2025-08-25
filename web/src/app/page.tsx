@@ -106,7 +106,6 @@ const getAppropriateData = (appropriate: number): AppropriateData => {
 
 export default function Home() {
     const theme = useTheme();
-    const darkMode = useMediaQuery('(prefers-color-scheme: dark)');
     
     const [formData, setFormData] = useState<FormData>({
         childAge: '',
