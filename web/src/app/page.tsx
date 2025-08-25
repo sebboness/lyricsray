@@ -23,7 +23,6 @@ import {
     ListItemText,
     ListItemAvatar,
     Avatar,
-    useMediaQuery,
     Link,
 } from '@mui/material';
 import {
