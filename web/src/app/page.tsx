@@ -569,8 +569,11 @@ export default function Home() {
                                 
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     {result.analysis}
+                                </Typography>
+
+                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     <Link href="/about">
-                                        Read more about this analysis and how we do it.
+                                        <strong>Read more about this analysis and how we do it &raquo;</strong>
                                     </Link>
                                 </Typography>
                                 
@@ -580,11 +583,6 @@ export default function Home() {
                                     variant="h6" 
                                     sx={{ 
                                         fontWeight: 600,
-                                        background: darkMode 
-                                            ? 'linear-gradient(45deg, #ff00ff 30%, #00ccff 90%)'
-                                            : 'linear-gradient(45deg, #8b00ff 30%, #0066cc 90%)',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
                                     }}
                                 >
                                     Remember: You know your child best. Use LyricsRay as a tool to inform your decisions, but always trust your parental instincts and family values when determining what&apos;s right for your children.
