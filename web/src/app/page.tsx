@@ -35,8 +35,10 @@ import {
     RecordVoiceOver,
     Close,
     WarningRounded,
+    Security,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import 'altcha';
 
 interface FormData {
     childAge: string;
@@ -120,6 +122,11 @@ export default function Home() {
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [scrollY, setScrollY] = useState(0);
     const [windowW, setWindowW] = useState(window.innerWidth);
+    
+    // ALTCHA state
+    const [altchaPayload, setAltchaPayload] = useState<string>('');
+    const [altchaChallenge, setAltchaChallenge] = useState<any>(null);
+    const [altchaVerified, setAltchaVerified] = useState<boolean>(false);
 
     // Handle scroll events
     useEffect(() => {
@@ -133,6 +140,11 @@ export default function Home() {
         };
     }, []);
 
+    // Load ALTCHA challenge on component mount
+    useEffect(() => {
+        loadAltchaChallenge();
+    }, []);
+
     // Calculate dynamic values based on scroll position
     const logoWidth = Math.min(1024, windowW);
     const logoRatio = logoWidth / 1024;
@@ -140,6 +152,26 @@ export default function Home() {
     const maxScroll = logoHeight * 0.8; // Start fading when 80% of logo would be scrolled past
     const scrollProgress = Math.min(scrollY / maxScroll, 1);
     const logoOpacity = Math.max(1 - scrollProgress, 0);
+
+    const loadAltchaChallenge = async () => {
+        try {
+            const response = await fetch('/api/altcha/challenge');
+            const challenge = await response.json();
+            setAltchaChallenge(challenge);
+        } catch (error) {
+            console.error('Failed to load ALTCHA challenge:', error);
+        }
+    };
+
+    const handleAltchaStateChange = (event: any) => {
+        if (event.detail.state === 'verified') {
+            setAltchaPayload(event.detail.payload);
+            setAltchaVerified(true);
+        } else if (event.detail.state === 'unverified') {
+            setAltchaPayload('');
+            setAltchaVerified(false);
+        }
+    };
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -170,7 +202,8 @@ export default function Home() {
                 },
                 body: JSON.stringify({
                     songName: formData.songName,
-                    artist: formData.songArtist
+                    artist: formData.songArtist,
+                    altchaPayload,
                 }),
             });
 
@@ -229,7 +262,8 @@ export default function Home() {
                 body: JSON.stringify({
                     childAge: formData.childAge,
                     lyrics: lyrics || formData.lyrics,
-                    inputMethod: 'lyrics'
+                    inputMethod: 'lyrics',
+                    altchaPayload,
                 }),
             });
 
@@ -257,11 +291,27 @@ export default function Home() {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setResult(null); // Clear previous results
+
+        // Check ALTCHA verification first
+        if (!altchaVerified) {
+            setResult({
+                appropriate: 0,
+                analysis: '',
+                recommendedAge: '',
+                error: 'Please complete the human verification first.'
+            });
+            return;
+        }
         
         if (formData.inputMethod === 'search') {
             await searchSongs();
         } else {
             await analyzeLyricsDirectly(null);
+
+            // Reset ALTCHA after successful submission of
+            setAltchaVerified(false);
+            setAltchaPayload('');
+            loadAltchaChallenge(); // Load new challenge
         }
     };
 
@@ -277,7 +327,7 @@ export default function Home() {
     const isFormValid = formData.childAge && (
         (formData.inputMethod === 'search' && formData.songName && formData.songArtist) ||
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
-    );
+    ) && altchaVerified;
 
     const appropriatenessData = getAppropriateData(result?.appropriate || 0);
 
@@ -442,6 +492,36 @@ export default function Home() {
                             </Box>
                         </Box>
 
+                        {/* ALTCHA Human Verification */}
+                        <Box sx={{ my: 4 }}>                            
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                <Security sx={{ color: theme.palette.primary.main }} />
+                                <Typography variant="h6" fontWeight="600">
+                                    Human Verification
+                                </Typography>
+                                {altchaVerified && (
+                                    <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                )}
+                            </Box>
+                            
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Complete this quick verification to prevent automated abuse of our AI analysis service.
+                            </Typography>
+
+                            {/* ALTCHA Widget Container */}
+                            {altchaChallenge && (
+                                <altcha-widget
+                                    challengeurl="/api/altcha/challenge"
+                                    style={{
+                                        '--altcha-color-base': theme.palette.background.paper,
+                                        '--altcha-color-text': theme.palette.text.primary,
+                                        '--altcha-border-radius': '8px',
+                                    }}
+                                    onstatechange={handleAltchaStateChange}
+                                />
+                            )}
+                        </Box>
+
                         {/* Submit Button */}
                         <Box textAlign="center" mt={4} className="submit-wrapper">
                             <Button
@@ -456,6 +536,12 @@ export default function Home() {
                                  isLoading ? 'Analyzing Song...' : 
                                  formData.inputMethod === 'search' ? 'Search & Analyze' : 'Analyze Lyrics'}
                             </Button>
+                            
+                            {!altchaVerified && (
+                                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
+                                    Please complete human verification above
+                                </Typography>
+                            )}
                         </Box>
                     </Box>
                 </Paper>

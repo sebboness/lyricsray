@@ -1,11 +1,11 @@
-// app/api/search-song/route.ts
-
 import { logger } from '@/logger/logger';
 import { LrcLibApi, SongSearchResult as LrcLibSongSearchResult } from '@/services/lrclib';
+import { verifyAltchaSolution } from '@/util/altcha';
 import { logPrefix } from '@/util/log';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface SearchSongRequest {
+    altchaPayload: string;
     songName: string;
     artist: string;
 }
@@ -29,7 +29,16 @@ const logName = "search-song";
 export async function POST(request: NextRequest) {
     try {
         const body: SearchSongRequest = await request.json();
-        const { songName, artist } = body;
+        const { altchaPayload, songName, artist } = body;
+
+        logger.info(`${logPrefix(logName)} altchaPayload`, altchaPayload);
+        
+        if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
+            return NextResponse.json(
+                { error: 'Human verification failed' },
+                { status: 400 }
+            );
+        }
 
         if (!songName?.trim() || !artist?.trim()) {
             return NextResponse.json(

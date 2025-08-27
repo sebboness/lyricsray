@@ -1,12 +1,12 @@
-// app/api/analyze-song/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { Model, TextBlock } from '@anthropic-ai/sdk/resources';
 import { logPrefix } from '@/util/log';
 import { logger } from '@/logger/logger';
+import { verifyAltchaSolution } from '@/util/altcha';
 
 interface AnalyzeSongRequest {
+    altchaPayload: string;
     childAge: number;
     lyrics: string;
 }
@@ -138,7 +138,16 @@ Please tailor your assessment to the age of ${childAge} years old. Consider what
 export async function POST(request: NextRequest) {
     try {
         const body: AnalyzeSongRequest = await request.json();
-        const { childAge, lyrics } = body;
+        const { altchaPayload, childAge, lyrics } = body;
+
+        logger.info(`${logPrefix(logName)} altchaPayload`, altchaPayload);
+
+        if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
+            return NextResponse.json(
+                { error: 'Human verification failed' },
+                { status: 400 }
+            );
+        }
 
         if (!childAge || childAge < 2 || childAge > 21) {
             return NextResponse.json(

@@ -159,6 +159,8 @@ resource "aws_amplify_branch" "main" {
       APP_NAME          = local.ssm_secrets.APP_NAME
       APP_URL           = local.ssm_secrets.APP_URL
       APP_VERSION       = local.ssm_secrets.APP_VERSION
+      ALTCHA_KEY        = local.ssm_secrets.ALTCHA_KEY
+      ALTCHA_SECRET     = local.ssm_secrets.ALTCHA_SECRET
       ANTHROPIC_API_KEY = local.ssm_secrets.ANTHROPIC_API_KEY
       ANTHROPIC_MODEL   = local.ssm_secrets.ANTHROPIC_MODEL
     }
