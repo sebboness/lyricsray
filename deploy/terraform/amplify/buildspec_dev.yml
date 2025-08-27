@@ -14,6 +14,7 @@ applications:
           commands:
             - ' >> .env'
             - 'env | grep -e ANTHROPIC_ >> .env'
+            - 'env | grep -e ALTCHA_ >> .env'
             - 'env | grep -e APP_ >> .env'
             - 'env | grep -e NEXT_PUBLIC_ >> .env'
             - 'cat .env'
