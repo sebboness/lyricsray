@@ -2,31 +2,6 @@ import { logger } from "@/logger/logger";
 import { QueryParams, toFetchUrl } from "@/util/apiUtils";
 import { logPrefix } from "@/util/log";
 
-const baseUrl = "https://lrclib.net/api";
-
-export interface SearchSongRequest {
-    songName: string;
-    artist: string;
-}
-
-export interface SongSearchResult {
-    id: string;
-    albumName?: string;
-    artistName: string;
-    duration: number;
-    instrumental: boolean;
-    name: string;
-    plainLyrics?: string;
-    thumbnail?: string;
-    trackName: string;
-    syncedLyrics?: string;
-}
-
-export interface SearchSongResponse {
-    songs: SongSearchResult[];
-    error?: string;
-}
-
 export type CallOptions = {
     payload?: any;
     queryParams?: QueryParams;
@@ -62,7 +37,7 @@ export class Api {
             };
 
             // Build API URL
-            const url = toFetchUrl(baseUrl, endpoint, opts.queryParams)
+            const url = toFetchUrl(this.baseUri, endpoint, opts.queryParams)
 
             const noCache = false;
 
