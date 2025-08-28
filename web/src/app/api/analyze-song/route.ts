@@ -177,6 +177,14 @@ export async function POST(request: NextRequest) {
         let song: AnalysisResult | null = null;
 
         try {
+            logger.info("Preparing to save analysis result", {
+                moduleName,
+                age: childAge,
+                artistName,
+                songName,
+                songKey,
+            });
+
             song = await analysisResultDb.getAnalysisResult(childAge, songKey);
         }
         catch (err) {

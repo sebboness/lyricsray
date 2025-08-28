@@ -6,4 +6,13 @@ const client = new DynamoDBClient({
 });
 
 // Document client makes it easier to work with native JS objects
-export const ddbDocClient = DynamoDBDocumentClient.from(client);
+export const ddbDocClient = DynamoDBDocumentClient.from(client, {
+    marshallOptions: {
+        removeUndefinedValues: true,
+        convertEmptyValues: true,
+        convertClassInstanceToMap: true,
+    },
+    unmarshallOptions: {
+        // Optional: configure unmarshalling options if needed
+    },
+});

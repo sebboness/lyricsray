@@ -24,9 +24,9 @@ describe('Api Integration Tests', () => {
 
     it.skip('should perform real POST request', async () => {
         const payload = {
-        title: 'Test Post',
-        body: 'This is a test post',
-        userId: 1
+            title: 'Test Post',
+            body: 'This is a test post',
+            userId: 1
         }
         
         const result = await api.post<{ id: number; title: string; body: string; userId: number }>('/posts', { payload })

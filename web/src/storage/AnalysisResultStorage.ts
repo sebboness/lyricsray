@@ -4,7 +4,7 @@ import { logPrefix } from "@/util/log";
 import { logger } from "@/logger/logger";
 
 const moduleName = "AnalysisResultStorage";
-const tableName = `${process.env.APP_NAME!.toLowerCase()} ${process.env.ENV?.toLowerCase()}-analysis-results`;
+const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-results`;
 
 export interface AnalysisResult {
     age: number;

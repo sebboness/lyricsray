@@ -6,6 +6,7 @@ export default defineConfig({
     plugins: [react()],
     test: {
         globals: true,
+        disableConsoleIntercept: true,
         environment: 'jsdom',
         setupFiles: ['./src/test/setup.ts'],
         coverage: {
