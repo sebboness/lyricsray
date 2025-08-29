@@ -4,11 +4,16 @@ import { Model, TextBlock } from '@anthropic-ai/sdk/resources';
 import { logPrefix } from '@/util/log';
 import { logger } from '@/logger/logger';
 import { verifyAltchaSolution } from '@/util/altcha';
+import { makeKey } from '@/util/hash';
+import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
+import moment from 'moment';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
     childAge: number;
     lyrics: string;
+    songName?: string;
+    artistName?: string;
 }
 
 interface AnalyzeSongResponse {
@@ -18,12 +23,12 @@ interface AnalyzeSongResponse {
     error?: string;
 }
 
-const logName = "analyze-song";
+const moduleName = "analyze-song";
 
 async function analyzeLyricsWithClaude(lyrics: string, childAge: number): Promise<{
     appropriate: number;
     analysis: string;
-    recommendedAge: string;
+    recommendedAge: number;
 }> {
     const prompt = `You are tasked with analyzing song lyrics for age-appropriateness for a specific child's age. Your goal is to provide a thoughtful assessment considering various factors that may impact the suitability of the content for young listeners.
 
@@ -77,11 +82,11 @@ Please tailor your assessment to the age of ${childAge} years old. Consider what
             model: process.env.ANTHROPIC_MODEL as Model,
         })
         .catch(async (err) => {
-            logger.error(`${logPrefix(logName)} Claude fetch threw error`, err);
+            logger.error(`${logPrefix(moduleName)} Claude fetch threw error`, err);
             throw err;
         });
 
-        logger.info(`${logPrefix(logName)} Claude response`, response);
+        logger.info(`${logPrefix(moduleName)} Claude response`, response);
 
         if (!response) {
             throw new Error("Claude API error: Nothing returned");
@@ -116,7 +121,7 @@ Please tailor your assessment to the age of ${childAge} years old. Consider what
                 recommendedAge: analysis.recommendedAge
             };
         } catch (parseError) {
-            logger.error(`${logName} Error parsing Claude response:`, {
+            logger.error(`${moduleName} Error parsing Claude response:`, {
                 parseError,
                 responseText,
             });
@@ -125,22 +130,25 @@ Please tailor your assessment to the age of ${childAge} years old. Consider what
             return {
                 appropriate: 0,
                 analysis: "Unable to parse analysis response. Please try again.",
-                recommendedAge: "Unknown"
+                recommendedAge: 0
             };
         }
 
     } catch (error) {
-        logger.error(`${logName} Error calling Claude API:`, error);
+        logger.error(`${moduleName} Error calling Claude API:`, error);
         throw new Error('Failed to analyze lyrics with Claude AI');
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
+        const analysisResultDb = AnalysisResultStorage.getInstance();
         const body: AnalyzeSongRequest = await request.json();
-        const { altchaPayload, childAge, lyrics } = body;
+        const { altchaPayload, childAge, lyrics, songName, artistName } = body;
 
-        logger.info(`${logPrefix(logName)} altchaPayload`, altchaPayload);
+        const age = parseInt(childAge + "");
+
+        logger.info(`${logPrefix(moduleName)} altchaPayload`, altchaPayload);
 
         if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
             return NextResponse.json(
@@ -149,7 +157,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!childAge || childAge < 2 || childAge > 21) {
+        if (!age || age < 2 || age > 21) {
             return NextResponse.json(
                 { error: 'Child age must be between 2 and 21' },
                 { status: 400 }
@@ -165,19 +173,97 @@ export async function POST(request: NextRequest) {
 
         const lyricsToAnalyze = lyrics.trim();
 
-        // Analyze lyrics with Claude
-        const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, childAge);
+        // Try to get analysis from storage if it was previously analyzed
+        const songKeyPrefix = `${age}|${artistName}|${songName}`;
+        const songKey = makeKey(lyricsToAnalyze, songKeyPrefix);
+        let song: AnalysisResult | null = null;
 
-        const response: AnalyzeSongResponse = {
-            appropriate: analysis.appropriate,
-            analysis: analysis.analysis,
-            recommendedAge: analysis.recommendedAge
-        };
+        try {
+            song = await analysisResultDb.getAnalysisResult(age, songKey);
 
-        return NextResponse.json(response);
+            const message = !!song
+                ? "Retrieved existing analysis result from storage"
+                : "Analysis result not found in storage";
+
+            logger.info(message, {
+                moduleName,
+                age,
+                artistName,
+                songName,
+                songKey,
+            });
+        }
+        catch (err) {
+            logger.info("Error ocurred while retrieving analysis result from storage", {
+                moduleName,
+                age,
+                artistName,
+                songName,
+                err,
+            })
+        }
+
+        if (song != null) {
+            const response: AnalyzeSongResponse = {
+                appropriate: song.appropriate,
+                analysis: song.analysis,
+                recommendedAge: song.recommendedAge.toString(),
+            };
+
+            return NextResponse.json(response);
+        }
+        else {
+            // Analyze lyrics with Claude
+            const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, age);
+
+            const analysisResult: AnalysisResult = {
+                age,
+                appropriate: analysis.appropriate,
+                analysis: analysis.analysis,
+                recommendedAge: analysis.recommendedAge,
+                date: moment.utc().toISOString(),
+                songKey,
+                song: {
+                    albumName: undefined,
+                    artistName,
+                    songName,
+                    thumbnailUrl: undefined,
+                    yearReleased: undefined,
+                }
+            }
+
+            // Try saving to database
+            try {
+                await analysisResultDb.saveAnalysisResult(analysisResult);
+
+                logger.info("Analysis result saved to storage", {
+                    moduleName,
+                    age,
+                    artistName,
+                    songName,
+                })
+            }
+            catch (err) {
+                logger.info("Failed to save analysis result to storage", {
+                    moduleName,
+                    age,
+                    artistName,
+                    songName,
+                    err,
+                })
+            }
+
+            const response: AnalyzeSongResponse = {
+                appropriate: analysis.appropriate,
+                analysis: analysis.analysis,
+                recommendedAge: analysis.recommendedAge.toString(),
+            };
+
+            return NextResponse.json(response);
+        }
 
     } catch (error) {
-        logger.error(`${logPrefix(logName)} Error analyzing song:`, error);
+        logger.error(`${logPrefix(moduleName)} Error analyzing song:`, error);
         return NextResponse.json(
             { 
                 error: 'Internal server error. Please try again.',

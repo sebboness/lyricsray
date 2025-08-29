@@ -118,6 +118,7 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isSearching, setIsSearching] = useState<boolean>(false);
     const [searchResults, setSearchResults] = useState<SongSearchResult[]>([]);
+    const [selectedSong, setSelectedSong] = useState<SongSearchResult | null>(null);
     const [showSongModal, setShowSongModal] = useState<boolean>(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [scrollY, setScrollY] = useState(0);
@@ -193,6 +194,7 @@ export default function Home() {
     };
 
     const searchSongs = async () => {
+        setSelectedSong(null);
         setIsSearching(true);
         try {
             const response = await fetch('/api/search-song', {
@@ -223,7 +225,7 @@ export default function Home() {
                 setSearchResults(data.songs);
                 if (data.songs.length === 1) {
                     // If only one result, proceed directly to analysis
-                    analyzeLyricsDirectly(data.songs[0].lyrics);
+                    analyzeLyricsDirectly(data.songs[0].lyrics, data.songs[0]);
                 } else {
                     // Show modal for multiple results
                     setShowSongModal(true);
@@ -249,7 +251,7 @@ export default function Home() {
         }
     };
 
-    const analyzeLyricsDirectly = async (lyrics: string | undefined | null) => {
+    const analyzeLyricsDirectly = async (lyrics: string | undefined | null, song: SongSearchResult | null) => {
         setIsLoading(true);
         setShowSongModal(false);
         
@@ -260,10 +262,13 @@ export default function Home() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    childAge: formData.childAge,
+                    childAge: parseInt(formData.childAge),
                     lyrics: lyrics || formData.lyrics,
                     inputMethod: 'lyrics',
                     altchaPayload,
+                    songName: song?.title,
+                    artistName: song?.artist,
+                    albumName: song?.album,
                 }),
             });
 
@@ -306,7 +311,7 @@ export default function Home() {
         if (formData.inputMethod === 'search') {
             await searchSongs();
         } else {
-            await analyzeLyricsDirectly(null);
+            await analyzeLyricsDirectly(null, selectedSong);
 
             // Reset ALTCHA after successful submission of
             setAltchaVerified(false);
@@ -316,7 +321,8 @@ export default function Home() {
     };
 
     const handleSongSelect = (song: SongSearchResult) => {
-        analyzeLyricsDirectly(song.lyrics);
+        setSelectedSong(song);
+        analyzeLyricsDirectly(song.lyrics, song);
     };
 
     const handleCloseModal = () => {
