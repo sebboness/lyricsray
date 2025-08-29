@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import 'altcha';
+import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 
 interface FormData {
     childAge: string;
@@ -69,6 +70,13 @@ interface AppropriateData {
     color: string;
     text: string;
 }
+
+const tip1 = `Paste the complete lyrics for the most accurate analysis*`;
+const tip2 = `You may submit lyrics in any language!`;
+
+const noteLyricsMaxLen = `* Keep in mind that the maximum allowed length of lyrics to analyze
+is ${LYRICS_MAX_LENGTH} characters. If your lyrics are longer, consider
+submitting only part of the lyrics.`;
 
 /**
  * Gets display data based on appropriateness level
@@ -397,14 +405,16 @@ export default function Home() {
                                 type="number"
                                 value={formData.childAge}
                                 onChange={handleInputChange}
-                                InputProps={{
-                                    inputProps: { min: 1, max: 17 },
-                                    startAdornment: <ChildCare sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                slotProps={{
+                                    htmlInput: { min: 1, max: 21 },
+                                    input: {
+                                        startAdornment: <ChildCare sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                    },
+                                    inputLabel: { shrink: true }
                                 }}
                                 placeholder="e.g., 12"
                                 required
                                 sx={{ maxWidth: 260 }}
-                                InputLabelProps={{ shrink: true }}
                             />
                         </Box>
 
@@ -447,36 +457,45 @@ export default function Home() {
                             {/* Tab Content */}
                             <Box sx={{ minHeight: 200 }}>
                                 {formData.inputMethod === 'search' ? (
-                                    <Grid container spacing={3}>
-                                        <Grid size={{ xs:12, md: 6 }}>
-                                            <TextField
-                                                name="songName"
-                                                label="Song Name"
-                                                value={formData.songName}
-                                                onChange={handleInputChange}
-                                                placeholder="e.g., Happy"
-                                                required={formData.inputMethod === 'search'}
-                                                fullWidth
-                                                InputProps={{
-                                                    startAdornment: <MusicNote sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                                }}
-                                            />
+                                    <Box>
+                                        <Grid container spacing={3}>
+                                            <Grid size={{ xs:12, md: 6 }}>
+                                                <TextField
+                                                    name="songName"
+                                                    label="Song Name"
+                                                    value={formData.songName}
+                                                    onChange={handleInputChange}
+                                                    placeholder="e.g., Happy"
+                                                    required={formData.inputMethod === 'search'}
+                                                    fullWidth
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: <MusicNote sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                                        }
+                                                    }}
+                                                />
+                                            </Grid>
+                                            <Grid size={{ xs:12, md: 6 }}>
+                                                <TextField
+                                                    name="songArtist"
+                                                    label="Artist Name"
+                                                    value={formData.songArtist}
+                                                    onChange={handleInputChange}
+                                                    placeholder="e.g., Pharrell Williams"
+                                                    required={formData.inputMethod === 'search'}
+                                                    fullWidth
+                                                    slotProps={{
+                                                        input: {
+                                                            startAdornment: <RecordVoiceOver sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                                        }
+                                                    }}
+                                                />
+                                            </Grid>
                                         </Grid>
-                                        <Grid size={{ xs:12, md: 6 }}>
-                                            <TextField
-                                                name="songArtist"
-                                                label="Artist Name"
-                                                value={formData.songArtist}
-                                                onChange={handleInputChange}
-                                                placeholder="e.g., Pharrell Williams"
-                                                required={formData.inputMethod === 'search'}
-                                                fullWidth
-                                                InputProps={{
-                                                    startAdornment: <RecordVoiceOver sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                                }}
-                                            />
-                                        </Grid>
-                                    </Grid>
+                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                            💡 Tip: {tip2}
+                                        </Typography>
+                                    </Box>
                                 ) : (
                                     <Box>
                                         <TextField
@@ -486,12 +505,20 @@ export default function Home() {
                                             onChange={handleInputChange}
                                             multiline
                                             rows={8}
+                                            slotProps={{
+                                                htmlInput: { maxLength: LYRICS_MAX_LENGTH }
+                                            }}
                                             placeholder="Paste the complete song lyrics here..."
                                             required={formData.inputMethod === 'lyrics'}
                                             fullWidth
                                         />
                                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                            💡 Tip: Paste the complete lyrics for the most accurate analysis
+                                            💡 Tip #1: {tip1}
+                                            <br />
+                                            💡 Tip #2: {tip2}
+                                            <br />
+                                            &nbsp;&nbsp;
+                                            <i>{noteLyricsMaxLen}</i>
                                         </Typography>
                                     </Box>
                                 )}

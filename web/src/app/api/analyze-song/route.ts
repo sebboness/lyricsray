@@ -6,6 +6,7 @@ import { makeKey } from '@/util/hash';
 import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
 import moment from 'moment';
 import { AiClient } from '@/services/aiClient';
+import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -36,10 +37,11 @@ export async function POST(request: NextRequest) {
             albumName,
             altchaPayload,
             childAge,
-            lyrics,
             songName,
             artistName
         } = body;
+
+        let { lyrics } = body;
 
         const age = parseInt(childAge + "");
 
@@ -50,6 +52,10 @@ export async function POST(request: NextRequest) {
                 { error: 'Human verification failed' },
                 { status: 400 }
             );
+        }
+
+        if (!lyrics && lyrics.length > LYRICS_MAX_LENGTH) {
+            lyrics = lyrics.substring(0, LYRICS_MAX_LENGTH);
         }
 
         if (!age || age < 2 || age > 21) {
