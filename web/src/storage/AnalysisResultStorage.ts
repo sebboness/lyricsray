@@ -57,8 +57,8 @@ export class AnalysisResultStorage {
             const command = new GetCommand({
                 TableName: tableName,
                 Key: {
-                    PK: age,
-                    SK: songKey,
+                    age,
+                    songKey,
                 },
             });
 
@@ -84,10 +84,8 @@ export class AnalysisResultStorage {
     public saveAnalysisResult(analysisResult: AnalysisResult): Promise<AnalysisResult> {
         return new Promise((resolve, reject) => {
             const command = new PutCommand({
-                TableName: process.env.DYNAMO_TABLE_NAME,
+                TableName: tableName,
                 Item: {
-                    PK: analysisResult.age,
-                    SK: analysisResult.songKey,
                     ...analysisResult,
                 },
             });

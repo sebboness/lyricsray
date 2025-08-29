@@ -262,7 +262,7 @@ export default function Home() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    childAge: formData.childAge,
+                    childAge: parseInt(formData.childAge),
                     lyrics: lyrics || formData.lyrics,
                     inputMethod: 'lyrics',
                     altchaPayload,

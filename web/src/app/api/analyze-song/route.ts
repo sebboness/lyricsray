@@ -146,6 +146,8 @@ export async function POST(request: NextRequest) {
         const body: AnalyzeSongRequest = await request.json();
         const { altchaPayload, childAge, lyrics, songName, artistName } = body;
 
+        const age = parseInt(childAge + "");
+
         logger.info(`${logPrefix(moduleName)} altchaPayload`, altchaPayload);
 
         if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
@@ -155,7 +157,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!childAge || childAge < 2 || childAge > 21) {
+        if (!age || age < 2 || age > 21) {
             return NextResponse.json(
                 { error: 'Child age must be between 2 and 21' },
                 { status: 400 }
@@ -172,25 +174,29 @@ export async function POST(request: NextRequest) {
         const lyricsToAnalyze = lyrics.trim();
 
         // Try to get analysis from storage if it was previously analyzed
-        const songKeyPrefix = `${childAge}|${artistName}|${songName}`;
+        const songKeyPrefix = `${age}|${artistName}|${songName}`;
         const songKey = makeKey(lyricsToAnalyze, songKeyPrefix);
         let song: AnalysisResult | null = null;
 
         try {
-            logger.info("Preparing to save analysis result", {
+            song = await analysisResultDb.getAnalysisResult(age, songKey);
+
+            let message = !!song
+                ? "Retrieved existing analysis result from storage"
+                : "Analysis result not found in storage";
+
+            logger.info(message, {
                 moduleName,
-                age: childAge,
+                age,
                 artistName,
                 songName,
                 songKey,
             });
-
-            song = await analysisResultDb.getAnalysisResult(childAge, songKey);
         }
         catch (err) {
-            logger.info("Song not found in storage", {
+            logger.info("Error ocurred while retrieving analysis result from storage", {
                 moduleName,
-                age: childAge,
+                age,
                 artistName,
                 songName,
                 err,
@@ -208,10 +214,10 @@ export async function POST(request: NextRequest) {
         }
         else {
             // Analyze lyrics with Claude
-            const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, childAge);
+            const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, age);
 
             const analysisResult: AnalysisResult = {
-                age: childAge,
+                age,
                 appropriate: analysis.appropriate,
                 analysis: analysis.analysis,
                 recommendedAge: analysis.recommendedAge,
@@ -229,11 +235,18 @@ export async function POST(request: NextRequest) {
             // Try saving to database
             try {
                 await analysisResultDb.saveAnalysisResult(analysisResult);
+
+                logger.info("Analysis result saved to storage", {
+                    moduleName,
+                    age,
+                    artistName,
+                    songName,
+                })
             }
             catch (err) {
                 logger.info("Failed to save analysis result to storage", {
                     moduleName,
-                    age: childAge,
+                    age,
                     artistName,
                     songName,
                     err,
