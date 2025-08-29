@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
         try {
             song = await analysisResultDb.getAnalysisResult(age, songKey);
 
-            let message = !!song
+            const message = !!song
                 ? "Retrieved existing analysis result from storage"
                 : "Analysis result not found in storage";
 
