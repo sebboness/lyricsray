@@ -3,16 +3,18 @@ import WinstonCloudWatch from 'winston-cloudwatch';
 
 const logGroupName = `/aws/amplify/apps/${process.env.APP_NAME?.toLocaleLowerCase()}/${process.env.ENV?.toLocaleLowerCase()}`;
 
-// Create the logger
-export const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL,
-    format: winston.format.json(),
-    transports: [
+const getTransports = () => {
+    const transports = [
         // Console transport for local development
         new winston.transports.Console(),
+    ];
 
-        // CloudWatch transport
-        new WinstonCloudWatch({
+    const isLocal = !!process.env.IS_LOCAL;
+    console.log("isLocal", isLocal);
+
+    // Log to CloudWatch if this is not local development
+    if (!isLocal) {
+        transports.push(new WinstonCloudWatch({
             logGroupName: logGroupName,
             logStreamName() {
                 // Spread log streams across dates as the server stays up
@@ -23,6 +25,15 @@ export const logger = winston.createLogger({
             messageFormatter(logObject) {
                 return JSON.stringify(logObject);
             },
-        }),
-    ],
+        }) as any);
+    }
+
+    return transports;
+}
+
+// Create the logger
+export const logger = winston.createLogger({
+    level: process.env.LOG_LEVEL,
+    format: winston.format.json(),
+    transports: getTransports(),
 });

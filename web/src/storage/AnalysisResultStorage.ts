@@ -1,5 +1,5 @@
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
-import { ddbDocClient } from "./dynamodb";
+import { getDynamoDbClient } from "./dynamodb";
 import { logPrefix } from "@/util/log";
 import { logger } from "@/logger/logger";
 
@@ -30,8 +30,8 @@ export class AnalysisResultStorage {
     private static instance: AnalysisResultStorage;
 
     constructor() {
-        this.dbClient = ddbDocClient;
-        logger.info(`${logPrefix(moduleName)}Initialized storage with table name ${tableName}`);
+        this.dbClient = getDynamoDbClient();
+        logger.info("Initialized AnalysisResultStorage", { moduleName, tableName });
     }
 
     /**
@@ -62,7 +62,7 @@ export class AnalysisResultStorage {
                 },
             });
 
-            ddbDocClient.send(command)
+            this.dbClient.send(command)
                 .then((response) => {
                     const { Item } = response;
                     logger.debug(`${logPrefix(moduleName)} response received`, Item);
@@ -90,7 +90,7 @@ export class AnalysisResultStorage {
                 },
             });
 
-            ddbDocClient.send(command)
+            this.dbClient.send(command)
                 .then((response) => {
                     logger.debug(`${logPrefix(moduleName)} analysis result saved.`, {
                         consumedCapacity: response.ConsumedCapacity,
