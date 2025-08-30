@@ -56,6 +56,11 @@ resource "aws_iam_role_policy" "amplify_policy" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = data.aws_secretsmanager_secret.secrets.arn
+      },
+      {
+        Effect = "Allow"
+        Action = "sts:GetCallerIdentity"
+        Resource = "*"
       }
     ]
   })

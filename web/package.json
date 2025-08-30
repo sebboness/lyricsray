@@ -17,6 +17,7 @@
     "@aws-sdk/client-cloudwatch-logs": "3.876.0",
     "@aws-sdk/client-dynamodb": "3.876.0",
     "@aws-sdk/lib-dynamodb": "3.876.0",
+    "@aws-sdk/client-sts": "3.876.0",
     "@anthropic-ai/sdk": "0.60.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
