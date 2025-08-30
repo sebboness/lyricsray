@@ -161,6 +161,7 @@ resource "aws_amplify_branch" "main" {
 
   environment_variables = merge(
     {
+      ENV                   = local.env
       ENVIRONMENT           = local.env
       NEXT_PUBLIC_ENV       = local.env
       NODE_ENV              = local.env == "prod" ? "production" : "development"

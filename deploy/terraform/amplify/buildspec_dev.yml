@@ -16,6 +16,8 @@ applications:
             - 'env | grep -e ANTHROPIC_ >> .env'
             - 'env | grep -e ALTCHA_ >> .env'
             - 'env | grep -e APP_ >> .env'
+            - 'env | grep -e AWS_REGION >> .env'
+            - 'env | grep -e ENV >> .env'
             - 'env | grep -e NEXT_PUBLIC_ >> .env'
             - 'cat .env'
             - 'export NODE_ENV=production'

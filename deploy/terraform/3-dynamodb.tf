@@ -17,3 +17,8 @@ resource "aws_dynamodb_table" "analysis_results" {
     hash_key = "age"
     range_key = "songKey"
 }
+
+output "analysis_results_table_name" {
+  description = "DynamoDB table name for analysis results"
+  value       = aws_dynamodb_table.analysis_results.name
+}
