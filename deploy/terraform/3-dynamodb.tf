@@ -1,4 +1,4 @@
-resource "aws_dynamodb_table" "analysis-results" {
+resource "aws_dynamodb_table" "analysis_results" {
     name = "${local.app}-${local.env}-analysis-results"
     billing_mode = "PROVISIONED"
     read_capacity= "10"
