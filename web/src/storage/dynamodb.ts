@@ -9,16 +9,22 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
  */
 export const getDynamoDbClient = () => {
 
-    logger.info(`process.env.SERVICE_ROLE_ARN: ${process.env.SERVICE_ROLE_ARN}`);
+    logger.info(`process.env.APP_SERVICE_ROLE_ARN: ${process.env.APP_SERVICE_ROLE_ARN}`);
+
+    const isLocal = !!process.env.IS_LOCAL;
+    
+    const credentials = isLocal
+        ? undefined
+        : fromTemporaryCredentials({
+            params: {
+                RoleArn: process.env.APP_SERVICE_ROLE_ARN,
+                RoleSessionName: "in-app",
+            },
+        });
 
     const client = new DynamoDBClient({
         region: process.env.AWS_REGION!,
-        credentials: fromTemporaryCredentials({
-            params: {
-                RoleArn: process.env.SERVICE_ROLE_ARN,
-                RoleSessionName: "in-app",
-            },
-        }),
+        credentials,
         maxAttempts: 3,
         retryMode: "adaptive",
     });

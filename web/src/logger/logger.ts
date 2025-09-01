@@ -10,7 +10,6 @@ const getTransports = () => {
     ];
 
     const isLocal = !!process.env.IS_LOCAL;
-    console.log("isLocal", isLocal);
 
     // Log to CloudWatch if this is not local development
     if (!isLocal) {
