@@ -1,6 +1,5 @@
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { logger } from "@/logger/logger";
 
