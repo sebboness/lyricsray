@@ -7,6 +7,7 @@ import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultS
 import moment from 'moment';
 import { AiClient } from '@/services/aiClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
+import { getDynamoDbClient } from '@/storage/dynamodb';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -30,7 +31,9 @@ const aiClient = new AiClient(process.env.ANTHROPIC_MODEL!, process.env.ANTHROPI
 
 export async function POST(request: NextRequest) {
     try {
-        const analysisResultDb = new AnalysisResultStorage();
+
+        const ddbClient = await getDynamoDbClient();
+        const analysisResultDb = new AnalysisResultStorage(ddbClient);
         const body: AnalyzeSongRequest = await request.json();
 
         const {

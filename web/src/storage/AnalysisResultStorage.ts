@@ -1,5 +1,4 @@
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
-import { getDynamoDbClient } from "./dynamodb";
 import { logPrefix } from "@/util/log";
 import { logger } from "@/logger/logger";
 
@@ -27,22 +26,9 @@ export interface AnalysisSongDetails {
 export class AnalysisResultStorage {
     dbClient: DynamoDBDocumentClient;
 
-    private static instance: AnalysisResultStorage;
-
-    constructor() {
-        this.dbClient = getDynamoDbClient();
+    constructor(dbClient: DynamoDBDocumentClient) {
+        this.dbClient = dbClient;
         logger.info("Initialized AnalysisResultStorage", { moduleName, tableName });
-    }
-
-    /**
-     * Returns the current AnalysisResultStorage API instance.
-     * @returns The current AnalysisResultStorage API instance
-     */
-    public static getInstance(): AnalysisResultStorage {
-        if (!AnalysisResultStorage.instance) {
-            AnalysisResultStorage.instance = new AnalysisResultStorage();
-        }
-        return AnalysisResultStorage.instance;
     }
 
     /**
