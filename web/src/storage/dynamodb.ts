@@ -1,7 +1,5 @@
-import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { logger } from "@/logger/logger";
 
 /**
  * Gets a new instance of the DynamoDB client
@@ -9,39 +7,46 @@ import { logger } from "@/logger/logger";
  */
 export const getDynamoDbClient = async () => {
 
-    logger.info(`process.env.APP_SERVICE_ROLE_ARN: ${process.env.APP_SERVICE_ROLE_ARN}`);
+    // logger.info(`process.env.APP_SERVICE_ROLE_ARN: ${process.env.APP_SERVICE_ROLE_ARN}`);
 
-    const isLocal = !!process.env.IS_LOCAL;
-    let credentials: any = undefined;
+    // const isLocal = !!process.env.IS_LOCAL;
+    // let credentials: any = undefined;
 
-    if (!isLocal) {
-        try {
+    // if (isLocal) {
+    //     try {
 
-            // Assume the role to get temporary credentials
-            const stsClient = new STSClient({ region: process.env.AWS_REGION });
-            const assumeRoleParams = {
-                RoleArn: process.env.APP_SERVICE_ROLE_ARN,
-                RoleSessionName: `in-app-${Date.now()}`,
-            };
+    //         // Assume the role to get temporary credentials
+    //         const stsClient = new STSClient({ region: process.env.AWS_REGION });
+    //         const assumeRoleParams = {
+    //             RoleArn: process.env.APP_SERVICE_ROLE_ARN,
+    //             RoleSessionName: `in-app-${Date.now()}`,
+    //         };
 
-            const command = new AssumeRoleCommand(assumeRoleParams);
-            const data = await stsClient.send(command);
+    //         const command = new AssumeRoleCommand(assumeRoleParams);
+    //         const data = await stsClient.send(command);
 
-            if (data && data.Credentials) {
-                credentials = {
-                    accessKeyId: data.Credentials.AccessKeyId,
-                    secretAccessKey: data.Credentials.SecretAccessKey,
-                    sessionToken: data.Credentials.SessionToken,
-                };
-            }
-            else {
-                logger.warn("Unexpected response received from STSClient", data);
-            }
-        }
-        catch (err) {
-                logger.error("Failed to retrieve credentials from STSClient", err);
-        }
-    }
+    //         if (data && data.Credentials) {
+    //             credentials = {
+    //                 accessKeyId: data.Credentials.AccessKeyId,
+    //                 secretAccessKey: data.Credentials.SecretAccessKey,
+    //                 sessionToken: data.Credentials.SessionToken,
+    //             };
+    //         }
+    //         else {
+    //             logger.warn("Unexpected response received from STSClient", data);
+    //         }
+    //     }
+    //     catch (err) {
+    //             logger.error("Failed to retrieve credentials from STSClient", err);
+    //     }
+    // }
+    // else {
+    //     credentials = {
+    //         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    //         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    //         sessionToken: process.env.AWS_SESSION_TOKEN,
+    //     };
+    // }
     
     // const credentials = isLocal
     //     ? undefined
@@ -54,7 +59,7 @@ export const getDynamoDbClient = async () => {
 
     const client = new DynamoDBClient({
         region: process.env.AWS_REGION!,
-        credentials,
+        // credentials,
         maxAttempts: 3,
         retryMode: "adaptive",
     });

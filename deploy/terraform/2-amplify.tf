@@ -47,19 +47,16 @@ resource "aws_iam_role_policy" "amplify_policy" {
           "dynamodb:Query"
         ]
         Resource = [
-          aws_dynamodb_table.analysis_results.arn
+          aws_dynamodb_table.analysis_results.arn,
+          "${aws_dynamodb_table.analysis_results.arn}/index/*"
         ]
       },
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue"
+          "sts:GetCallerIdentity",
+          "sts:AssumeRole"
         ]
-        Resource = data.aws_secretsmanager_secret.secrets.arn
-      },
-      {
-        Effect = "Allow"
-        Action = "sts:GetCallerIdentity"
         Resource = "*"
       }
     ]
