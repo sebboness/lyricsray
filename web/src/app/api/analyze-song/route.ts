@@ -6,8 +6,10 @@ import { makeKey } from '@/util/hash';
 import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
 import moment from 'moment';
 import { AiClient } from '@/services/aiClient';
+import { RateLimiter } from '@/services/rateLimiter';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { getDynamoDbClient } from '@/storage/dynamodb';
+import { getClientIp } from '@/util/request';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -46,6 +48,8 @@ export async function POST(request: NextRequest) {
 
         const ddbClient = getDynamoDbClient();
         const analysisResultDb = new AnalysisResultStorage(ddbClient);
+        const rateLimiter = new RateLimiter(ddbClient);
+
         const body: AnalyzeSongRequest = await request.json();
 
         const {
@@ -129,6 +133,33 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(response);
         }
         else {
+            const clientIp = getClientIp(request);
+            const rateLimitResult = await rateLimiter.checkAndIncrementRateLimit(clientIp);
+
+            if (!rateLimitResult.allowed) {
+                logger.warn(`Rate limit exceeded for IP ${clientIp}`, {
+                    moduleName,
+                    clientIp,
+                    reason: rateLimitResult.reason,
+                    retryAfter: rateLimitResult.retryAfter
+                });
+                
+                return NextResponse.json(
+                    { 
+                        error: rateLimitResult.reason || 'Rate limit exceeded',
+                        retryAfter: rateLimitResult.retryAfter
+                    },
+                    { 
+                        status: 429,
+                        headers: {
+                            'Retry-After': rateLimitResult.retryAfter?.toString() || '3600',
+                            'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
+                            'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+                        }
+                    }
+                );
+            }
+
             // Get an estimate prior to analyzing with AI
             const prompt = aiClient.getLyricsPrompt(lyrics, age);
             const estimateTokensIn = await aiClient.getTokenInputEstimate(prompt);
@@ -182,7 +213,12 @@ export async function POST(request: NextRequest) {
                 recommendedAge: analysis.recommendedAge.toString(),
             };
 
-            return NextResponse.json(response);
+            return NextResponse.json(response, {
+                headers: {
+                    'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
+                    'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+                }
+            });
         }
 
     } catch (error) {

@@ -4,7 +4,7 @@ import moment from 'moment';
 import { getDefaultRateLimitConfig } from '@/config/rateLimitConfig';
 import { logger } from '@/logger/logger';
 
-const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-rate-limiter`;
+const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-rate-limits`;
 
 interface RateLimitConfig {
     hourlyLimit: number;
@@ -53,6 +53,8 @@ export class RateLimiter {
         
         // Import and use the configuration
         const defaultConfig = getDefaultRateLimitConfig();
+
+        console.log("defaultConfig", defaultConfig);
         
         this.config = {
             ...defaultConfig,

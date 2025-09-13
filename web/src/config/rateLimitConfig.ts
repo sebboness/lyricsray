@@ -26,14 +26,14 @@ export interface RateLimitSettings {
 }
 
 // Configuration based on environment
-const isDevelopment = process.env.NODE_ENV === 'development';
+// const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const rateLimitConfig: RateLimitSettings = {
     // Global limit across all users - adjust based on your Anthropic budget
     // Assuming ~$0.0085 per request, 1000 requests = ~$8.50/day
     globalDailyLimit: defaults.globalDailyLimit,
 
-    enableRateLimit: !isDevelopment, // Disable in dev, enable in prod
+    enableRateLimit: true, // !isDevelopment, // Disable in dev, enable in prod
 
     fallbackBehavior: 'allow', // Fail open - don't block users if service is down
 
