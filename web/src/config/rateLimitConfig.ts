@@ -1,3 +1,11 @@
+const defaults = {
+    globalDailyLimit: parseInt(process.env.FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
+    hourlyLimit: parseInt(process.env.FREE_TIER_HOURLY_LIMIT || "0"),
+    dailyLimit: parseInt(process.env.FREE_TIER_DAILY_LIMIT || "0"),
+    burstLimit: parseInt(process.env.FREE_TIER_BURST_LIMIT || "0"),
+    burstWindowMinutes: parseInt(process.env.FREE_TIER_BURST_WINDOW_MINUTES || "0"),
+};
+
 export interface RateLimitTier {
     name: string;
     hourlyLimit: number;
@@ -23,7 +31,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 export const rateLimitConfig: RateLimitSettings = {
     // Global limit across all users - adjust based on your Anthropic budget
     // Assuming ~$0.0085 per request, 1000 requests = ~$8.50/day
-    globalDailyLimit: isDevelopment ? 1000 : 300,
+    globalDailyLimit: defaults.globalDailyLimit,
 
     enableRateLimit: !isDevelopment, // Disable in dev, enable in prod
 
@@ -32,17 +40,18 @@ export const rateLimitConfig: RateLimitSettings = {
     tiers: {
         free: {
             name: 'Free Tier',
-            hourlyLimit: isDevelopment ? 20 : 12, // Higher limit for development testing
-            dailyLimit: isDevelopment ? 50 : 25,
-            burstLimit: isDevelopment ? 10 : 5,
-            burstWindowMinutes: 10,
+            hourlyLimit: defaults.hourlyLimit,
+            dailyLimit: defaults.dailyLimit,
+            burstLimit: defaults.burstLimit,
+            burstWindowMinutes: defaults.burstWindowMinutes,
             description: 'Perfect for trying out LyricsRay with a few songs'
         },
     }
 };
 
-// Helper function to get rate limit config for a user
-export function getRateLimitConfigForUser(userTier: 'free' | 'premium' = 'free') {
+// Helper function to get the default rate limit config for the "free" tier
+export function getDefaultRateLimitConfig() {
+    const userTier = 'free';
     const config = rateLimitConfig.tiers[userTier];
 
     if (!config) {
@@ -57,31 +66,3 @@ export function getRateLimitConfigForUser(userTier: 'free' | 'premium' = 'free')
         burstWindowMinutes: config.burstWindowMinutes,
     };
 }
-
-// Environment-specific adjustments
-export const getEnvironmentConfig = () => {
-    if (isDevelopment) {
-        return {
-            ...rateLimitConfig,
-            enableRateLimit: false, // No limits in development
-            globalDailyLimit: 999999,
-        };
-    }
-
-    if (process.env.VERCEL_ENV === 'preview') {
-        return {
-            ...rateLimitConfig,
-            globalDailyLimit: 200, // Lower limit for preview deployments
-            tiers: {
-                ...rateLimitConfig.tiers,
-                free: {
-                ...rateLimitConfig.tiers.free,
-                hourlyLimit: 5,
-                dailyLimit: 10,
-                }
-            }
-        };
-    }
-
-    return rateLimitConfig;
-};
