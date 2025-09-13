@@ -444,7 +444,7 @@ export class RateLimiter {
                 const windowEnd = burstWindowStart.clone().add(this.config.burstWindowMinutes, 'minutes');
                 
                 if (now.isBefore(windowEnd)) {
-                burstUsage = record.burstCount || 0;
+                    burstUsage = record.burstCount || 0;
                 }
             }
 
