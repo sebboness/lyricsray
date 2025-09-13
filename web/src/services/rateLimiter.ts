@@ -1,9 +1,9 @@
-import { ConditionalCheckFailedException, DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import moment from 'moment';
+import { getRateLimitConfigForUser } from '@/config/rateLimitConfig';
 import { logger } from '@/logger/logger';
 
-const moduleName = "RateLimiter";
 const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-rate-limiter`;
 
 interface RateLimitConfig {
@@ -52,7 +52,6 @@ export class RateLimiter {
         this.dbClient = dbClient;
         
         // Import and use the configuration
-        const { getRateLimitConfigForUser } = require('@/config/rateLimitConfig');
         const defaultConfig = getRateLimitConfigForUser('free');
         
         this.config = {

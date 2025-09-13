@@ -19,7 +19,6 @@ export interface RateLimitSettings {
 
 // Configuration based on environment
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
 
 export const rateLimitConfig: RateLimitSettings = {
     // Global limit across all users - adjust based on your Anthropic budget
