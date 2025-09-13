@@ -29,10 +29,22 @@ const moduleName = "analyze-song";
 
 const aiClient = new AiClient(process.env.ANTHROPIC_MODEL!, process.env.ANTHROPIC_API_KEY!);
 
+/**
+ * Cleans up lyrics by trimming the string, removing any html elements, and removing any "[" and "]" groups.
+ * @param lyrics The lyrics to clean
+ * @returns Cleaned up lyrics string
+ */
+const cleanUpLyrics = (lyrics?: string): string => {
+    if (!lyrics)
+        return "";
+    
+    return lyrics.trim().replace(/(<[^>]*>)|(\[[^\]]*\])/g, '');
+}
+
 export async function POST(request: NextRequest) {
     try {
 
-        const ddbClient = await getDynamoDbClient();
+        const ddbClient = getDynamoDbClient();
         const analysisResultDb = new AnalysisResultStorage(ddbClient);
         const body: AnalyzeSongRequest = await request.json();
 
@@ -57,6 +69,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        lyrics = cleanUpLyrics(lyrics);
+
+        if (!lyrics) {
+            return NextResponse.json(
+                { error: 'Lyrics are required' },
+                { status: 400 }
+            );
+        }
+
         if (!lyrics && lyrics.length > LYRICS_MAX_LENGTH) {
             lyrics = lyrics.substring(0, LYRICS_MAX_LENGTH);
         }
@@ -68,18 +89,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!lyrics.trim()) {
-            return NextResponse.json(
-                { error: 'Lyrics are required' },
-                { status: 400 }
-            );
-        }
-
-        const lyricsToAnalyze = lyrics.trim();
-
         // Try to get analysis from storage if it was previously analyzed
         const songKeyPrefix = `${age}|${artistName}|${songName}`;
-        const songKey = makeKey(lyricsToAnalyze, songKeyPrefix);
+        const songKey = makeKey(lyrics, songKeyPrefix);
         let song: AnalysisResult | null = null;
 
         try {
@@ -136,6 +148,7 @@ export async function POST(request: NextRequest) {
                 song: {
                     albumName,
                     artistName,
+                    lyrics,
                     songName,
                     thumbnailUrl: undefined,
                     yearReleased: undefined,

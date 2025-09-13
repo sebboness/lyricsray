@@ -18,7 +18,16 @@ resource "aws_dynamodb_table" "analysis_results" {
     range_key = "songKey"
 }
 
-output "analysis_results_table_name" {
-  description = "DynamoDB table name for analysis results"
-  value       = aws_dynamodb_table.analysis_results.name
+resource "aws_dynamodb_table" "analysis_rate_limits" {
+    name = "${local.app}-${local.env}-analysis-rate-limits"
+    billing_mode = "PROVISIONED"
+    read_capacity= "5"
+    write_capacity= "10"
+
+    attribute {
+        name = "id"
+        type = "S"
+    }
+
+    hash_key = "id"
 }
