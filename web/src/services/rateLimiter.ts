@@ -1,5 +1,5 @@
-import { ConditionalCheckFailedException, TransactionCanceledException } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import moment from 'moment';
 import { getDefaultRateLimitConfig } from '@/config/rateLimitConfig';
 import { logger } from '@/logger/logger';
@@ -129,7 +129,7 @@ export class RateLimiter {
                             TableName: tableName,
                             Key: { id: ipId },
                             UpdateExpression: this.buildIpUpdateExpression(isNewHour),
-                            ConditionExpression: this.buildIpConditionExpression(isNewHour),
+                            ConditionExpression: this.buildIpConditionExpression(),
                             ExpressionAttributeNames: {
                                 '#date': 'date',
                                 '#hour': 'hour',
@@ -207,11 +207,10 @@ export class RateLimiter {
 
     /**
      * Builds the ConditionExpression for IP counter updates
-     * @param {boolean} isNewHour - Whether this is the first request in a new hour
      * @returns {string} The DynamoDB ConditionExpression string
      * @private
      */
-    private buildIpConditionExpression(isNewHour: boolean): string {
+    private buildIpConditionExpression(): string {
         const conditions = [
             '(dailyCount < :dailyLimit OR attribute_not_exists(dailyCount))',
             '(:hourlyCount <= :hourlyLimit)'

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { ConditionalCheckFailedException, TransactionCanceledException } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import moment from 'moment';
 import { RateLimiter } from '@/services/rateLimiter';
 
@@ -256,7 +256,7 @@ describe('RateLimiter', () => {
 
     describe('buildIpConditionExpression', () => {
         it('should return condition with daily and hourly limits', () => {
-            const condition = rateLimiter['buildIpConditionExpression'](true);
+            const condition = rateLimiter['buildIpConditionExpression']();
             expect(condition).toContain('dailyCount < :dailyLimit');
             expect(condition).toContain('hourlyCount <= :hourlyLimit');
             expect(condition).toContain('AND');
