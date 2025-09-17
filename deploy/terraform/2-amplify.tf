@@ -172,14 +172,21 @@ resource "aws_amplify_branch" "main" {
     },
     # Add secret environment variables
     {
-      APP_NAME          = local.ssm_secrets.APP_NAME
-      APP_URL           = local.ssm_secrets.APP_URL
-      APP_SERVICE_ROLE_ARN  = aws_iam_role.amplify_role.arn
-      APP_VERSION       = local.ssm_secrets.APP_VERSION
-      ALTCHA_KEY        = local.ssm_secrets.ALTCHA_KEY
-      ALTCHA_SECRET     = local.ssm_secrets.ALTCHA_SECRET
-      ANTHROPIC_API_KEY = local.ssm_secrets.ANTHROPIC_API_KEY
-      ANTHROPIC_MODEL   = local.ssm_secrets.ANTHROPIC_MODEL
+      APP_NAME                  = local.ssm_secrets.APP_NAME
+      APP_URL                   = local.ssm_secrets.APP_URL
+      APP_VERSION               = local.ssm_secrets.APP_VERSION
+      ALTCHA_KEY                = local.ssm_secrets.ALTCHA_KEY
+      ALTCHA_SECRET             = local.ssm_secrets.ALTCHA_SECRET
+      ANTHROPIC_API_KEY         = local.ssm_secrets.ANTHROPIC_API_KEY
+      ANTHROPIC_MODEL           = local.ssm_secrets.ANTHROPIC_MODEL
+
+      FREE_TIER_GLOBAL_DAILY_LIMIT   = local.ssm_secrets.FREE_TIER_GLOBAL_DAILY_LIMIT
+      FREE_TIER_HOURLY_LIMIT         = local.ssm_secrets.FREE_TIER_HOURLY_LIMIT
+      FREE_TIER_DAILY_LIMIT          = local.ssm_secrets.FREE_TIER_DAILY_LIMIT
+      FREE_TIER_BURST_LIMIT          = local.ssm_secrets.FREE_TIER_BURST_LIMIT
+      FREE_TIER_BURST_WINDOW_MINUTES = local.ssm_secrets.FREE_TIER_BURST_WINDOW_MINUTES
+      
+      _AMPLIFY_COMPUTE_ROLE_ARN = aws_iam_role.amplify_role.arn
     }
   )
 

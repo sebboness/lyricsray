@@ -18,6 +18,7 @@ export interface AnalysisResult {
 export interface AnalysisSongDetails {
     albumName?: string;
     artistName?: string;
+    lyrics?: string;
     songName?: string;
     thumbnailUrl?: string;
     yearReleased?: number;

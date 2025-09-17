@@ -6,8 +6,10 @@ import { makeKey } from '@/util/hash';
 import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
 import moment from 'moment';
 import { AiClient } from '@/services/aiClient';
+import { RateLimiter } from '@/services/rateLimiter';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { getDynamoDbClient } from '@/storage/dynamodb';
+import { getClientIp } from '@/util/request';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -29,11 +31,25 @@ const moduleName = "analyze-song";
 
 const aiClient = new AiClient(process.env.ANTHROPIC_MODEL!, process.env.ANTHROPIC_API_KEY!);
 
+/**
+ * Cleans up lyrics by trimming the string, removing any html elements, and removing any "[" and "]" groups.
+ * @param lyrics The lyrics to clean
+ * @returns Cleaned up lyrics string
+ */
+const cleanUpLyrics = (lyrics?: string): string => {
+    if (!lyrics)
+        return "";
+    
+    return lyrics.trim().replace(/(<[^>]*>)|(\[[^\]]*\])/g, '');
+}
+
 export async function POST(request: NextRequest) {
     try {
 
-        const ddbClient = await getDynamoDbClient();
+        const ddbClient = getDynamoDbClient();
         const analysisResultDb = new AnalysisResultStorage(ddbClient);
+        const rateLimiter = new RateLimiter(ddbClient);
+
         const body: AnalyzeSongRequest = await request.json();
 
         const {
@@ -57,6 +73,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        lyrics = cleanUpLyrics(lyrics);
+
+        if (!lyrics) {
+            return NextResponse.json(
+                { error: 'Lyrics are required' },
+                { status: 400 }
+            );
+        }
+
         if (!lyrics && lyrics.length > LYRICS_MAX_LENGTH) {
             lyrics = lyrics.substring(0, LYRICS_MAX_LENGTH);
         }
@@ -68,18 +93,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!lyrics.trim()) {
-            return NextResponse.json(
-                { error: 'Lyrics are required' },
-                { status: 400 }
-            );
-        }
-
-        const lyricsToAnalyze = lyrics.trim();
-
         // Try to get analysis from storage if it was previously analyzed
         const songKeyPrefix = `${age}|${artistName}|${songName}`;
-        const songKey = makeKey(lyricsToAnalyze, songKeyPrefix);
+        const songKey = makeKey(lyrics, songKeyPrefix);
         let song: AnalysisResult | null = null;
 
         try {
@@ -117,6 +133,33 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(response);
         }
         else {
+            const clientIp = getClientIp(request);
+            const rateLimitResult = await rateLimiter.checkAndIncrementRateLimit(clientIp);
+
+            if (!rateLimitResult.allowed) {
+                logger.warn(`Rate limit exceeded for IP ${clientIp}`, {
+                    moduleName,
+                    clientIp,
+                    reason: rateLimitResult.reason,
+                    retryAfter: rateLimitResult.retryAfter
+                });
+                
+                return NextResponse.json(
+                    { 
+                        error: rateLimitResult.reason || 'Rate limit exceeded',
+                        retryAfter: rateLimitResult.retryAfter
+                    },
+                    { 
+                        status: 429,
+                        headers: {
+                            'Retry-After': rateLimitResult.retryAfter?.toString() || '3600',
+                            'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
+                            'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+                        }
+                    }
+                );
+            }
+
             // Get an estimate prior to analyzing with AI
             const prompt = aiClient.getLyricsPrompt(lyrics, age);
             const estimateTokensIn = await aiClient.getTokenInputEstimate(prompt);
@@ -136,6 +179,7 @@ export async function POST(request: NextRequest) {
                 song: {
                     albumName,
                     artistName,
+                    lyrics,
                     songName,
                     thumbnailUrl: undefined,
                     yearReleased: undefined,
@@ -169,7 +213,12 @@ export async function POST(request: NextRequest) {
                 recommendedAge: analysis.recommendedAge.toString(),
             };
 
-            return NextResponse.json(response);
+            return NextResponse.json(response, {
+                headers: {
+                    'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
+                    'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+                }
+            });
         }
 
     } catch (error) {
