@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException, TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import moment from 'moment';
 import { RateLimiter } from '@/services/rateLimiter';
 
@@ -9,17 +9,26 @@ vi.mock('@/logger/logger', () => ({
     logger: {
         error: vi.fn(),
         warn: vi.fn(),
+        info: vi.fn(),
     },
 }));
 
 vi.mock('@/config/rateLimitConfig', () => ({
-    getRateLimitConfigForUser: vi.fn(() => ({
+    getDefaultRateLimitConfig: vi.fn(() => ({
         hourlyLimit: 10,
         dailyLimit: 100,
         globalDailyLimit: 10000,
         burstLimit: 5,
         burstWindowMinutes: 10,
     })),
+}));
+
+// Mock environment variables
+vi.mock('process', () => ({
+    env: {
+        APP_NAME: 'TestApp',
+        ENV: 'test'
+    }
 }));
 
 describe('RateLimiter', () => {
@@ -30,7 +39,7 @@ describe('RateLimiter', () => {
     beforeEach(() => {
         mockSend = vi.fn();
         mockDbClient = {
-        send: mockSend,
+            send: mockSend,
         } as DynamoDBDocumentClient;
         rateLimiter = new RateLimiter(mockDbClient);
         
@@ -57,67 +66,28 @@ describe('RateLimiter', () => {
 
     describe('checkAndIncrementRateLimit', () => {
         it('should allow request when all limits are within bounds', async () => {
-            // Mock successful global update
+            // Mock getting current record (no existing record)
             mockSend
-                .mockResolvedValueOnce({}) // Global update
-                .mockResolvedValueOnce({ Item: null }) // IP record get
-                .mockResolvedValueOnce({}); // IP update
+                .mockResolvedValueOnce({ Item: null }) // GetCommand for current record
+                .mockResolvedValueOnce({}); // TransactWriteCommand succeeds
+
             const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
             expect(result.allowed).toBe(true);
             expect(result.remaining).toBeDefined();
-            expect(mockSend).toHaveBeenCalledTimes(3);
+            expect(result.remaining.hourly).toBe(9); // 10 - 1
+            expect(result.remaining.daily).toBe(99); // 100 - 1
+            expect(result.remaining.burst).toBe(4); // 5 - 1
+            expect(mockSend).toHaveBeenCalledTimes(2);
+            
+            // Verify transaction was called with correct structure
+            const transactCall = mockSend.mock.calls[1][0];
+            expect(transactCall).toBeInstanceOf(TransactWriteCommand);
+            expect(transactCall.input.TransactItems).toHaveLength(2);
         });
 
-        it('should deny request when global daily limit exceeded', async () => {
-            // Mock global limit exceeded
-            mockSend.mockRejectedValueOnce(new ConditionalCheckFailedException({
-                message: 'Condition failed',
-                $metadata: {}
-            }));
-            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
-            expect(result.allowed).toBe(false);
-            expect(result.reason).toContain('Global daily limit exceeded');
-            expect(result.retryAfter).toBeDefined();
-        });
-
-        it('should fail open when database error occurs', async () => {
-            mockSend.mockRejectedValueOnce(new Error('Database connection failed'));
-            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
-            expect(result.allowed).toBe(true);
-        });
-    });
-
-    describe('checkAndIncrementGlobal', () => {
-        it('should allow request within global limit', async () => {
-            mockSend.mockResolvedValueOnce({});
-            const result = await rateLimiter['checkAndIncrementGlobal']('2023-01-01');
-            expect(result.allowed).toBe(true);
-            expect(mockSend).toHaveBeenCalledWith(expect.any(UpdateCommand));
-        });
-
-        it('should deny request when global limit exceeded', async () => {
-            mockSend.mockRejectedValueOnce(new ConditionalCheckFailedException({
-                message: 'Condition failed',
-                $metadata: {}
-            }));
-            const result = await rateLimiter['checkAndIncrementGlobal']('2023-01-01');
-            expect(result.allowed).toBe(false);
-            expect(result.reason).toContain('Global daily limit exceeded');
-        });
-    });
-
-    describe('checkAndIncrementIp', () => {
-        const mockNow = moment.utc('2023-01-01T12:00:00.000Z');
-        
-        it('should allow new IP with no existing record', async () => {
-            mockSend
-                .mockResolvedValueOnce({ Item: null }) // GET
-                .mockResolvedValueOnce({}); // UPDATE
-            const result = await rateLimiter['checkAndIncrementIp']('192.168.1.1', '2023-01-01', '2023-01-01-12', mockNow);
-            expect(result.allowed).toBe(true);
-        });
-
-        it('should deny when daily limit exceeded', async () => {
+        it('should deny request when transaction fails due to limits', async () => {
+            // Mock existing record at daily limit
             const existingRecord = {
                 id: 'IP-192.168.1.1-2023-01-01',
                 hour: '2023-01-01-12',
@@ -125,35 +95,171 @@ describe('RateLimiter', () => {
                 dailyCount: 100, // At limit
                 burstCount: 0,
             };
+
             mockSend
-                .mockResolvedValueOnce({ Item: existingRecord }) // GET
-                .mockRejectedValueOnce(new ConditionalCheckFailedException({
-                message: 'Condition failed',
-                $metadata: {}
-                })); // UPDATE fails
-            const result = await rateLimiter['checkAndIncrementIp']('192.168.1.1', '2023-01-01', '2023-01-01-12', mockNow);
+                .mockResolvedValueOnce({ Item: existingRecord }) // GetCommand
+                .mockRejectedValueOnce(new TransactionCanceledException({
+                    message: 'Transaction cancelled',
+                    $metadata: {},
+                    CancellationReasons: [
+                        { Code: 'ConditionalCheckFailed' },
+                        { Code: 'ConditionalCheckFailed' }
+                    ]
+                })); // TransactWriteCommand fails
+
+            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
             expect(result.allowed).toBe(false);
             expect(result.reason).toContain('Daily limit exceeded');
+            expect(result.retryAfter).toBeDefined();
+            expect(result.remaining.daily).toBe(0);
         });
 
-        it('should deny when hourly limit exceeded', async () => {
+        it('should deny request when hourly limit exceeded', async () => {
+            // Mock existing record at hourly limit but not daily limit
             const existingRecord = {
                 id: 'IP-192.168.1.1-2023-01-01',
                 hour: '2023-01-01-12',
-                hourlyCount: 10, // At limit
+                hourlyCount: 10, // At hourly limit
                 dailyCount: 50,
                 burstCount: 0,
             };
-            mockSend
-                .mockResolvedValueOnce({ Item: existingRecord }) // GET
-                .mockRejectedValueOnce(new ConditionalCheckFailedException({
-                message: 'Condition failed',
-                $metadata: {}
-                })); // UPDATE fails
 
-            const result = await rateLimiter['checkAndIncrementIp']('192.168.1.1', '2023-01-01', '2023-01-01-12', mockNow);
+            mockSend
+                .mockResolvedValueOnce({ Item: existingRecord }) // GetCommand
+                .mockRejectedValueOnce(new TransactionCanceledException({
+                    message: 'Transaction cancelled',
+                    $metadata: {},
+                })); // TransactWriteCommand fails
+
+            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
             expect(result.allowed).toBe(false);
             expect(result.reason).toContain('Hourly limit exceeded');
+            expect(result.remaining.hourly).toBe(0);
+            expect(result.remaining.daily).toBe(50); // Still has daily remaining
+        });
+
+        it('should deny request when global limit causes transaction failure', async () => {
+            // Mock no existing record (new user)
+            mockSend
+                .mockResolvedValueOnce({ Item: null }) // GetCommand
+                .mockRejectedValueOnce(new TransactionCanceledException({
+                    message: 'Transaction cancelled',
+                    $metadata: {},
+                })); // TransactWriteCommand fails (likely global limit)
+
+            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
+            expect(result.allowed).toBe(false);
+            expect(result.reason).toContain('Service capacity exceeded');
+            expect(result.retryAfter).toBeDefined();
+        });
+
+        it('should deny request when burst limit exceeded', async () => {
+            // Mock existing record with burst at limit
+            const existingRecord = {
+                id: 'IP-192.168.1.1-2023-01-01',
+                hour: '2023-01-01-12',
+                hourlyCount: 3,
+                dailyCount: 10,
+                burstCount: 5, // At burst limit
+                burstWindowStart: '2023-01-01T11:55:00.000Z', // 5 minutes ago
+            };
+
+            mockSend.mockResolvedValueOnce({ Item: existingRecord }); // GetCommand
+
+            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
+            expect(result.allowed).toBe(false);
+            expect(result.reason).toContain('Rate limit exceeded');
+            expect(result.retryAfter).toBeDefined();
+            expect(result.remaining.burst).toBe(0);
+            // Should not attempt transaction since burst check fails first
+            expect(mockSend).toHaveBeenCalledTimes(1);
+        });
+
+        it('should fail open when unexpected database error occurs', async () => {
+            mockSend
+                .mockResolvedValueOnce({ Item: null }) // GetCommand succeeds
+                .mockRejectedValueOnce(new Error('Database connection failed')); // Unexpected error
+
+            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
+            expect(result.allowed).toBe(true); // Fail open
+            expect(result.remaining).toBeDefined();
+        });
+
+        it('should handle new hour correctly in transaction', async () => {
+            // Mock existing record from previous hour
+            const existingRecord = {
+                id: 'IP-192.168.1.1-2023-01-01',
+                hour: '2023-01-01-11', // Previous hour
+                hourlyCount: 8,
+                dailyCount: 20,
+                burstCount: 0,
+            };
+
+            mockSend
+                .mockResolvedValueOnce({ Item: existingRecord }) // GetCommand
+                .mockResolvedValueOnce({}); // TransactWriteCommand succeeds
+
+            const result = await rateLimiter.checkAndIncrementRateLimit('192.168.1.1');
+            
+            expect(result.allowed).toBe(true);
+            expect(result.remaining.hourly).toBe(9); // New hour, so 10 - 1
+            expect(result.remaining.daily).toBe(79); // 100 - 20 - 1
+        });
+    });
+
+    describe('getCurrentRecord', () => {
+        it('should return undefined when record does not exist', async () => {
+            mockSend.mockResolvedValueOnce({ Item: null });
+            
+            const record = await rateLimiter['getCurrentRecord']('test-id');
+            
+            expect(record).toBeNull();
+            expect(mockSend).toHaveBeenCalledWith(expect.any(GetCommand));
+        });
+
+        it('should return record when it exists', async () => {
+            const existingRecord = { id: 'test-id', dailyCount: 5 };
+            mockSend.mockResolvedValueOnce({ Item: existingRecord });
+            
+            const record = await rateLimiter['getCurrentRecord']('test-id');
+            
+            expect(record).toEqual(existingRecord);
+        });
+
+        it('should return undefined on database error', async () => {
+            mockSend.mockRejectedValueOnce(new Error('Database error'));
+            
+            const record = await rateLimiter['getCurrentRecord']('test-id');
+            
+            expect(record).toBeUndefined();
+        });
+    });
+
+    describe('buildIpUpdateExpression', () => {
+        it('should return correct expression for new hour', () => {
+            const expression = rateLimiter['buildIpUpdateExpression'](true);
+            expect(expression).toContain('SET hourlyCount = :hourlyCount');
+            expect(expression).toContain('ADD dailyCount :dailyInc');
+        });
+
+        it('should return correct expression for same hour', () => {
+            const expression = rateLimiter['buildIpUpdateExpression'](false);
+            expect(expression).toContain('ADD hourlyCount :dailyInc, dailyCount :dailyInc');
+            expect(expression).toContain('SET #date = :date');
+        });
+    });
+
+    describe('buildIpConditionExpression', () => {
+        it('should return condition with daily and hourly limits', () => {
+            const condition = rateLimiter['buildIpConditionExpression'](true);
+            expect(condition).toContain('dailyCount < :dailyLimit');
+            expect(condition).toContain('hourlyCount <= :hourlyLimit');
+            expect(condition).toContain('AND');
         });
     });
 

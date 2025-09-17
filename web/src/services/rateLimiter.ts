@@ -1,5 +1,5 @@
-import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { ConditionalCheckFailedException, TransactionCanceledException } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import moment from 'moment';
 import { getDefaultRateLimitConfig } from '@/config/rateLimitConfig';
 import { logger } from '@/logger/logger';
@@ -72,187 +72,94 @@ export class RateLimiter {
         const now = moment.utc();
         const dateStr = now.format('YYYY-MM-DD');
         const hourStr = now.format('YYYY-MM-DD-HH');
-
-        try {
-            // First check global rate limit atomically
-            const globalResult = await this.checkAndIncrementGlobal(dateStr);
-            if (!globalResult.allowed) {
-                return globalResult;
-            }
-
-            // Then check IP-specific limits atomically
-            const ipResult = await this.checkAndIncrementIp(ipAddress, dateStr, hourStr, now);
-            
-            return ipResult;
-
-        } catch (error) {
-            logger.error('Atomic rate limit check failed', { error, ipAddress });
-            // Fail open - allow request if rate limiting service is down
-            return {
-                allowed: true,
-                remaining: {
-                    hourly: this.config.hourlyLimit,
-                    daily: this.config.dailyLimit,
-                    burst: this.config.burstLimit
-                }
-            };
-        }
-    }
-
-    /**
-     * Atomically checks and increments the global daily counter to prevent exceeding budget limits.
-     * Uses conditional DynamoDB updates to ensure global limits are enforced across all users.
-     * @param {string} dateStr - The date string in YYYY-MM-DD format for the current day
-     * @returns {Promise<RateLimitResult>} Promise resolving to rate limit result for global limits
-     * @private
-     */
-    private async checkAndIncrementGlobal(dateStr: string): Promise<RateLimitResult> {
         const globalId = `GLOBAL-${dateStr}`;
+        const ipId = `IP-${ipAddress}-${dateStr}`;
         const ttl = moment.utc().add(2, 'days').unix();
+        let currentRecord: RateLimitRecord | undefined = undefined;
 
         try {
-            // Try to atomically increment if under limit
-            await this.dbClient.send(new UpdateCommand({
-                TableName: tableName,
-                Key: { id: globalId },
-                UpdateExpression: 'ADD dailyCount :inc SET #date = :date, #ttl = :ttl',
-                ConditionExpression: 'dailyCount < :limit OR attribute_not_exists(dailyCount)',
-                ExpressionAttributeNames: {
-                    '#date': 'date',
-                    '#ttl': 'ttl'
-                },
-                ExpressionAttributeValues: {
-                    ':inc': 1,
-                    ':date': dateStr,
-                    ':ttl': ttl,
-                    ':limit': this.config.globalDailyLimit
-                }
-            }));
-
-            // If we get here, the increment succeeded
-            return {
-                allowed: true,
-                remaining: {
-                    hourly: this.config.hourlyLimit,
-                    daily: this.config.dailyLimit,
-                    burst: this.config.burstLimit
-                }
-            };
-
-        } catch (error) {
-            if (error instanceof ConditionalCheckFailedException) {
-                // Global limit exceeded
-                logger.warn('Global daily limit exceeded', { dateStr, limit: this.config.globalDailyLimit });
-                
+            // Get current IP record to handle complex burst logic
+            currentRecord = await this.getCurrentRecord(ipId);
+            
+            // Check burst limits before attempting transaction
+            const burstState = this.calculateBurstState(currentRecord, now);
+            if (!burstState.allowed) {
                 return {
                     allowed: false,
-                    reason: 'Global daily limit exceeded. Please try again tomorrow.',
-                    retryAfter: this.getSecondsUntilMidnight(),
+                    reason: burstState.reason,
+                    retryAfter: burstState.retryAfter,
                     remaining: {
                         hourly: 0,
                         daily: 0,
-                        burst: 0
+                        burst: burstState.remaining
                     }
                 };
             }
-            
-            // Other error - rethrow
-            throw error;
-        }
-    }
 
-    /**
-     * Atomically checks and increments IP-specific counters (hourly, daily, burst) in a single operation.
-     * Handles complex logic for different time windows and burst detection.
-     * @param {string} ipAddress - The client's IP address
-     * @param {string} dateStr - The date string in YYYY-MM-DD format
-     * @param {string} hourStr - The hour string in YYYY-MM-DD-HH format
-     * @param {moment.Moment} now - The current moment instance for time calculations
-     * @returns {Promise<RateLimitResult>} Promise resolving to rate limit result for IP-specific limits
-     * @private
-     */
-    private async checkAndIncrementIp(
-        ipAddress: string, 
-        dateStr: string, 
-        hourStr: string, 
-        now: moment.Moment
-    ): Promise<RateLimitResult> {
-        const ipId = `IP-${ipAddress}-${dateStr}`;
-        const ttl = moment.utc().add(2, 'days').unix();
-
-        // First, get current record to handle complex burst logic
-        let currentRecord: RateLimitRecord | undefined;
-        
-        try {
-            const result = await this.dbClient.send(new GetCommand({
-                TableName: tableName,
-                Key: { id: ipId }
-            }));
-            currentRecord = result.Item as RateLimitRecord;
-        } catch (error) {
-            logger.warn('Failed to get current IP record', { error, ipAddress });
-            // Continue without current record
-        }
-
-        // Calculate burst window state
-        const burstState = this.calculateBurstState(currentRecord, now);
-        
-        if (!burstState.allowed) {
-            return {
-                ...burstState,
-                remaining: {
-                    hourly: 0,
-                    daily: 0,
-                    burst: burstState.remaining
-                }
-            };
-        }
-
-        // Now try to atomically update all counters with multiple conditions
-        try {
+            // Prepare transaction parameters
             const isNewHour = !currentRecord || currentRecord.hour !== hourStr;
             const newHourlyCount = isNewHour ? 1 : (currentRecord?.hourlyCount || 0) + 1;
+            const newDailyCount = (currentRecord?.dailyCount || 0) + 1;
 
-            // Build the atomic update with multiple conditions
-            const conditionParts = [];
-            const attributeValues: any = {
-                ':dailyInc': 1,
-                ':hourlyCount': newHourlyCount,
-                ':date': dateStr,
-                ':hour': hourStr,
-                ':ttl': ttl,
-                ':burstCount': burstState.newBurstCount,
-                ':burstWindowStart': burstState.burstWindowStart,
-                ':dailyLimit': this.config.dailyLimit,
-                ':hourlyLimit': this.config.hourlyLimit
-            };
-
-            // Daily limit condition
-            conditionParts.push('(dailyCount < :dailyLimit OR attribute_not_exists(dailyCount))');
-            
-            // Hourly limit condition
-            conditionParts.push('(:hourlyCount <= :hourlyLimit)');
-
-            const updateExpression = isNewHour 
-                ? 'SET hourlyCount = :hourlyCount, #date = :date, #hour = :hour, #ttl = :ttl, burstCount = :burstCount, burstWindowStart = :burstWindowStart ADD dailyCount :dailyInc'
-                : 'ADD hourlyCount :dailyInc, dailyCount :dailyInc SET #date = :date, #hour = :hour, #ttl = :ttl, burstCount = :burstCount, burstWindowStart = :burstWindowStart';
-
-            await this.dbClient.send(new UpdateCommand({
-                TableName: tableName,
-                Key: { id: ipId },
-                UpdateExpression: updateExpression,
-                ConditionExpression: conditionParts.join(' AND '),
-                ExpressionAttributeNames: {
-                    '#date': 'date',
-                    '#hour': 'hour',
-                    '#ttl': 'ttl'
-                },
-                ExpressionAttributeValues: attributeValues
+            // Execute atomic transaction - both global and IP counters update or both fail
+            await this.dbClient.send(new TransactWriteCommand({
+                TransactItems: [
+                    // Global counter transaction item
+                    {
+                        Update: {
+                            TableName: tableName,
+                            Key: { id: globalId },
+                            UpdateExpression: 'ADD dailyCount :inc SET #date = :date, #ttl = :ttl',
+                            ConditionExpression: 'dailyCount < :globalLimit OR attribute_not_exists(dailyCount)',
+                            ExpressionAttributeNames: {
+                                '#date': 'date',
+                                '#ttl': 'ttl'
+                            },
+                            ExpressionAttributeValues: {
+                                ':inc': 1,
+                                ':date': dateStr,
+                                ':ttl': ttl,
+                                ':globalLimit': this.config.globalDailyLimit
+                            }
+                        }
+                    },
+                    // IP counter transaction item
+                    {
+                        Update: {
+                            TableName: tableName,
+                            Key: { id: ipId },
+                            UpdateExpression: this.buildIpUpdateExpression(isNewHour),
+                            ConditionExpression: this.buildIpConditionExpression(isNewHour),
+                            ExpressionAttributeNames: {
+                                '#date': 'date',
+                                '#hour': 'hour',
+                                '#ttl': 'ttl'
+                            },
+                            ExpressionAttributeValues: {
+                                ':dailyInc': 1,
+                                ':hourlyCount': newHourlyCount,
+                                ':date': dateStr,
+                                ':hour': hourStr,
+                                ':ttl': ttl,
+                                ':burstCount': burstState.newBurstCount,
+                                ':burstWindowStart': burstState.burstWindowStart,
+                                ':dailyLimit': this.config.dailyLimit,
+                                ':hourlyLimit': this.config.hourlyLimit
+                            }
+                        }
+                    }
+                ]
             }));
 
-            // Success! Calculate remaining limits
-            const newDailyCount = (currentRecord?.dailyCount || 0) + 1;
-            
+            // Transaction succeeded - both counters were updated atomically
+            logger.info('Rate limit transaction succeeded', {
+                ipAddress,
+                globalId,
+                ipId,
+                newDailyCount,
+                newHourlyCount
+            });
+
             return {
                 allowed: true,
                 remaining: {
@@ -263,42 +170,87 @@ export class RateLimiter {
             };
 
         } catch (error) {
-            if (error instanceof ConditionalCheckFailedException) {
-                // One of our limits was exceeded - determine which one
-                const currentHourlyCount = currentRecord?.hour === hourStr ? currentRecord.hourlyCount : 0;
-                const currentDailyCount = currentRecord?.dailyCount || 0;
+            return this.handleTransactionError(error, ipAddress, currentRecord, hourStr);
+        }
+    }
 
-                if (currentDailyCount >= this.config.dailyLimit) {
-                    return {
-                        allowed: false,
-                        reason: 'Daily limit exceeded. Please try again tomorrow.',
-                        retryAfter: this.getSecondsUntilMidnight(),
-                        remaining: {
-                            hourly: 0,
-                            daily: 0,
-                            burst: burstState.remaining
-                        }
-                    };
-                }
+    /**
+     * Gets the current record for an IP address without incrementing counters
+     * @param {string} ipId - The IP record ID
+     * @returns {Promise<RateLimitRecord | undefined>} The current record or undefined if not found
+     * @private
+     */
+    private async getCurrentRecord(ipId: string): Promise<RateLimitRecord | undefined> {
+        try {
+            const result = await this.dbClient.send(new GetCommand({
+                TableName: tableName,
+                Key: { id: ipId }
+            }));
+            return result.Item as RateLimitRecord;
+        } catch (error) {
+            logger.warn('Failed to get current record', { error, ipId });
+            return undefined;
+        }
+    }
 
-                if (currentHourlyCount >= this.config.hourlyLimit) {
-                    return {
-                        allowed: false,
-                        reason: 'Hourly limit exceeded. Please wait before trying again.',
-                        retryAfter: this.getSecondsUntilNextHour(),
-                        remaining: {
-                            hourly: 0,
-                            daily: Math.max(0, this.config.dailyLimit - currentDailyCount),
-                            burst: burstState.remaining
-                        }
-                    };
-                }
+    /**
+     * Builds the UpdateExpression for IP counter updates based on whether it's a new hour
+     * @param {boolean} isNewHour - Whether this is the first request in a new hour
+     * @returns {string} The DynamoDB UpdateExpression string
+     * @private
+     */
+    private buildIpUpdateExpression(isNewHour: boolean): string {
+        return isNewHour 
+            ? 'SET hourlyCount = :hourlyCount, #date = :date, #hour = :hour, #ttl = :ttl, burstCount = :burstCount, burstWindowStart = :burstWindowStart ADD dailyCount :dailyInc'
+            : 'ADD hourlyCount :dailyInc, dailyCount :dailyInc SET #date = :date, #hour = :hour, #ttl = :ttl, burstCount = :burstCount, burstWindowStart = :burstWindowStart';
+    }
 
-                // Shouldn't reach here, but handle gracefully
+    /**
+     * Builds the ConditionExpression for IP counter updates
+     * @param {boolean} isNewHour - Whether this is the first request in a new hour
+     * @returns {string} The DynamoDB ConditionExpression string
+     * @private
+     */
+    private buildIpConditionExpression(isNewHour: boolean): string {
+        const conditions = [
+            '(dailyCount < :dailyLimit OR attribute_not_exists(dailyCount))',
+            '(:hourlyCount <= :hourlyLimit)'
+        ];
+        return conditions.join(' AND ');
+    }
+
+    /**
+     * Handles transaction errors and determines the specific reason for failure
+     * @param {any} error - The error thrown by the transaction
+     * @param {string} ipAddress - The client's IP address
+     * @param {RateLimitRecord | undefined} currentRecord - The current IP record
+     * @param {string} hourStr - The current hour string
+     * @returns {RateLimitResult} Rate limit result with failure details
+     * @private
+     */
+    private handleTransactionError(
+        error: any, 
+        ipAddress: string, 
+        currentRecord: RateLimitRecord | undefined,
+        hourStr: string
+    ): RateLimitResult {
+        if (error instanceof TransactionCanceledException) {
+            // Transaction was cancelled due to condition failure
+            logger.warn('Rate limit transaction cancelled - limits exceeded', {
+                ipAddress,
+                error: error.message
+            });
+
+            // Determine which limit was exceeded by checking current values
+            const currentHourlyCount = currentRecord?.hour === hourStr ? currentRecord.hourlyCount : 0;
+            const currentDailyCount = currentRecord?.dailyCount || 0;
+
+            // Check daily limit first (more permanent)
+            if (currentDailyCount >= this.config.dailyLimit) {
                 return {
                     allowed: false,
-                    reason: 'Rate limit exceeded.',
-                    retryAfter: 3600,
+                    reason: 'Daily limit exceeded. Please try again tomorrow.',
+                    retryAfter: this.getSecondsUntilMidnight(),
                     remaining: {
                         hourly: 0,
                         daily: 0,
@@ -306,10 +258,48 @@ export class RateLimiter {
                     }
                 };
             }
-            
-            // Other error - rethrow
-            throw error;
+
+            // Check hourly limit
+            if (currentHourlyCount >= this.config.hourlyLimit) {
+                return {
+                    allowed: false,
+                    reason: 'Hourly limit exceeded. Please wait before trying again.',
+                    retryAfter: this.getSecondsUntilNextHour(),
+                    remaining: {
+                        hourly: 0,
+                        daily: Math.max(0, this.config.dailyLimit - currentDailyCount),
+                        burst: 0
+                    }
+                };
+            }
+
+            // If we get here, it was likely the global limit
+            return {
+                allowed: false,
+                reason: 'Service capacity exceeded. Please try again tomorrow.',
+                retryAfter: this.getSecondsUntilMidnight(),
+                remaining: {
+                    hourly: 0,
+                    daily: 0,
+                    burst: 0
+                }
+            };
         }
+
+        // Other errors - log and fail open for availability
+        logger.error('Rate limit transaction failed with unexpected error', {
+            error,
+            ipAddress
+        });
+
+        return {
+            allowed: true, // Fail open
+            remaining: {
+                hourly: this.config.hourlyLimit,
+                daily: this.config.dailyLimit,
+                burst: this.config.burstLimit
+            }
+        };
     }
 
     /**

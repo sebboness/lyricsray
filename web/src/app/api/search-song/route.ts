@@ -12,7 +12,7 @@ interface SearchSongRequest {
 
 interface SongSearchResult {
     id: string;
-    artist: string;
+    artist?: string;
     album?: string;
     lyrics: string;
     thumbnail?: string;
@@ -40,15 +40,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!songName?.trim() || !artist?.trim()) {
+        if (!songName?.trim()) {
             return NextResponse.json(
-                { error: 'Song name and artist are required' },
+                { error: 'Song name is required' },
                 { status: 400 }
             );
         }
 
         const api = LrcLibApi.getInstance();
-        const results = await api.searchLyrics(songName.trim(), artist.trim());
+        const results = await api.searchLyrics(songName.trim(), artist?.trim());
 
         logger.info(`${logPrefix(logName)} found songs with lyrics`, results.filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics).length);
 

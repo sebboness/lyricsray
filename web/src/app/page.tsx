@@ -44,7 +44,7 @@ import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 interface FormData {
     childAge: string;
     songName: string;
-    songArtist: string;
+    songArtist?: string;
     lyrics: string;
     inputMethod: 'search' | 'lyrics';
 }
@@ -339,7 +339,7 @@ export default function Home() {
     };
 
     const isFormValid = formData.childAge && (
-        (formData.inputMethod === 'search' && formData.songName && formData.songArtist) ||
+        (formData.inputMethod === 'search' && formData.songName.trim()) ||
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     ) && altchaVerified;
 
@@ -478,11 +478,11 @@ export default function Home() {
                                             <Grid size={{ xs:12, md: 6 }}>
                                                 <TextField
                                                     name="songArtist"
-                                                    label="Artist Name"
+                                                    label="Artist Name (Optional)"
                                                     value={formData.songArtist}
                                                     onChange={handleInputChange}
                                                     placeholder="e.g., Pharrell Williams"
-                                                    required={formData.inputMethod === 'search'}
+                                                    required={false}
                                                     fullWidth
                                                     slotProps={{
                                                         input: {
