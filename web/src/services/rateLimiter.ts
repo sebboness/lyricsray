@@ -234,6 +234,8 @@ export class RateLimiter {
         hourStr: string
     ): RateLimitResult {
         if (error instanceof TransactionCanceledException) {
+            logger.info("rate limit error", {error});
+
             // Transaction was cancelled due to condition failure
             logger.warn('Rate limit transaction cancelled - limits exceeded', {
                 ipAddress,
