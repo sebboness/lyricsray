@@ -182,11 +182,11 @@ resource "aws_amplify_branch" "main" {
       ANTHROPIC_API_KEY         = local.ssm_secrets.ANTHROPIC_API_KEY
       ANTHROPIC_MODEL           = local.ssm_secrets.ANTHROPIC_MODEL
 
-      FREE_TIER_GLOBAL_DAILY_LIMIT   = local.ssm_secrets.FREE_TIER_GLOBAL_DAILY_LIMIT
-      FREE_TIER_HOURLY_LIMIT         = local.ssm_secrets.FREE_TIER_HOURLY_LIMIT
-      FREE_TIER_DAILY_LIMIT          = local.ssm_secrets.FREE_TIER_DAILY_LIMIT
-      FREE_TIER_BURST_LIMIT          = local.ssm_secrets.FREE_TIER_BURST_LIMIT
-      FREE_TIER_BURST_WINDOW_MINUTES = local.ssm_secrets.FREE_TIER_BURST_WINDOW_MINUTES
+      APP_FREE_TIER_GLOBAL_DAILY_LIMIT   = local.ssm_secrets.APP_FREE_TIER_GLOBAL_DAILY_LIMIT
+      APP_FREE_TIER_HOURLY_LIMIT         = local.ssm_secrets.APP_FREE_TIER_HOURLY_LIMIT
+      APP_FREE_TIER_DAILY_LIMIT          = local.ssm_secrets.APP_FREE_TIER_DAILY_LIMIT
+      APP_FREE_TIER_BURST_LIMIT          = local.ssm_secrets.APP_FREE_TIER_BURST_LIMIT
+      APP_FREE_TIER_BURST_WINDOW_MINUTES = local.ssm_secrets.APP_FREE_TIER_BURST_WINDOW_MINUTES
       
       _AMPLIFY_COMPUTE_ROLE_ARN = aws_iam_role.amplify_role.arn
     }
