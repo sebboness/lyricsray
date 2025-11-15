@@ -62,17 +62,17 @@ export class RateLimiter {
         };
 
         logger.info("config from env", {
-            globalDailyLimit: (process.env.FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
-            hourlyLimit: (process.env.FREE_TIER_HOURLY_LIMIT || "0"),
-            dailyLimit: (process.env.FREE_TIER_DAILY_LIMIT || "0"),
-            burstLimit: (process.env.FREE_TIER_BURST_LIMIT || "0"),
-            burstWindowMinutes: (process.env.FREE_TIER_BURST_WINDOW_MINUTES || "0"),
+            globalDailyLimit: (process.env.APP_FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
+            hourlyLimit: (process.env.APP_FREE_TIER_HOURLY_LIMIT || "0"),
+            dailyLimit: (process.env.APP_FREE_TIER_DAILY_LIMIT || "0"),
+            burstLimit: (process.env.APP_FREE_TIER_BURST_LIMIT || "0"),
+            burstWindowMinutes: (process.env.APP_FREE_TIER_BURST_WINDOW_MINUTES || "0"),
             inted: {
-                globalDailyLimit: parseInt(process.env.FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
-                hourlyLimit: parseInt(process.env.FREE_TIER_HOURLY_LIMIT || "0"),
-                dailyLimit: parseInt(process.env.FREE_TIER_DAILY_LIMIT || "0"),
-                burstLimit: parseInt(process.env.FREE_TIER_BURST_LIMIT || "0"),
-                burstWindowMinutes: parseInt(process.env.FREE_TIER_BURST_WINDOW_MINUTES || "0"),
+                globalDailyLimit: parseInt(process.env.APP_FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
+                hourlyLimit: parseInt(process.env.APP_FREE_TIER_HOURLY_LIMIT || "0"),
+                dailyLimit: parseInt(process.env.APP_FREE_TIER_DAILY_LIMIT || "0"),
+                burstLimit: parseInt(process.env.APP_FREE_TIER_BURST_LIMIT || "0"),
+                burstWindowMinutes: parseInt(process.env.APP_FREE_TIER_BURST_WINDOW_MINUTES || "0"),
             }
         })
 
