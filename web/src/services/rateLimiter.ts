@@ -61,7 +61,22 @@ export class RateLimiter {
             ...config
         };
 
-        logger.info("merged config", defaultConfig);
+        logger.info("config from env", {
+            globalDailyLimit: (process.env.FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
+            hourlyLimit: (process.env.FREE_TIER_HOURLY_LIMIT || "0"),
+            dailyLimit: (process.env.FREE_TIER_DAILY_LIMIT || "0"),
+            burstLimit: (process.env.FREE_TIER_BURST_LIMIT || "0"),
+            burstWindowMinutes: (process.env.FREE_TIER_BURST_WINDOW_MINUTES || "0"),
+            inted: {
+                globalDailyLimit: parseInt(process.env.FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
+                hourlyLimit: parseInt(process.env.FREE_TIER_HOURLY_LIMIT || "0"),
+                dailyLimit: parseInt(process.env.FREE_TIER_DAILY_LIMIT || "0"),
+                burstLimit: parseInt(process.env.FREE_TIER_BURST_LIMIT || "0"),
+                burstWindowMinutes: parseInt(process.env.FREE_TIER_BURST_WINDOW_MINUTES || "0"),
+            }
+        })
+
+        logger.info("merged config", this.config);
     }
 
     /**
@@ -78,6 +93,15 @@ export class RateLimiter {
         const ipId = `IP-${ipAddress}-${dateStr}`;
         const ttl = moment.utc().add(2, 'days').unix();
         let currentRecord: RateLimitRecord | undefined = undefined;
+
+        logger.info("rate limit current info", {
+            now,
+            dateStr,
+            hourStr,
+            globalId,
+            ipId,
+            ttl,
+        });
 
         try {
             // Get current IP record to handle complex burst logic
@@ -102,6 +126,31 @@ export class RateLimiter {
             const isNewHour = !currentRecord || currentRecord.hour !== hourStr;
             const newHourlyCount = isNewHour ? 1 : (currentRecord?.hourlyCount || 0) + 1;
             const newDailyCount = (currentRecord?.dailyCount || 0) + 1;
+
+            logger.info("rate limit prepare txn info", {
+                currentRecord,
+                isNewHour,
+                newHourlyCount,
+                newDailyCount,
+                burstState,
+            });
+
+            // Build expression attribute values conditionally
+            const ipExpressionValues: Record<string, any> = {
+                ':dailyInc': 1,
+                ':date': dateStr,
+                ':hour': hourStr,
+                ':ttl': ttl,
+                ':burstCount': burstState.newBurstCount,
+                ':burstWindowStart': burstState.burstWindowStart,
+                ':dailyLimit': this.config.dailyLimit,
+                ':hourlyLimit': this.config.hourlyLimit
+            };
+
+            // Only add :hourlyCount when setting it (new hour)
+            if (isNewHour) {
+                ipExpressionValues[':hourlyCount'] = newHourlyCount;
+            }
 
             // Execute atomic transaction - both global and IP counters update or both fail
             await this.dbClient.send(new TransactWriteCommand({
@@ -137,17 +186,7 @@ export class RateLimiter {
                                 '#hour': 'hour',
                                 '#ttl': 'ttl'
                             },
-                            ExpressionAttributeValues: {
-                                ':dailyInc': 1,
-                                ':hourlyCount': newHourlyCount,
-                                ':date': dateStr,
-                                ':hour': hourStr,
-                                ':ttl': ttl,
-                                ':burstCount': burstState.newBurstCount,
-                                ':burstWindowStart': burstState.burstWindowStart,
-                                ':dailyLimit': this.config.dailyLimit,
-                                ':hourlyLimit': this.config.hourlyLimit
-                            }
+                            ExpressionAttributeValues: ipExpressionValues
                         }
                     }
                 ]
@@ -214,8 +253,8 @@ export class RateLimiter {
      */
     private buildIpConditionExpression(): string {
         const conditions = [
-            '(dailyCount < :dailyLimit OR attribute_not_exists(dailyCount))',
-            '(:hourlyCount <= :hourlyLimit)'
+            '(attribute_not_exists(dailyCount) OR dailyCount < :dailyLimit)',
+            '(attribute_not_exists(hourlyCount) OR hourlyCount < :hourlyLimit)'
         ];
         return conditions.join(' AND ');
     }
