@@ -53,30 +53,11 @@ export class RateLimiter {
         
         // Import and use the configuration
         const defaultConfig = getDefaultRateLimitConfig();
-
-        logger.info("defaultConfig", defaultConfig);
         
         this.config = {
             ...defaultConfig,
             ...config
         };
-
-        logger.info("config from env", {
-            globalDailyLimit: (process.env.APP_FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
-            hourlyLimit: (process.env.APP_FREE_TIER_HOURLY_LIMIT || "0"),
-            dailyLimit: (process.env.APP_FREE_TIER_DAILY_LIMIT || "0"),
-            burstLimit: (process.env.APP_FREE_TIER_BURST_LIMIT || "0"),
-            burstWindowMinutes: (process.env.APP_FREE_TIER_BURST_WINDOW_MINUTES || "0"),
-            inted: {
-                globalDailyLimit: parseInt(process.env.APP_FREE_TIER_GLOBAL_DAILY_LIMIT || "0"),
-                hourlyLimit: parseInt(process.env.APP_FREE_TIER_HOURLY_LIMIT || "0"),
-                dailyLimit: parseInt(process.env.APP_FREE_TIER_DAILY_LIMIT || "0"),
-                burstLimit: parseInt(process.env.APP_FREE_TIER_BURST_LIMIT || "0"),
-                burstWindowMinutes: parseInt(process.env.APP_FREE_TIER_BURST_WINDOW_MINUTES || "0"),
-            }
-        })
-
-        logger.info("merged config", this.config);
     }
 
     /**
@@ -93,15 +74,6 @@ export class RateLimiter {
         const ipId = `IP-${ipAddress}-${dateStr}`;
         const ttl = moment.utc().add(2, 'days').unix();
         let currentRecord: RateLimitRecord | undefined = undefined;
-
-        logger.info("rate limit current info", {
-            now,
-            dateStr,
-            hourStr,
-            globalId,
-            ipId,
-            ttl,
-        });
 
         try {
             // Get current IP record to handle complex burst logic
@@ -126,14 +98,6 @@ export class RateLimiter {
             const isNewHour = !currentRecord || currentRecord.hour !== hourStr;
             const newHourlyCount = isNewHour ? 1 : (currentRecord?.hourlyCount || 0) + 1;
             const newDailyCount = (currentRecord?.dailyCount || 0) + 1;
-
-            logger.info("rate limit prepare txn info", {
-                currentRecord,
-                isNewHour,
-                newHourlyCount,
-                newDailyCount,
-                burstState,
-            });
 
             // Build expression attribute values conditionally
             const ipExpressionValues: Record<string, any> = {
@@ -198,7 +162,19 @@ export class RateLimiter {
                 globalId,
                 ipId,
                 newDailyCount,
-                newHourlyCount
+                newHourlyCount,
+                debugInfo: {
+                    config: this.config,
+                    currentRecord,
+                    now,
+                    dateStr,
+                    hourStr,
+                    ttl,
+                    isNewHour,
+                    newHourlyCount,
+                    newDailyCount,
+                    burstState,
+                }
             });
 
             return {
@@ -275,12 +251,14 @@ export class RateLimiter {
         hourStr: string
     ): RateLimitResult {
         if (error instanceof TransactionCanceledException) {
-            logger.info("rate limit error", {error});
 
             // Transaction was cancelled due to condition failure
             logger.warn('Rate limit transaction cancelled - limits exceeded', {
                 ipAddress,
-                error: error.message
+                config: this.config,
+                error,
+                hourStr,
+                currentRecord,
             });
 
             // Determine which limit was exceeded by checking current values
