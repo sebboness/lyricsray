@@ -54,12 +54,14 @@ export class RateLimiter {
         // Import and use the configuration
         const defaultConfig = getDefaultRateLimitConfig();
 
-        console.log("defaultConfig", defaultConfig);
+        logger.info("defaultConfig", defaultConfig);
         
         this.config = {
             ...defaultConfig,
             ...config
         };
+
+        logger.info("merged config", defaultConfig);
     }
 
     /**
