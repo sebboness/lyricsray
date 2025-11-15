@@ -347,7 +347,7 @@ export default function About() {
                         >
                             Remember: You know your child best. Use LyricsRay as a tool to inform your decisions, but 
                             always trust your parental instincts and family values when determining what&apos;s right 
-                            for your children.
+                            for your children, and consider whether the themes portraied in popular media is appropriate.
                         </Typography>
                     </CardContent>
                 </Card>

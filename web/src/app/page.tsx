@@ -78,6 +78,14 @@ const noteLyricsMaxLen = `* Keep in mind that the maximum allowed length of lyri
 is ${LYRICS_MAX_LENGTH} characters. If your lyrics are longer, consider
 submitting only part of the lyrics.`;
 
+const emptyFormData: FormData = {
+    childAge: '',
+    songName: '',
+    songArtist: '',
+    lyrics: '',
+    inputMethod: 'search'
+};
+
 /**
  * Gets display data based on appropriateness level
  * @param appropriate The appropriateness level as an integer
@@ -116,18 +124,13 @@ const getAppropriateData = (appropriate: number): AppropriateData => {
 export default function Home() {
     const theme = useTheme();
     
-    const [formData, setFormData] = useState<FormData>({
-        childAge: '',
-        songName: '',
-        songArtist: '',
-        lyrics: '',
-        inputMethod: 'search'
-    });
+    const [formData, setFormData] = useState<FormData>(emptyFormData);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isSearching, setIsSearching] = useState<boolean>(false);
     const [searchResults, setSearchResults] = useState<SongSearchResult[]>([]);
     const [selectedSong, setSelectedSong] = useState<SongSearchResult | null>(null);
     const [showSongModal, setShowSongModal] = useState<boolean>(false);
+    const [showLyricsModal, setShowLyricsModal] = useState<boolean>(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [scrollY, setScrollY] = useState(0);
     const [windowW, setWindowW] = useState(window.innerWidth);
@@ -284,9 +287,9 @@ export default function Home() {
             setResult(data);
 
             setTimeout(() => {
-                const element = document.getElementsByClassName('submit-wrapper');
-                if (element && element.length)
-                    element[0].scrollIntoView({ behavior: 'smooth' });
+                const element = document.getElementById('analyze-results-wrapper');
+                if (element)
+                    element.scrollIntoView({ behavior: 'smooth' });
             }, 500);
         } catch (error) {
             console.error('Error analyzing lyrics:', error);
@@ -321,10 +324,7 @@ export default function Home() {
         } else {
             await analyzeLyricsDirectly(null, selectedSong);
 
-            // Reset ALTCHA after successful submission of
-            setAltchaVerified(false);
-            setAltchaPayload('');
-            loadAltchaChallenge(); // Load new challenge
+            resetAltcha();
         }
     };
 
@@ -336,6 +336,33 @@ export default function Home() {
     const handleCloseModal = () => {
         setShowSongModal(false);
         setSearchResults([]);
+    };
+
+    const handleShowLyricsModal = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        setShowLyricsModal(true);
+        e.preventDefault();
+        return false;
+    }
+
+    const handleTryAgainButton = () => {
+        setResult(null);
+        resetForm();
+        resetAltcha();
+        setSelectedSong(null);
+        setSearchResults([]);
+    };
+
+    const resetAltcha = () => {
+        // Reset ALTCHA
+        setAltchaVerified(false);
+        setAltchaPayload('');
+
+        // Loads a new challenge
+        loadAltchaChallenge();
+    }
+
+    const resetForm = () => {
+        setFormData(emptyFormData);
     };
 
     const isFormValid = formData.childAge && (
@@ -389,194 +416,305 @@ export default function Home() {
                         Choose to search for a song by title and artist, or paste lyrics directly if you already have them. 
                         We will analyze the content and provide you with a detailed assessment and age recommendation.
                     </Typography>
-                    
-                    <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
-                        <strong>Two ways to analyze:</strong> Search our database or paste any lyrics directly 
-                        for instant analysis.
-                    </Typography>
-                    
-                    {/* Form */}
-                    <Box component="form" onSubmit={handleSubmit}>
-                        {/* Child Age Input */}
-                        <Box mb={3}>
-                            <TextField
-                                name="childAge"
-                                label="Child's Age"
-                                type="number"
-                                value={formData.childAge}
-                                onChange={handleInputChange}
-                                slotProps={{
-                                    htmlInput: { min: 1, max: 21 },
-                                    input: {
-                                        startAdornment: <ChildCare sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                    },
-                                    inputLabel: { shrink: true }
-                                }}
-                                placeholder="e.g., 12"
-                                required
-                                sx={{ maxWidth: 260 }}
-                            />
-                        </Box>
 
-                        <Divider sx={{ mb: 3, borderColor: 'rgba(255, 0, 255, 0.2)' }} />
-
-                        {/* Tabbed Interface */}
-                        <Box>
-                            <Tabs 
-                                value={formData.inputMethod} 
-                                onChange={handleTabChange}
-                                sx={{ 
-                                    mb: 3,
-                                    '& .MuiTab-root': {
-                                        fontWeight: 600,
-                                        '&.Mui-selected': {
-                                            color: theme.palette.primary.main,
-                                        },
-                                    },
-                                    '& .MuiTabs-indicator': {
-                                        background: 'linear-gradient(90deg, #ff00ff, #00ccff)',
-                                        height: 3,
-                                    },
-                                }}
-                                variant="fullWidth"
-                            >
-                                <Tab 
-                                    value="search" 
-                                    label="Search by Song & Artist" 
-                                    icon={<Search />}
-                                    iconPosition="start"
-                                />
-                                <Tab 
-                                    value="lyrics" 
-                                    label="Paste Lyrics Directly" 
-                                    icon={<Note />}
-                                    iconPosition="start"
-                                />
-                            </Tabs>
-
-                            {/* Tab Content */}
-                            <Box sx={{ minHeight: 200 }}>
-                                {formData.inputMethod === 'search' ? (
-                                    <Box>
-                                        <Grid container spacing={3}>
-                                            <Grid size={{ xs:12, md: 6 }}>
-                                                <TextField
-                                                    name="songName"
-                                                    label="Song Name"
-                                                    value={formData.songName}
-                                                    onChange={handleInputChange}
-                                                    placeholder="e.g., Happy"
-                                                    required={formData.inputMethod === 'search'}
-                                                    fullWidth
-                                                    slotProps={{
-                                                        input: {
-                                                            startAdornment: <MusicNote sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                                        }
-                                                    }}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs:12, md: 6 }}>
-                                                <TextField
-                                                    name="songArtist"
-                                                    label="Artist Name (Optional)"
-                                                    value={formData.songArtist}
-                                                    onChange={handleInputChange}
-                                                    placeholder="e.g., Pharrell Williams"
-                                                    required={false}
-                                                    fullWidth
-                                                    slotProps={{
-                                                        input: {
-                                                            startAdornment: <RecordVoiceOver sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                                        }
-                                                    }}
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                            💡 Tip: {tip2}
-                                        </Typography>
-                                    </Box>
-                                ) : (
-                                    <Box>
-                                        <TextField
-                                            name="lyrics"
-                                            label="Song Lyrics"
-                                            value={formData.lyrics}
-                                            onChange={handleInputChange}
-                                            multiline
-                                            rows={8}
-                                            slotProps={{
-                                                htmlInput: { maxLength: LYRICS_MAX_LENGTH }
-                                            }}
-                                            placeholder="Paste the complete song lyrics here..."
-                                            required={formData.inputMethod === 'lyrics'}
-                                            fullWidth
-                                        />
-                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                            💡 Tip #1: {tip1}
-                                            <br />
-                                            💡 Tip #2: {tip2}
-                                            <br />
-                                            &nbsp;&nbsp;
-                                            <i>{noteLyricsMaxLen}</i>
-                                        </Typography>
-                                    </Box>
-                                )}
-                            </Box>
-                        </Box>
-
-                        {/* ALTCHA Human Verification */}
-                        <Box sx={{ my: 4 }}>                            
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                <Security sx={{ color: theme.palette.primary.main }} />
-                                <Typography variant="h6" fontWeight="600">
-                                    Human Verification
-                                </Typography>
-                                {altchaVerified && (
-                                    <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
-                                )}
-                            </Box>
-                            
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                Complete this quick verification to prevent automated abuse of our AI analysis service.
+                    {!result && (
+                        <Box id="analyze-form-wrapper">
+                            <Typography variant="h5" fontWeight="600" mb={3}>
+                                Analyze a Song
                             </Typography>
-
-                            {/* ALTCHA Widget Container */}
-                            {altchaChallenge && (
-                                <altcha-widget
-                                    challengeurl="/api/altcha/challenge"
-                                    style={{
-                                        '--altcha-color-base': theme.palette.background.paper,
-                                        '--altcha-color-text': theme.palette.text.primary,
-                                        '--altcha-border-radius': '8px',
-                                    }}
-                                    onstatechange={handleAltchaStateChange}
-                                />
-                            )}
-                        </Box>
-
-                        {/* Submit Button */}
-                        <Box textAlign="center" mt={4} className="submit-wrapper">
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                size="large"
-                                disabled={!isFormValid || isLoading || isSearching}
-                                startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <Search />}
-                                sx={{ px: 4, py: 1.5 }}
-                            >
-                                {isSearching ? 'Searching Songs...' : 
-                                 isLoading ? 'Analyzing Song...' : 
-                                 formData.inputMethod === 'search' ? 'Search & Analyze' : 'Analyze Lyrics'}
-                            </Button>
                             
-                            {!altchaVerified && (
-                                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
-                                    Please complete human verification above
-                                </Typography>
+                            <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
+                                <strong>Two ways to analyze:</strong> Search the database or paste any lyrics directly 
+                                for instant analysis.
+                            </Typography>
+                            
+                            {/* Form */}
+                            <Box component="form" onSubmit={handleSubmit}>
+                                {/* Child Age Input */}
+                                <Box mb={3}>
+                                    <TextField
+                                        name="childAge"
+                                        label="Child's Age"
+                                        type="number"
+                                        value={formData.childAge}
+                                        onChange={handleInputChange}
+                                        slotProps={{
+                                            htmlInput: { min: 1, max: 21 },
+                                            input: {
+                                                startAdornment: <ChildCare sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                            },
+                                            inputLabel: { shrink: true }
+                                        }}
+                                        placeholder="e.g., 12"
+                                        required
+                                        sx={{ maxWidth: 260 }}
+                                    />
+                                </Box>
+
+                                <Divider sx={{ mb: 3, borderColor: 'rgba(255, 0, 255, 0.2)' }} />
+
+                                {/* Tabbed Interface */}
+                                <Box>
+                                    <Tabs 
+                                        value={formData.inputMethod} 
+                                        onChange={handleTabChange}
+                                        sx={{ 
+                                            mb: 3,
+                                            '& .MuiTab-root': {
+                                                fontWeight: 600,
+                                                '&.Mui-selected': {
+                                                    color: theme.palette.primary.main,
+                                                },
+                                            },
+                                            '& .MuiTabs-indicator': {
+                                                background: 'linear-gradient(90deg, #ff00ff, #00ccff)',
+                                                height: 3,
+                                            },
+                                        }}
+                                        variant="fullWidth"
+                                    >
+                                        <Tab 
+                                            value="search" 
+                                            label="Search by Song & Artist" 
+                                            icon={<Search />}
+                                            iconPosition="start"
+                                        />
+                                        <Tab 
+                                            value="lyrics" 
+                                            label="Paste Lyrics Directly" 
+                                            icon={<Note />}
+                                            iconPosition="start"
+                                        />
+                                    </Tabs>
+
+                                    {/* Tab Content */}
+                                    <Box sx={{ minHeight: 200 }}>
+                                        {formData.inputMethod === 'search' ? (
+                                            <Box>
+                                                <Grid container spacing={3}>
+                                                    <Grid size={{ xs:12, md: 6 }}>
+                                                        <TextField
+                                                            name="songName"
+                                                            label="Song Name"
+                                                            value={formData.songName}
+                                                            onChange={handleInputChange}
+                                                            placeholder="e.g., Happy"
+                                                            required={formData.inputMethod === 'search'}
+                                                            fullWidth
+                                                            slotProps={{
+                                                                input: {
+                                                                    startAdornment: <MusicNote sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Grid>
+                                                    <Grid size={{ xs:12, md: 6 }}>
+                                                        <TextField
+                                                            name="songArtist"
+                                                            label="Artist Name (Optional)"
+                                                            value={formData.songArtist}
+                                                            onChange={handleInputChange}
+                                                            placeholder="e.g., Pharrell Williams"
+                                                            required={false}
+                                                            fullWidth
+                                                            slotProps={{
+                                                                input: {
+                                                                    startAdornment: <RecordVoiceOver sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Grid>
+                                                </Grid>
+                                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                                    💡 Tip: {tip2}
+                                                </Typography>
+                                            </Box>
+                                        ) : (
+                                            <Box>
+                                                <TextField
+                                                    name="lyrics"
+                                                    label="Song Lyrics"
+                                                    value={formData.lyrics}
+                                                    onChange={handleInputChange}
+                                                    multiline
+                                                    rows={8}
+                                                    slotProps={{
+                                                        htmlInput: { maxLength: LYRICS_MAX_LENGTH }
+                                                    }}
+                                                    placeholder="Paste the complete song lyrics here..."
+                                                    required={formData.inputMethod === 'lyrics'}
+                                                    fullWidth
+                                                />
+                                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                                    💡 Tip #1: {tip1}
+                                                    <br />
+                                                    💡 Tip #2: {tip2}
+                                                    <br />
+                                                    &nbsp;&nbsp;
+                                                    <i>{noteLyricsMaxLen}</i>
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Box>
+
+                                {/* ALTCHA Human Verification */}
+                                <Box sx={{ my: 4 }}>                            
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                        <Security sx={{ color: theme.palette.primary.main }} />
+                                        <Typography variant="h6" fontWeight="600">
+                                            Human Verification
+                                        </Typography>
+                                        {altchaVerified && (
+                                            <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                        )}
+                                    </Box>
+                                    
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                        Complete this quick verification to prevent automated abuse of our AI analysis service.
+                                    </Typography>
+
+                                    {/* ALTCHA Widget Container */}
+                                    {altchaChallenge && (
+                                        <altcha-widget
+                                            challengeurl="/api/altcha/challenge"
+                                            style={{
+                                                '--altcha-color-base': theme.palette.background.paper,
+                                                '--altcha-color-text': theme.palette.text.primary,
+                                                '--altcha-border-radius': '8px',
+                                            }}
+                                            onstatechange={handleAltchaStateChange}
+                                        />
+                                    )}
+                                </Box>
+
+                                {/* Submit Button */}
+                                <Box textAlign="center" mt={4} className="submit-wrapper">
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        size="large"
+                                        disabled={!isFormValid || isLoading || isSearching}
+                                        startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <Search />}
+                                        sx={{ px: 4, py: 1.5 }}
+                                    >
+                                        {isSearching ? 'Searching Songs...' : 
+                                        isLoading ? 'Analyzing Song...' : 
+                                        formData.inputMethod === 'search' ? 'Search & Analyze' : 'Analyze Lyrics'}
+                                    </Button>
+                                    
+                                    {!altchaVerified && (
+                                        <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
+                                            Please complete human verification above
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Box>
+                        </Box>)}
+
+                    {result && (
+                        <Box id="analyze-results-wrapper">
+                            <Typography variant="h5" fontWeight="600" mb={3}>
+                                Analysis results for lyrics
+                            </Typography>
+                            
+                            {result.error ? (
+                                <>
+                                    <Alert 
+                                        severity="error"
+                                        sx={{
+                                            background: 'rgba(255, 51, 102, 0.1)',
+                                            border: '1px solid rgba(255, 51, 102, 0.3)',
+                                        }}
+                                    >
+                                        {result.error}
+                                    </Alert>
+
+                                    {/* Try again Button */}
+                                    <Box textAlign="center" mt={4} className="submit-wrapper">
+                                        <Button
+                                            type="button"
+                                            variant="contained"
+                                            size="large"
+                                            sx={{ px: 4, py: 1.5 }}
+                                            onClick={(e) => handleTryAgainButton()}
+                                        >
+                                            Try again
+                                        </Button>
+                                    </Box>
+                                </>
+                            ) : (
+                                <Box>
+                                    {selectedSong && (
+                                        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                            <strong>{selectedSong.title || "Unknown song"}</strong>
+                                            <br />
+                                            by <strong>{selectedSong.artist || "Unknown artist"}</strong>
+                                            <br />
+                                            Lyrics: <i>{selectedSong.lyrics.substring(0, 50)}&hellip;</i> 
+                                            <Link href="#" onClick={(e) => handleShowLyricsModal(e)}>Show full lyrics</Link>
+                                        </Typography>
+                                    )}
+
+                                    <Card sx={{ mb: 2 }}>
+                                        <CardContent>
+                                            <Box display="flex" alignItems="center" gap={2}>
+                                                {(appropriatenessData.icon)}
+                                                <Box gap={2}>
+                                                    <Typography 
+                                                        variant="h6" 
+                                                        color={appropriatenessData.color}
+                                                        fontWeight="600"
+                                                    >
+                                                        {appropriatenessData.text}
+                                                    </Typography>
+
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        <strong>Recommended age:</strong> {result.recommendedAge}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                    
+                                    <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                        {result.analysis}
+                                    </Typography>
+
+                                    <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                        <Link href="/about">
+                                            <strong>Read more about this analysis and how we do it &raquo;</strong>
+                                        </Link>
+                                    </Typography>
+                                    
+                                    <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
+                        
+                                    <Typography 
+                                        variant="h6" 
+                                        sx={{ 
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        Remember: You know your child best. Use LyricsRay as a tool to inform your 
+                                        decisions, but always trust your parental instincts and family values when 
+                                        determining what&apos;s right for your children.
+                                    </Typography>
+
+                                    {/* Analyze another song button */}
+                                    <Box textAlign="center" mt={4} className="submit-wrapper">
+                                        <Button
+                                            type="button"
+                                            variant="contained"
+                                            size="large"
+                                            sx={{ px: 4, py: 1.5 }}
+                                            onClick={(e) => handleTryAgainButton()}
+                                        >
+                                            Analyze another song
+                                        </Button>
+                                    </Box>
+                                </Box>
                             )}
-                        </Box>
-                    </Box>
+                        </Box>)}
                 </Paper>
 
                 {/* Song Selection Modal */}
@@ -644,72 +782,44 @@ export default function Home() {
                     </Box>
                 </Modal>
 
-                {/* Results Section */}
-                {result && (
-                    <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }} className='analysis-results'>
-                        <Typography variant="h5" fontWeight="600" mb={3}>
-                            Analysis Results
-                        </Typography>
-                        
-                        {result.error ? (
-                            <Alert 
-                                severity="error"
-                                sx={{
-                                    background: 'rgba(255, 51, 102, 0.1)',
-                                    border: '1px solid rgba(255, 51, 102, 0.3)',
-                                }}
-                            >
-                                {result.error}
-                            </Alert>
-                        ) : (
-                            <Box>
-                                <Card sx={{ mb: 2 }}>
-                                    <CardContent>
-                                        <Box display="flex" alignItems="center" gap={2}>
-                                            {(appropriatenessData.icon)}
-                                            <Box gap={2}>
-                                                <Typography 
-                                                    variant="h6" 
-                                                    color={appropriatenessData.color}
-                                                    fontWeight="600"
-                                                >
-                                                    {appropriatenessData.text}
-                                                </Typography>
-
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Recommended age:</strong> {result.recommendedAge}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-                                
-                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                    {result.analysis}
+                {/* Lyrics Modal */}
+                {selectedSong && (
+                    <Modal open={showLyricsModal} onClose={() => setShowLyricsModal(false)}>
+                        <Box sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: { xs: '90%', sm: 500 },
+                            maxHeight: '80vh',
+                            bgcolor: 'background.paper',
+                            borderRadius: 2,
+                            boxShadow: '0 0 50px rgba(255, 0, 255, 0.3)',
+                            overflow: 'hidden'
+                        }}>
+                            <Box sx={{ 
+                                p: 2, 
+                                borderBottom: 1, 
+                                borderColor: 'rgba(255, 0, 255, 0.2)', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 204, 255, 0.1))',
+                            }}>
+                                <Typography variant="h6" component="h2">
+                                    {selectedSong.title || "Unknown song"} by {selectedSong.artist || "Unknown artist"}
                                 </Typography>
-
+                                <Button onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                                    <Close />
+                                </Button>
+                            </Box>
+                            <Box sx={{ maxHeight: 500, maxWidth: 600, overflow: 'auto', p: 2 }}>
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                    <Link href="/about">
-                                        <strong>Read more about this analysis and how we do it &raquo;</strong>
-                                    </Link>
-                                </Typography>
-                                
-                                <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
-                    
-                                <Typography 
-                                    variant="h6" 
-                                    sx={{ 
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Remember: You know your child best. Use LyricsRay as a tool to inform your 
-                                    decisions, but always trust your parental instincts and family values when 
-                                    determining what&apos;s right for your children.
+                                    {selectedSong.lyrics || "No lyrics to show :("}
                                 </Typography>
                             </Box>
-                        )}
-                    </Paper>
-                )}
+                        </Box>
+                    </Modal>)}
             </Container>
         </Box>
     );
