@@ -637,7 +637,7 @@ export default function Home() {
                                             variant="contained"
                                             size="large"
                                             sx={{ px: 4, py: 1.5 }}
-                                            onClick={(e) => handleTryAgainButton()}
+                                            onClick={() => handleTryAgainButton()}
                                         >
                                             Try again
                                         </Button>
@@ -707,7 +707,7 @@ export default function Home() {
                                             variant="contained"
                                             size="large"
                                             sx={{ px: 4, py: 1.5 }}
-                                            onClick={(e) => handleTryAgainButton()}
+                                            onClick={() => handleTryAgainButton()}
                                         >
                                             Analyze another song
                                         </Button>
