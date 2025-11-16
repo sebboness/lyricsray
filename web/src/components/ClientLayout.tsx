@@ -45,7 +45,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
             <CssBaseline />
             <Box sx={{ 
                 minHeight: '100vh',
-                background: '#000015',
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -74,7 +73,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                 <AppBar 
                     position="fixed" 
                     sx={{ 
-                        background: 'rgba(26, 26, 46, 0.5)',
+                        background: theme.palette.background.paper,
                         backdropFilter: 'blur(15px)',
                         borderBottom: '1px solid rgba(255, 0, 255, 0.2)',
                         boxShadow: '0 4px 20px rgba(255, 0, 255, 0.15)',
@@ -133,23 +132,29 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             </Box>
 
                             <FormControlLabel
+                                title={`Turn on ${darkMode ? 'Light' : 'Dark'} mode`}
                                 control={
                                     <Switch
                                         checked={darkMode}
                                         onChange={(e) => setDarkMode(e.target.checked)}
                                         sx={{
                                             '& .MuiSwitch-thumb': {
-                                                backgroundColor: darkMode ? '#ff00ff' : '#8b00ff',
+                                                backgroundColor: darkMode ? '#8b00ff' : '#ff00ff',
                                             },
                                             '& .MuiSwitch-track': {
-                                                backgroundColor: darkMode ? 'rgba(255, 0, 255, 0.3)' : 'rgba(139, 0, 255, 0.3)',
+                                                backgroundColor: darkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
                                             },
                                         }}
                                     />
                                 }
                                 label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        {darkMode ? <DarkMode /> : <LightMode />}
+                                    <Box sx={{
+                                            color: theme.palette.text.primary,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1 
+                                        }}>
+                                        {darkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
                                         {darkMode ? 'Dark' : 'Light'}
                                     </Box>
                                 }
