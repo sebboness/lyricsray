@@ -24,6 +24,7 @@ interface AnalyzeSongResponse {
     appropriate: number;
     analysis: string;
     recommendedAge: string;
+    songKey: string;
     error?: string;
 }
 
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
                 appropriate: song.appropriate,
                 analysis: song.analysis,
                 recommendedAge: song.recommendedAge.toString(),
+                songKey,
             };
 
             return NextResponse.json(response);
@@ -211,6 +213,7 @@ export async function POST(request: NextRequest) {
                 appropriate: analysis.appropriate,
                 analysis: analysis.analysis,
                 recommendedAge: analysis.recommendedAge.toString(),
+                songKey,
             };
 
             return NextResponse.json(response, {

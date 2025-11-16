@@ -24,6 +24,7 @@ import {
     ListItemAvatar,
     Avatar,
     Link,
+    IconButton,
 } from '@mui/material';
 import {
     ChildCare,
@@ -36,6 +37,7 @@ import {
     Close,
     WarningRounded,
     Security,
+    Share,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import 'altcha';
@@ -62,6 +64,7 @@ interface AnalysisResult {
     appropriate: number;
     analysis: string;
     recommendedAge: string;
+    songKey: string;
     error?: string;
 }
 
@@ -227,6 +230,7 @@ export default function Home() {
                     appropriate: 0,
                     analysis: '',
                     recommendedAge: '',
+                    songKey: '',
                     error: data.error
                 });
                 return;
@@ -236,7 +240,7 @@ export default function Home() {
                 setSearchResults(data.songs);
                 if (data.songs.length === 1) {
                     // If only one result, proceed directly to analysis
-                    analyzeLyricsDirectly(data.songs[0].lyrics, data.songs[0]);
+                    analyzeLyricsDirectly(data.songs[0]);
                 } else {
                     // Show modal for multiple results
                     setShowSongModal(true);
@@ -246,6 +250,7 @@ export default function Home() {
                     appropriate: 0,
                     analysis: '',
                     recommendedAge: '',
+                    songKey: '',
                     error: 'No songs found. Please try different search terms or paste lyrics directly.'
                 });
             }
@@ -255,6 +260,7 @@ export default function Home() {
                 appropriate: 0,
                 analysis: '',
                 recommendedAge: '',
+                songKey: '',
                 error: 'Failed to search songs. Please try again.'
             });
         } finally {
@@ -262,7 +268,7 @@ export default function Home() {
         }
     };
 
-    const analyzeLyricsDirectly = async (lyrics: string | undefined | null, song: SongSearchResult | null) => {
+    const analyzeLyricsDirectly = async (song: SongSearchResult) => {
         setIsLoading(true);
         setShowSongModal(false);
         
@@ -274,12 +280,12 @@ export default function Home() {
                 },
                 body: JSON.stringify({
                     childAge: parseInt(formData.childAge),
-                    lyrics: lyrics || formData.lyrics,
+                    lyrics: song.lyrics,
                     inputMethod: 'lyrics',
                     altchaPayload,
-                    songName: song?.title,
-                    artistName: song?.artist,
-                    albumName: song?.album,
+                    songName: song.title,
+                    artistName: song.artist,
+                    albumName: song.album,
                 }),
             });
 
@@ -297,6 +303,7 @@ export default function Home() {
                 appropriate: 0,
                 analysis: '',
                 recommendedAge: '',
+                songKey: '',
                 error: 'Failed to analyze lyrics. Please try again.'
             });
         } finally {
@@ -314,6 +321,7 @@ export default function Home() {
                 appropriate: 0,
                 analysis: '',
                 recommendedAge: '',
+                songKey: '',
                 error: 'Please complete the human verification first.'
             });
             return;
@@ -322,7 +330,14 @@ export default function Home() {
         if (formData.inputMethod === 'search') {
             await searchSongs();
         } else {
-            await analyzeLyricsDirectly(null, selectedSong);
+            const _selectedSong: SongSearchResult = {
+                id: "unknown",
+                lyrics: formData.lyrics,
+                artist: "Unknown artist",
+                title: "Unknown song",
+            };
+            setSelectedSong(_selectedSong);
+            await analyzeLyricsDirectly(_selectedSong);
 
             resetAltcha();
         }
@@ -330,7 +345,7 @@ export default function Home() {
 
     const handleSongSelect = (song: SongSearchResult) => {
         setSelectedSong(song);
-        analyzeLyricsDirectly(song.lyrics, song);
+        analyzeLyricsDirectly(song);
     };
 
     const handleCloseModal = () => {
@@ -648,31 +663,60 @@ export default function Home() {
                                     {selectedSong && (
                                         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                             <strong>{selectedSong.title || "Unknown song"}</strong>
-                                            <br />
                                             by <strong>{selectedSong.artist || "Unknown artist"}</strong>
                                             <br />
-                                            Lyrics: <i>{selectedSong.lyrics.substring(0, 50)}&hellip;</i> 
+                                            Lyrics: <i>{selectedSong.lyrics.substring(0, 60)}&hellip;</i>&nbsp;
                                             <Link href="#" onClick={(e) => handleShowLyricsModal(e)}>Show full lyrics</Link>
                                         </Typography>
                                     )}
 
+                                    {/* Analysis results card */}
                                     <Card sx={{ mb: 2 }}>
                                         <CardContent>
-                                            <Box display="flex" alignItems="center" gap={2}>
-                                                {(appropriatenessData.icon)}
-                                                <Box gap={2}>
-                                                    <Typography 
-                                                        variant="h6" 
-                                                        color={appropriatenessData.color}
-                                                        fontWeight="600"
-                                                    >
-                                                        {appropriatenessData.text}
-                                                    </Typography>
+                                            <Box display="flex" alignItems="center" justifyContent="space-between">
+                                                {/* Left side: Icon and text */}
+                                                <Box display="flex" alignItems="center" gap={2}>
+                                                    {(appropriatenessData.icon)}
+                                                    <Box gap={2}>
+                                                        <Typography 
+                                                            variant="h6" 
+                                                            color={appropriatenessData.color}
+                                                            fontWeight="600"
+                                                        >
+                                                            {appropriatenessData.text}
+                                                        </Typography>
 
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        <strong>Recommended age:</strong> {result.recommendedAge}
-                                                    </Typography>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            <strong>Recommended age:</strong> {result.recommendedAge}
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
+
+                                                {/* Right side: Share button */}
+                                                 <Link 
+                                                    href={`/analysis/${encodeURIComponent(result.songKey)}`} // your actual route
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <Box 
+                                                        display="flex" 
+                                                        flexDirection="column" 
+                                                        alignItems="center"
+                                                    >
+                                                        <IconButton 
+                                                            aria-label="share"
+                                                            size="small"
+                                                        >
+                                                            <Share sx={{ fontSize: 36 }} />
+                                                        </IconButton>
+                                                        <Typography 
+                                                            variant="caption" 
+                                                            color="text.secondary"
+                                                            sx={{ mt: -0.5 }}
+                                                        >
+                                                            Share
+                                                        </Typography>
+                                                    </Box>
+                                                </Link>
                                             </Box>
                                         </CardContent>
                                     </Card>
@@ -809,7 +853,7 @@ export default function Home() {
                                 <Typography variant="h6" component="h2">
                                     {selectedSong.title || "Unknown song"} by {selectedSong.artist || "Unknown artist"}
                                 </Typography>
-                                <Button onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                                <Button onClick={() => setShowLyricsModal(false)} size="small" sx={{ minWidth: 'auto', p: 1 }}>
                                     <Close />
                                 </Button>
                             </Box>
