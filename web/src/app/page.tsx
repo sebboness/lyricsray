@@ -42,6 +42,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import 'altcha';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
+import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 
 interface FormData {
     childAge: string;
@@ -63,7 +64,7 @@ interface SongSearchResult {
 interface AnalysisResult {
     appropriate: number;
     analysis: string;
-    recommendedAge: string;
+    recommendedAge: number;
     songKey: string;
     error?: string;
 }
@@ -89,40 +90,7 @@ const emptyFormData: FormData = {
     inputMethod: 'search'
 };
 
-/**
- * Gets display data based on appropriateness level
- * @param appropriate The appropriateness level as an integer
- * @returns Data based on appropriateness level
- */
-const getAppropriateData = (appropriate: number): AppropriateData => {
-    let icon = <></>;
-    let color = '';
-    let text = '';
 
-    switch (appropriate) {
-        case 1:
-            icon = <CheckCircle sx={{ color: 'success.main', fontSize: 36 }} />;
-            color = 'success.main';
-            text = 'Appropriate for your child';
-            break;
-        case 2:
-            icon = <WarningRounded sx={{ color: 'warning.main', fontSize: 36 }} />;
-            color = 'warning.main';
-            text = 'Contains themes that may not be appropriate for your child';
-            break;
-        case 3:
-            icon = <Error sx={{ color: 'error.main', fontSize: 36 }} />;
-            color = 'error.main';
-            text = 'May not be appropriate for your child';
-            break;
-    }
-
-    return {
-        icon,
-        color,
-        text,
-    }
-}
 
 export default function Home() {
     const theme = useTheme();
@@ -229,7 +197,7 @@ export default function Home() {
                 setResult({
                     appropriate: 0,
                     analysis: '',
-                    recommendedAge: '',
+                    recommendedAge: 0,
                     songKey: '',
                     error: data.error
                 });
@@ -249,7 +217,7 @@ export default function Home() {
                 setResult({
                     appropriate: 0,
                     analysis: '',
-                    recommendedAge: '',
+                    recommendedAge: 0,
                     songKey: '',
                     error: 'No songs found. Please try different search terms or paste lyrics directly.'
                 });
@@ -259,7 +227,7 @@ export default function Home() {
             setResult({
                 appropriate: 0,
                 analysis: '',
-                recommendedAge: '',
+                recommendedAge: 0,
                 songKey: '',
                 error: 'Failed to search songs. Please try again.'
             });
@@ -302,7 +270,7 @@ export default function Home() {
             setResult({
                 appropriate: 0,
                 analysis: '',
-                recommendedAge: '',
+                recommendedAge: 0,
                 songKey: '',
                 error: 'Failed to analyze lyrics. Please try again.'
             });
@@ -320,7 +288,7 @@ export default function Home() {
             setResult({
                 appropriate: 0,
                 analysis: '',
-                recommendedAge: '',
+                recommendedAge: 0,
                 songKey: '',
                 error: 'Please complete the human verification first.'
             });
@@ -384,8 +352,6 @@ export default function Home() {
         (formData.inputMethod === 'search' && formData.songName.trim()) ||
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     ) && altchaVerified;
-
-    const appropriatenessData = getAppropriateData(result?.appropriate || 0);
 
     return (
         <Box sx={{ position: 'relative', minHeight: '100vh' }}>
@@ -610,7 +576,7 @@ export default function Home() {
                                         variant="contained"
                                         size="large"
                                         disabled={!isFormValid || isLoading || isSearching}
-                                        startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <Search />}
+                                        startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <CircularProgress />}
                                         sx={{ px: 4, py: 1.5 }}
                                     >
                                         {isSearching ? 'Searching Songs...' : 
@@ -671,55 +637,11 @@ export default function Home() {
                                     )}
 
                                     {/* Analysis results card */}
-                                    <Card sx={{ mb: 2 }}>
-                                        <CardContent>
-                                            <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                {/* Left side: Icon and text */}
-                                                <Box display="flex" alignItems="center" gap={2}>
-                                                    {(appropriatenessData.icon)}
-                                                    <Box gap={2}>
-                                                        <Typography 
-                                                            variant="h6" 
-                                                            color={appropriatenessData.color}
-                                                            fontWeight="600"
-                                                        >
-                                                            {appropriatenessData.text}
-                                                        </Typography>
-
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            <strong>Recommended age:</strong> {result.recommendedAge}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-
-                                                {/* Right side: Share button */}
-                                                 <Link 
-                                                    href={`/analysis/${encodeURIComponent(result.songKey)}`} // your actual route
-                                                    style={{ textDecoration: 'none' }}
-                                                >
-                                                    <Box 
-                                                        display="flex" 
-                                                        flexDirection="column" 
-                                                        alignItems="center"
-                                                    >
-                                                        <IconButton 
-                                                            aria-label="share"
-                                                            size="small"
-                                                        >
-                                                            <Share sx={{ fontSize: 36 }} />
-                                                        </IconButton>
-                                                        <Typography 
-                                                            variant="caption" 
-                                                            color="text.secondary"
-                                                            sx={{ mt: -0.5 }}
-                                                        >
-                                                            Share
-                                                        </Typography>
-                                                    </Box>
-                                                </Link>
-                                            </Box>
-                                        </CardContent>
-                                    </Card>
+                                    <AppropriatenessCard 
+                                        appropriate={result.appropriate}
+                                        recommendedAge={result.recommendedAge}
+                                        songKey={result.songKey}
+                                    />
                                     
                                     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                         {result.analysis}
