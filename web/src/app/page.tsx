@@ -13,8 +13,6 @@ import {
     Alert,
     CircularProgress,
     Divider,
-    Card,
-    CardContent,
     Grid,
     Modal,
     List,
@@ -31,15 +29,14 @@ import {
     Search,
     Note,
     CheckCircle,
-    Error,
     RecordVoiceOver,
     Close,
-    WarningRounded,
     Security,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import 'altcha';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
+import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 
 interface FormData {
     childAge: string;
@@ -61,14 +58,9 @@ interface SongSearchResult {
 interface AnalysisResult {
     appropriate: number;
     analysis: string;
-    recommendedAge: string;
+    recommendedAge: number;
+    songKey: string;
     error?: string;
-}
-
-interface AppropriateData {
-    icon: React.JSX.Element;
-    color: string;
-    text: string;
 }
 
 const tip1 = `Paste the complete lyrics for the most accurate analysis*`;
@@ -86,40 +78,7 @@ const emptyFormData: FormData = {
     inputMethod: 'search'
 };
 
-/**
- * Gets display data based on appropriateness level
- * @param appropriate The appropriateness level as an integer
- * @returns Data based on appropriateness level
- */
-const getAppropriateData = (appropriate: number): AppropriateData => {
-    let icon = <></>;
-    let color = '';
-    let text = '';
 
-    switch (appropriate) {
-        case 1:
-            icon = <CheckCircle sx={{ color: 'success.main', fontSize: 36 }} />;
-            color = 'success.main';
-            text = 'Appropriate for your child';
-            break;
-        case 2:
-            icon = <WarningRounded sx={{ color: 'warning.main', fontSize: 36 }} />;
-            color = 'warning.main';
-            text = 'Contains themes that may not be appropriate for your child';
-            break;
-        case 3:
-            icon = <Error sx={{ color: 'error.main', fontSize: 36 }} />;
-            color = 'error.main';
-            text = 'May not be appropriate for your child';
-            break;
-    }
-
-    return {
-        icon,
-        color,
-        text,
-    }
-}
 
 export default function Home() {
     const theme = useTheme();
@@ -226,7 +185,8 @@ export default function Home() {
                 setResult({
                     appropriate: 0,
                     analysis: '',
-                    recommendedAge: '',
+                    recommendedAge: 0,
+                    songKey: '',
                     error: data.error
                 });
                 return;
@@ -236,7 +196,7 @@ export default function Home() {
                 setSearchResults(data.songs);
                 if (data.songs.length === 1) {
                     // If only one result, proceed directly to analysis
-                    analyzeLyricsDirectly(data.songs[0].lyrics, data.songs[0]);
+                    analyzeLyricsDirectly(data.songs[0]);
                 } else {
                     // Show modal for multiple results
                     setShowSongModal(true);
@@ -245,7 +205,8 @@ export default function Home() {
                 setResult({
                     appropriate: 0,
                     analysis: '',
-                    recommendedAge: '',
+                    recommendedAge: 0,
+                    songKey: '',
                     error: 'No songs found. Please try different search terms or paste lyrics directly.'
                 });
             }
@@ -254,7 +215,8 @@ export default function Home() {
             setResult({
                 appropriate: 0,
                 analysis: '',
-                recommendedAge: '',
+                recommendedAge: 0,
+                songKey: '',
                 error: 'Failed to search songs. Please try again.'
             });
         } finally {
@@ -262,7 +224,7 @@ export default function Home() {
         }
     };
 
-    const analyzeLyricsDirectly = async (lyrics: string | undefined | null, song: SongSearchResult | null) => {
+    const analyzeLyricsDirectly = async (song: SongSearchResult) => {
         setIsLoading(true);
         setShowSongModal(false);
         
@@ -274,12 +236,12 @@ export default function Home() {
                 },
                 body: JSON.stringify({
                     childAge: parseInt(formData.childAge),
-                    lyrics: lyrics || formData.lyrics,
+                    lyrics: song.lyrics,
                     inputMethod: 'lyrics',
                     altchaPayload,
-                    songName: song?.title,
-                    artistName: song?.artist,
-                    albumName: song?.album,
+                    songName: song.title,
+                    artistName: song.artist,
+                    albumName: song.album,
                 }),
             });
 
@@ -296,7 +258,8 @@ export default function Home() {
             setResult({
                 appropriate: 0,
                 analysis: '',
-                recommendedAge: '',
+                recommendedAge: 0,
+                songKey: '',
                 error: 'Failed to analyze lyrics. Please try again.'
             });
         } finally {
@@ -313,7 +276,8 @@ export default function Home() {
             setResult({
                 appropriate: 0,
                 analysis: '',
-                recommendedAge: '',
+                recommendedAge: 0,
+                songKey: '',
                 error: 'Please complete the human verification first.'
             });
             return;
@@ -322,7 +286,14 @@ export default function Home() {
         if (formData.inputMethod === 'search') {
             await searchSongs();
         } else {
-            await analyzeLyricsDirectly(null, selectedSong);
+            const _selectedSong: SongSearchResult = {
+                id: "unknown",
+                lyrics: formData.lyrics,
+                artist: "Unknown artist",
+                title: "Unknown song",
+            };
+            setSelectedSong(_selectedSong);
+            await analyzeLyricsDirectly(_selectedSong);
 
             resetAltcha();
         }
@@ -330,7 +301,7 @@ export default function Home() {
 
     const handleSongSelect = (song: SongSearchResult) => {
         setSelectedSong(song);
-        analyzeLyricsDirectly(song.lyrics, song);
+        analyzeLyricsDirectly(song);
     };
 
     const handleCloseModal = () => {
@@ -369,8 +340,6 @@ export default function Home() {
         (formData.inputMethod === 'search' && formData.songName.trim()) ||
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     ) && altchaVerified;
-
-    const appropriatenessData = getAppropriateData(result?.appropriate || 0);
 
     return (
         <Box sx={{ position: 'relative', minHeight: '100vh' }}>
@@ -648,34 +617,22 @@ export default function Home() {
                                     {selectedSong && (
                                         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                             <strong>{selectedSong.title || "Unknown song"}</strong>
-                                            <br />
                                             by <strong>{selectedSong.artist || "Unknown artist"}</strong>
                                             <br />
-                                            Lyrics: <i>{selectedSong.lyrics.substring(0, 50)}&hellip;</i> 
+                                            Lyrics: <i>{selectedSong.lyrics.substring(0, 60)}&hellip;</i>&nbsp;
                                             <Link href="#" onClick={(e) => handleShowLyricsModal(e)}>Show full lyrics</Link>
                                         </Typography>
                                     )}
 
-                                    <Card sx={{ mb: 2 }}>
-                                        <CardContent>
-                                            <Box display="flex" alignItems="center" gap={2}>
-                                                {(appropriatenessData.icon)}
-                                                <Box gap={2}>
-                                                    <Typography 
-                                                        variant="h6" 
-                                                        color={appropriatenessData.color}
-                                                        fontWeight="600"
-                                                    >
-                                                        {appropriatenessData.text}
-                                                    </Typography>
-
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        <strong>Recommended age:</strong> {result.recommendedAge}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        </CardContent>
-                                    </Card>
+                                    {/* Analysis results card */}
+                                    <AppropriatenessCard 
+                                        appropriate={result.appropriate}
+                                        recommendedAge={result.recommendedAge}
+                                        showShareButton={true}
+                                        songKey={result.songKey}
+                                        songTitle={selectedSong?.title || 'Unknown Song'}
+                                        artistName={selectedSong?.artist || 'Unknown Artist'}
+                                    />
                                     
                                     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                         {result.analysis}
@@ -809,12 +766,16 @@ export default function Home() {
                                 <Typography variant="h6" component="h2">
                                     {selectedSong.title || "Unknown song"} by {selectedSong.artist || "Unknown artist"}
                                 </Typography>
-                                <Button onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                                <Button onClick={() => setShowLyricsModal(false)} size="small" sx={{ minWidth: 'auto', p: 1 }}>
                                     <Close />
                                 </Button>
                             </Box>
                             <Box sx={{ maxHeight: 500, maxWidth: 600, overflow: 'auto', p: 2 }}>
-                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                <Typography 
+                                    variant="body2" 
+                                    color="text.secondary" 
+                                    sx={{ whiteSpace: 'pre-line', fontFamily: 'monospace', mb: 2 }}
+                                >
                                     {selectedSong.lyrics || "No lyrics to show :("}
                                 </Typography>
                             </Box>
