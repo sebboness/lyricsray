@@ -22,7 +22,6 @@ import {
     WhatsApp,
     Share,
 } from '@mui/icons-material';
-import { logger } from '@/logger/logger';
 
 interface ShareButtonWithModalProps  {
     songKey: string;
@@ -53,7 +52,7 @@ export function ShareButtonWithModal({
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {
-            logger.error('Failed to copy link:', error);
+            console.error('Failed to copy link:', error);
         }
     };
 

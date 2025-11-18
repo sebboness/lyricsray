@@ -98,6 +98,9 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
                     <AppropriatenessCard 
                         appropriate={result.appropriate}
                         recommendedAge={result.recommendedAge}
+                        songKey={result.songKey}
+                        songTitle={result.song.songName || 'Unknown Song'}
+                        artistName={result.song.artistName || 'Unknown Artist'}
                     />
 
                     {/* Analysis */}

@@ -564,7 +564,7 @@ export default function Home() {
                                         variant="contained"
                                         size="large"
                                         disabled={!isFormValid || isLoading || isSearching}
-                                        startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <CircularProgress />}
+                                        startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <Search />}
                                         sx={{ px: 4, py: 1.5 }}
                                     >
                                         {isSearching ? 'Searching Songs...' : 
@@ -771,7 +771,11 @@ export default function Home() {
                                 </Button>
                             </Box>
                             <Box sx={{ maxHeight: 500, maxWidth: 600, overflow: 'auto', p: 2 }}>
-                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                <Typography 
+                                    variant="body2" 
+                                    color="text.secondary" 
+                                    sx={{ whiteSpace: 'pre-line', fontFamily: 'monospace', mb: 2 }}
+                                >
                                     {selectedSong.lyrics || "No lyrics to show :("}
                                 </Typography>
                             </Box>
