@@ -616,7 +616,7 @@ export default function Home() {
                                 <Box>
                                     {selectedSong && (
                                         <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                            <strong>{selectedSong.title || "Unknown song"}</strong>
+                                            <strong>{selectedSong.title || "Unknown song"}</strong>&nbsp; 
                                             by <strong>{selectedSong.artist || "Unknown artist"}</strong>
                                             <br />
                                             Lyrics: <i>{selectedSong.lyrics.substring(0, 60)}&hellip;</i>&nbsp;
@@ -700,7 +700,7 @@ export default function Home() {
                             <Typography variant="h6" component="h2">
                                 Select the Correct Song
                             </Typography>
-                            <Button onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                            <Button variant="contained" onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
                                 <Close />
                             </Button>
                         </Box>
@@ -747,7 +747,7 @@ export default function Home() {
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: { xs: '90%', sm: 500 },
+                            width: { xs: '90%', sm: 500, md: 800 },
                             maxHeight: '80vh',
                             bgcolor: 'background.paper',
                             borderRadius: 2,
@@ -766,11 +766,11 @@ export default function Home() {
                                 <Typography variant="h6" component="h2">
                                     {selectedSong.title || "Unknown song"} by {selectedSong.artist || "Unknown artist"}
                                 </Typography>
-                                <Button onClick={() => setShowLyricsModal(false)} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                                <Button variant="contained" onClick={() => setShowLyricsModal(false)} size="small" sx={{ minWidth: 'auto', p: 1 }}>
                                     <Close />
                                 </Button>
                             </Box>
-                            <Box sx={{ maxHeight: 500, maxWidth: 600, overflow: 'auto', p: 2 }}>
+                            <Box sx={{ maxHeight: 500, maxWidth: 800, overflow: 'auto', p: 2 }}>
                                 <Typography 
                                     variant="body2" 
                                     color="text.secondary" 
