@@ -1,12 +1,15 @@
-// components/AppropriatenessCard.tsx
-import { Box, Card, CardContent, IconButton, Link, Typography } from '@mui/material';
-import { CheckCircle, Error, Share, WarningRounded } from '@mui/icons-material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
+import { CheckCircle, Error, WarningRounded } from '@mui/icons-material';
+import { ShareButtonWithModal } from './ShareButtonWithModal';
 
 interface AppropriatenessCardProps {
     appropriate: number;
     recommendedAge: number;
     size?: 'small' | 'medium' | 'large';
     songKey?: string;
+    showShareButton?: boolean;
+    songTitle?: string;
+    artistName?: string;
 }
 
 interface AppropriateData {
@@ -57,7 +60,10 @@ export function AppropriatenessCard({
     recommendedAge, 
     size = 'medium',
     songKey,
-}: AppropriatenessCardProps) {
+    showShareButton = false,
+    songTitle = 'this song',
+    artistName = 'Unknown Artist',
+}: AppropriatenessCardProps) {    
     // Size configurations
     const sizeConfig = {
         small: { icon: 36, titleVariant: 'h6' as const, gap: 2 },
@@ -69,54 +75,39 @@ export function AppropriatenessCard({
     const appropriatenessData = getAppropriateData(appropriate, config.icon);
 
     return (
-        <Card sx={{ mb: 2 }}>
-            <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                    {/* Left side: Icon and text */}
-                    <Box display="flex" alignItems="center" gap={2}>
-                        {(appropriatenessData.icon)}
-                        <Box gap={2}>
-                            <Typography 
-                                variant="h6" 
-                                color={appropriatenessData.color}
-                                fontWeight="600"
-                            >
-                                {appropriatenessData.text}
-                            </Typography>
+        <>
+            <Card sx={{ mb: 2 }}>
+                <CardContent>
+                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                        {/* Left side: Icon and text */}
+                        <Box display="flex" alignItems="center" gap={2}>
+                            {(appropriatenessData.icon)}
+                            <Box gap={2}>
+                                <Typography 
+                                    variant="h6" 
+                                    color={appropriatenessData.color}
+                                    fontWeight="600"
+                                >
+                                    {appropriatenessData.text}
+                                </Typography>
 
-                            <Typography variant="body2" color="text.secondary">
-                                <strong>Recommended age:</strong> {recommendedAge}
-                            </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    <strong>Recommended age:</strong> {recommendedAge}
+                                </Typography>
+                            </Box>
                         </Box>
+
+                        {/* Right side: Share button with modal */}
+                        {showShareButton && songKey && (
+                            <ShareButtonWithModal
+                                songKey={songKey}
+                                songTitle={songTitle}
+                                artistName={artistName}
+                            />
+                        )}
                     </Box>
-
-                    {/* Right side: Share button */}
-                    {songKey && (<Link 
-                        href={`/analysis/${encodeURIComponent(songKey)}`} // your actual route
-                        style={{ textDecoration: 'none' }}
-                    >
-                        <Box 
-                            display="flex" 
-                            flexDirection="column" 
-                            alignItems="center"
-                        >
-                            <IconButton 
-                                aria-label="share"
-                                size="small"
-                            >
-                                <Share sx={{ fontSize: 36 }} />
-                            </IconButton>
-                            <Typography 
-                                variant="caption" 
-                                color="text.secondary"
-                                sx={{ mt: -0.5 }}
-                            >
-                                Share
-                            </Typography>
-                        </Box>
-                    </Link>)}
-                </Box>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </>
     );
 }

@@ -13,8 +13,6 @@ import {
     Alert,
     CircularProgress,
     Divider,
-    Card,
-    CardContent,
     Grid,
     Modal,
     List,
@@ -24,7 +22,6 @@ import {
     ListItemAvatar,
     Avatar,
     Link,
-    IconButton,
 } from '@mui/material';
 import {
     ChildCare,
@@ -32,12 +29,9 @@ import {
     Search,
     Note,
     CheckCircle,
-    Error,
     RecordVoiceOver,
     Close,
-    WarningRounded,
     Security,
-    Share,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import 'altcha';
@@ -67,12 +61,6 @@ interface AnalysisResult {
     recommendedAge: number;
     songKey: string;
     error?: string;
-}
-
-interface AppropriateData {
-    icon: React.JSX.Element;
-    color: string;
-    text: string;
 }
 
 const tip1 = `Paste the complete lyrics for the most accurate analysis*`;
@@ -640,7 +628,10 @@ export default function Home() {
                                     <AppropriatenessCard 
                                         appropriate={result.appropriate}
                                         recommendedAge={result.recommendedAge}
+                                        showShareButton={true}
                                         songKey={result.songKey}
+                                        songTitle={selectedSong?.title || 'Unknown Song'}
+                                        artistName={selectedSong?.artist || 'Unknown Artist'}
                                     />
                                     
                                     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
