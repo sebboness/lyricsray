@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logPrefix } from '../util/log';
-import { logger } from '../logger/logger';
-import { verifyAltchaSolution } from '../util/altcha';
-import { makeKey } from '../util/hash';
-import { AnalysisResult, AnalysisResultStorage } from '../storage/AnalysisResultStorage';
+import { logPrefix } from '../../../util/log';
+import { logger } from '../../../logger/logger';
+import { verifyAltchaSolution } from '../../../util/altcha';
+import { makeKey } from '../../../util/hash';
+import { AnalysisResult, AnalysisResultStorage } from '../../../storage/AnalysisResultStorage';
 import moment from 'moment';
-import { AiClient } from '../services/aiClient';
-import { RateLimiter } from '../services/rateLimiter';
-import { LYRICS_MAX_LENGTH } from '../util/defaults';
-import { getDynamoDbClient } from '../storage/dynamodb';
-import { getClientIp } from '../util/request';
+import { AiClient } from '../../../services/aiClient';
+import { RateLimiter } from '../../../services/rateLimiter';
+import { LYRICS_MAX_LENGTH } from '../../../util/defaults';
+import { getDynamoDbClient } from '../../../storage/dynamodb';
+import { getClientIp } from '../../../util/request';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;

@@ -1,7 +1,7 @@
-import { logger } from '../logger/logger';
-import { LrcLibApi, SongSearchResult as LrcLibSongSearchResult } from '../services/lrclib';
-import { verifyAltchaSolution } from '../util/altcha';
-import { logPrefix } from '../util/log';
+import { logger } from '../../../logger/logger';
+import { LrcLibApi, SongSearchResult as LrcLibSongSearchResult } from '../../../services/lrclib';
+import { verifyAltchaSolution } from '../../../util/altcha';
+import { logPrefix } from '../../../util/log';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface SearchSongRequest {
