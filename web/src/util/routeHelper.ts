@@ -2,9 +2,11 @@
  * Gets the base URL of this app and handles SSR/client.
  * @returns The base URL of this app.
  */
-export const getBaseUrl = () => typeof window !== 'undefined' 
-    ? window.location.origin 
-    : process.env.NEXT_PUBLIC_APP_URL || '';
+export const getBaseUrl = () => {
+    return typeof window !== 'undefined' 
+        ? window.location.origin 
+        : process.env.APP_URL || '';
+}
 
 /**
  * Gets the route path for a song analysis result.
