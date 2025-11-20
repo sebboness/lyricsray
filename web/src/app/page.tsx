@@ -324,11 +324,11 @@ export default function Home() {
 
                 {/* Introduction and Form Card */}
                 <Paper elevation={3} sx={{ p: 4, mb: 4, borderRadius: 3 }}>                        
-                    <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
+                    {/* <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 2 }}>
                         LyricsRay helps you determine whether a song is appropriate for your child 
                         based on its lyrics content. Using advanced AI analysis, we evaluate songs for explicit 
                         language, mature themes, and age-appropriate content.
-                    </Typography>
+                    </Typography> */}
                     
                     <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
                         Choose to search for a song by title and artist, or paste lyrics directly if you already have them. 

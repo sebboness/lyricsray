@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from "next/navigation";
 import {
     Box,
     Container,
@@ -26,9 +27,25 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     const theme = useTheme();
     const { theme: currentTheme, setTheme, systemTheme } = useNextTheme();
     const [mounted, setMounted] = useState(false);
+    const isHomePage = usePathname() === "/";
+    const [showNavbarLogo, setShowNavbarLogo] = useState(!isHomePage);
 
     useEffect(() => {
         setMounted(true);
+    }, []);
+
+    // Listen for header logo visibility changes only on Home page
+    useEffect(() => {
+        const handleHeaderLogoVisibility = (event: any) => {
+            // Show navbar logo when header logo is NOT visible
+            setShowNavbarLogo(!isHomePage || (isHomePage && !event.detail.visible));
+        };
+
+        window.addEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
+        
+        return () => {
+            window.removeEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
+        };
     }, []);
 
     // Determine the effective theme (accounting for system preference)
@@ -101,7 +118,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                     textDecoration: 'none',
                                     fontSize: '1rem',
                                     fontWeight: 500,
-                                    transition: 'color 0.3s ease',
+                                    transition: 'all 0.3s ease',
+                                    opacity: !mounted || showNavbarLogo ? 1 : 0,
+                                    visibility: !mounted || showNavbarLogo ? 'visible' : 'hidden',
+                                    transform: !mounted || showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
                                 }}
                             >
                                 <Box
@@ -116,7 +136,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                         margin: '0 auto',
                                         transition: 'all 0.3s ease-in-out',
                                         '&:hover': {
-                                            filter: isDarkMode  
+                                            filter: !mounted || isDarkMode  
                                                 ? 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.5))' 
                                                 : 'brightness(1.2) contrast(1.2) drop-shadow(0 3px 10px rgba(139, 0, 255, 0.3))',
                                         },
@@ -134,7 +154,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                     transition: 'color 0.3s ease',
                                     '&:hover': {
                                         color: theme.palette.primary.main,
-                                    }
+                                    },
+                                    opacity: !mounted || showNavbarLogo ? 1 : 0,
+                                    visibility: !mounted || showNavbarLogo ? 'visible' : 'hidden',
+                                    transform: !mounted || showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
                                 }}
                             >
                                 About
@@ -142,17 +165,17 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                         </Box>
 
                         <FormControlLabel
-                            title={`Turn on ${isDarkMode  ? 'Light' : 'Dark'} mode`}
+                            title={`Turn on ${ !mounted ||isDarkMode  ? 'Light' : 'Dark'} mode`}
                             control={
                                 <Switch
-                                    checked={isDarkMode }
+                                    checked={!mounted || isDarkMode }
                                     onChange={(e) => handleThemeToggle(e.target.checked)}
                                     sx={{
                                         '& .MuiSwitch-thumb': {
-                                            backgroundColor: isDarkMode ? '#8b00ff' : '#ff00ff',
+                                            backgroundColor: !mounted || isDarkMode ? '#8b00ff' : '#ff00ff',
                                         },
                                         '& .MuiSwitch-track': {
-                                            backgroundColor: isDarkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
+                                            backgroundColor: !mounted || isDarkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
                                         },
                                     }}
                                 />
@@ -164,8 +187,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                         alignItems: 'center',
                                         gap: 1 
                                     }}>
-                                    {isDarkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
-                                    {isDarkMode ? 'Dark' : 'Light'}
+                                    {!mounted || isDarkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
+                                    {!mounted || isDarkMode ? 'Dark' : 'Light'}
                                 </Box>
                             }
                         />
