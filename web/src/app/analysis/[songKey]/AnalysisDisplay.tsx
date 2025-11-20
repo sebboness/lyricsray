@@ -62,6 +62,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
 
                     {/* Appropriateness Card */}
                     <AppropriatenessCard 
+                        age={result.age}
                         appropriate={result.appropriate}
                         recommendedAge={result.recommendedAge}
                         showShareButton={true}
