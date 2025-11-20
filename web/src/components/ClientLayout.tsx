@@ -119,9 +119,9 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                     fontSize: '1rem',
                                     fontWeight: 500,
                                     transition: 'all 0.3s ease',
-                                    opacity: !mounted || showNavbarLogo ? 1 : 0,
-                                    visibility: !mounted || showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: !mounted || showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                    opacity: showNavbarLogo ? 1 : 0,
+                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
+                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
                                 }}
                             >
                                 <Box
@@ -136,7 +136,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                         margin: '0 auto',
                                         transition: 'all 0.3s ease-in-out',
                                         '&:hover': {
-                                            filter: !mounted || isDarkMode  
+                                            filter: isDarkMode  
                                                 ? 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.5))' 
                                                 : 'brightness(1.2) contrast(1.2) drop-shadow(0 3px 10px rgba(139, 0, 255, 0.3))',
                                         },
@@ -155,9 +155,9 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                     '&:hover': {
                                         color: theme.palette.primary.main,
                                     },
-                                    opacity: !mounted || showNavbarLogo ? 1 : 0,
-                                    visibility: !mounted || showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: !mounted || showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                    opacity: showNavbarLogo ? 1 : 0,
+                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
+                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
                                 }}
                             >
                                 About
@@ -168,14 +168,14 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             title={`Turn on ${ !mounted ||isDarkMode  ? 'Light' : 'Dark'} mode`}
                             control={
                                 <Switch
-                                    checked={!mounted || isDarkMode }
+                                    checked={isDarkMode }
                                     onChange={(e) => handleThemeToggle(e.target.checked)}
                                     sx={{
                                         '& .MuiSwitch-thumb': {
-                                            backgroundColor: !mounted || isDarkMode ? '#8b00ff' : '#ff00ff',
+                                            backgroundColor: isDarkMode ? '#8b00ff' : '#ff00ff',
                                         },
                                         '& .MuiSwitch-track': {
-                                            backgroundColor: !mounted || isDarkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
+                                            backgroundColor: isDarkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
                                         },
                                     }}
                                 />
@@ -187,8 +187,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                         alignItems: 'center',
                                         gap: 1 
                                     }}>
-                                    {!mounted || isDarkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
-                                    {!mounted || isDarkMode ? 'Dark' : 'Light'}
+                                    {isDarkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
+                                    {isDarkMode ? 'Dark' : 'Light'}
                                 </Box>
                             }
                         />

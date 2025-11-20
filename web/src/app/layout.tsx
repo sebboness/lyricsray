@@ -42,6 +42,12 @@ export default function RootLayout({
                                 if (theme === 'dark') {
                                     document.documentElement.classList.add('dark');
                                 }
+                                else if (theme === 'system') {
+                                    document.documentElement.classList.add('system');
+                                }
+                                else if (theme === 'light') {
+                                    document.documentElement.classList.add('light');
+                                }
                             })();
                         `,
                     }}

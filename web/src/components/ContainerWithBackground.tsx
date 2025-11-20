@@ -17,13 +17,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
     const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
     const isDarkMode = effectiveTheme === 'dark';
 
-    const [mounted, setMounted] = useState(false);
     const [isHeaderLogoVisible, setIsHeaderLogoVisible] = useState(true);
-    
-    // Set initial window width after mount
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     // Observe header logo visibility
     useEffect(() => {
@@ -104,7 +98,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 maxWidth: '768px',
                                 height: 'auto',
                                 display: 'block',
-                                filter: !mounted || isDarkMode 
+                                filter: isDarkMode 
                                     ? 'drop-shadow(0 4px 20px rgba(255, 0, 255, 0.6))' 
                                     : 'drop-shadow(0 4px 20px rgba(139, 0, 255, 0.4))',
                             }}
@@ -138,12 +132,12 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 py: 1.5,
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                boxShadow: !mounted || isDarkMode
+                                boxShadow: isDarkMode
                                     ? '0 2px 10px rgba(255, 0, 255, 0.5)'
                                     : '0 2px 10px rgba(139, 0, 255, 0.4)',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
-                                    boxShadow: !mounted || isDarkMode
+                                    boxShadow: isDarkMode
                                         ? '0 2px 15px rgba(255, 0, 255, 0.6)'
                                         : '0 2px 15px rgba(139, 0, 255, 0.5)',
                                 },
@@ -162,12 +156,12 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 py: 1.5,
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                boxShadow: !mounted || isDarkMode
+                                boxShadow: isDarkMode
                                     ? '0 2px 10px rgba(255, 0, 255, 0.5)'
                                     : '0 2px 10px rgba(139, 0, 255, 0.4)',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
-                                    boxShadow: !mounted || isDarkMode
+                                    boxShadow: isDarkMode
                                         ? '0 2px 15px rgba(255, 0, 255, 0.6)'
                                         : '0 2px 15px rgba(139, 0, 255, 0.5)',
                                 },
@@ -189,7 +183,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                 >
                     <Box
                         component="img"
-                        src={`/images/logo-transparent-no-text${!mounted || isDarkMode ? "" : "-light"}.png`}
+                        src={`/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}.png`}
                         alt="LyricsRay Logo"
                         sx={{
                             width: '100%',

@@ -4,6 +4,7 @@ import { ShareButtonWithModal } from './ShareButtonWithModal';
 
 interface AppropriatenessCardProps {
     appropriate: number;
+    age: number;
     recommendedAge: number;
     size?: 'small' | 'medium' | 'large';
     songKey?: string;
@@ -56,6 +57,7 @@ const getAppropriateData = (appropriate: number, iconSize: number): AppropriateD
 };
 
 export function AppropriatenessCard({ 
+    age,
     appropriate, 
     recommendedAge, 
     size = 'medium',
@@ -100,6 +102,7 @@ export function AppropriatenessCard({
                         {/* Right side: Share button with modal */}
                         {showShareButton && songKey && (
                             <ShareButtonWithModal
+                                age={age}
                                 songKey={songKey}
                                 songTitle={songTitle}
                                 artistName={artistName}
