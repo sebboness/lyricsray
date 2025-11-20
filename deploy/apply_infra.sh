@@ -10,7 +10,7 @@ if [[ "$1" == "dev" || "$1" == "prod" ]]; then
     [[ "$app_env" == "dev" ]] && app_id="d206abp9pyqklk"
     [[ "$app_env" == "dev" ]] && role_arn="arn:aws:iam::902557199875:role/lyricsray-amplify-role-dev"
     
-    [[ "$app_env" == "prod" ]] && app_id="123"
+    [[ "$app_env" == "prod" ]] && app_id="d3n9lys8fx0z0r"
     [[ "$app_env" == "prod" ]] && role_arn="arn:aws:iam::902557199875:role/lyricsray-amplify-role-prod"
 
     echo "    app_id   = $app_id"
