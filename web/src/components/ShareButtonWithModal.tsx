@@ -19,7 +19,7 @@ import {
     WhatsApp,
     Share,
 } from '@mui/icons-material';
-import { getAnalysisDetailsPath } from '@/util/routeHelper';
+import { getAnalysisDetailsPath } from '../util/routeHelper';
 
 interface ShareButtonWithModalProps  {
     age: number;

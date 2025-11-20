@@ -1,6 +1,6 @@
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
-import { logPrefix } from "@/util/log";
-import { logger } from "@/logger/logger";
+import { logPrefix } from "../util/log";
+import { logger } from "../logger/logger";
 
 const moduleName = "AnalysisResultStorage";
 const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-results`;

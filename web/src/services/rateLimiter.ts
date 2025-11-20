@@ -1,8 +1,8 @@
 import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import moment from 'moment';
-import { getDefaultRateLimitConfig } from '@/config/rateLimitConfig';
-import { logger } from '@/logger/logger';
+import { getDefaultRateLimitConfig } from '../config/rateLimitConfig';
+import { logger } from '../logger/logger';
 
 const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-rate-limits`;
 
