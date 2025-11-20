@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, Container } from '@mui/material';
+import { ArrowDownward, InfoOutlined } from '@mui/icons-material';
+import { Box, Button, Container, Link, Typography } from '@mui/material';
 import { useTheme as useNextTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
@@ -16,72 +17,197 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
     const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
     const isDarkMode = effectiveTheme === 'dark';
 
-    const [scrollY, setScrollY] = useState(0);
-    const [windowW, setWindowW] = useState(1024);
     const [mounted, setMounted] = useState(false);
+    const [isHeaderLogoVisible, setIsHeaderLogoVisible] = useState(true);
     
     // Set initial window width after mount
     useEffect(() => {
         setMounted(true);
-        setWindowW(window.innerWidth);
     }, []);
-    
-    // Handle scroll events
+
+    // Observe header logo visibility
     useEffect(() => {
-        if (!mounted) return;
+        const headerLogo = document.getElementById('header-logo');
+        
+        if (!headerLogo) return;
 
-        const handleScroll = () => setScrollY(window.scrollY);
-        const handleWidth = () => setWindowW(window.innerWidth);
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsHeaderLogoVisible(entry.isIntersecting);
+            },
+            {
+                threshold: 0.1, // Trigger when 10% of logo is visible
+                rootMargin: '-80px 0px 0px 0px', // Account for navbar height
+            }
+        );
 
-        window.addEventListener('resize', handleWidth);
-        window.addEventListener('scroll', handleScroll);
+        observer.observe(headerLogo);
 
-        return () => {
-            window.removeEventListener('resize', handleWidth);
-            window.removeEventListener('scroll', handleScroll)
-        };
+        return () => observer.disconnect();
     }, []);
 
-    // Calculate dynamic values based on scroll position
-    const logoWidth = Math.min(1024, windowW);
-    const logoRatio = logoWidth / 1024;
-    const logoHeight = logoRatio * 880;
-    const maxScroll = logoHeight * 0.8; // Start fading when 80% of logo would be scrolled past
-    const scrollProgress = Math.min(scrollY / maxScroll, 1);
-    const logoOpacity = Math.max(1 - scrollProgress, 0);
+    // Emit visibility state to parent (for navbar)
+    useEffect(() => {
+        // Dispatch custom event that navbar can listen to
+        window.dispatchEvent(
+            new CustomEvent('headerLogoVisibility', { 
+                detail: { visible: isHeaderLogoVisible } 
+            })
+        );
+    }, [isHeaderLogoVisible]);
+
+    // Handle scroll to main content
+    const handleScrollToContent = () => {
+        const element = document.getElementById('top-analyze-song-button');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
 
     return (
-        <>
-            {mounted && (<Box
+        <Container 
+            maxWidth="md" 
+            sx={{ 
+                position: 'relative', 
+                zIndex: 10,
+                pt: 8,
+                pb: 4,
+            }}
+        >
+            {/* Header Section: Logo/Text (Left) + Giant Image (Right) */}
+            <Box
                 sx={{
-                    position: 'fixed',
-                    top: 48,
-                    left: 0,
-                    right: 0,
-                    height: `${logoHeight}px`,
-                    backgroundImage: `url(/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}.png)`,
-                    backgroundPosition: 'top center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: 'contain',
-                    opacity: logoOpacity,
-                    zIndex: 1,
-                    pointerEvents: 'none',
-                    transition: 'opacity 0.1s ease-out',
-                }}
-            />)}
-
-            <Container 
-                maxWidth="md" 
-                sx={{ 
-                    position: 'relative', 
-                    zIndex: 10,
-                    pt: `${logoHeight + 48}px`,
-                    pb: 4,
-                    transition: 'padding-top 0.1s ease-out',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: 4,
+                    mb: 6,
+                    alignItems: 'center',
                 }}
             >
+                {/* Left Side: Logo + Text + Button (50% width) */}
+                <Box
+                    sx={{
+                        width: { xs: '100%', md: '50%' },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 3,
+                    }}
+                >
+                    {/* LyricsRay Logo */}
+                    <Box id="header-logo">
+                        <Box
+                            component="img"
+                            src="/images/logo-textonly-768.png"
+                            alt="LyricsRay"
+                            sx={{
+                                width: '100%',
+                                maxWidth: '768px',
+                                height: 'auto',
+                                display: 'block',
+                                filter: !mounted || isDarkMode 
+                                    ? 'drop-shadow(0 4px 20px rgba(255, 0, 255, 0.6))' 
+                                    : 'drop-shadow(0 4px 20px rgba(139, 0, 255, 0.4))',
+                            }}
+                        />
+                    </Box>
+
+                    {/* Intro Text */}
+                    <Typography 
+                        variant="body1" 
+                        color="text.secondary"
+                        sx={{
+                            fontSize: { xs: '1rem', sm: '1.1rem' },
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        LyricsRay helps you determine whether a song is appropriate for your child 
+                        based on its lyrics content. Using advanced AI analysis, we evaluate songs 
+                        for explicit language, mature themes, and age-appropriate content.
+                    </Typography>
+
+                    {/* Buttons */}
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <Button
+                            id="top-analyze-song-button"
+                            variant="contained"
+                            size="large"
+                            onClick={handleScrollToContent}
+                            endIcon={<ArrowDownward />}
+                            sx={{
+                                px: 4,
+                                py: 1.5,
+                                fontSize: '1.1rem',
+                                fontWeight: 700,
+                                boxShadow: !mounted || isDarkMode
+                                    ? '0 2px 10px rgba(255, 0, 255, 0.5)'
+                                    : '0 2px 10px rgba(139, 0, 255, 0.4)',
+                                '&:hover': {
+                                    transform: 'translateY(-3px)',
+                                    boxShadow: !mounted || isDarkMode
+                                        ? '0 2px 15px rgba(255, 0, 255, 0.6)'
+                                        : '0 2px 15px rgba(139, 0, 255, 0.5)',
+                                },
+                            }}
+                        >
+                            Analyze a Song
+                        </Button>
+                        <Button
+                            component={Link}
+                            href="/about"
+                            variant="contained"
+                            size="large"
+                            endIcon={<InfoOutlined />}
+                            sx={{
+                                px: 4,
+                                py: 1.5,
+                                fontSize: '1.1rem',
+                                fontWeight: 700,
+                                boxShadow: !mounted || isDarkMode
+                                    ? '0 2px 10px rgba(255, 0, 255, 0.5)'
+                                    : '0 2px 10px rgba(139, 0, 255, 0.4)',
+                                '&:hover': {
+                                    transform: 'translateY(-3px)',
+                                    boxShadow: !mounted || isDarkMode
+                                        ? '0 2px 15px rgba(255, 0, 255, 0.6)'
+                                        : '0 2px 15px rgba(139, 0, 255, 0.5)',
+                                },
+                            }}
+                        >
+                            About
+                        </Button>
+                    </Box>
+                </Box>
+
+                {/* Right Side: Giant Logo Image (50% width) */}
+                <Box
+                    sx={{
+                        width: { xs: '0%', md: '50%' },
+                        display: { xs: 'none', md: 'flex' },
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box
+                        component="img"
+                        src={`/images/logo-transparent-no-text${!mounted || isDarkMode ? "" : "-light"}.png`}
+                        alt="LyricsRay Logo"
+                        sx={{
+                            width: '100%',
+                            maxWidth: '768px',
+                            height: 'auto',
+                            display: 'block',
+                            filter: isDarkMode 
+                                ? 'drop-shadow(0 2px 10px rgba(255, 0, 255, 0.5))' 
+                                : 'drop-shadow(0 2px 10px rgba(139, 0, 255, 0.3))',
+                        }}
+                    />
+                </Box>
+            </Box>
+
+            {/* Main Content (from children) */}
+            <Box id="main-content">
                 {children}
-            </Container>
-        </>
+            </Box>
+        </Container>
     );
 }
