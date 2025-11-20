@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { TextBlock } from '@anthropic-ai/sdk/resources';
-import { logger } from "@/logger/logger";
+import { logger } from "../logger/logger";
 
 const moduleName = "AI Client";
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { Api, CallOptions } from '@/services/api'
+import { Api, CallOptions } from '../../services/api'
 
 // Use vi.hoisted for mocks that need to be available before imports
 const mockLogger = vi.hoisted(() => ({
@@ -26,13 +26,13 @@ const mockLog = vi.hoisted(() => ({
 }))
 
 // Mock modules before importing
-vi.mock('@/logger/logger', () => ({
+vi.mock('../logger/logger', () => ({
   logger: mockLogger
 }))
 
-vi.mock('@/util/apiUtils', () => mockApiUtils)
+vi.mock('../util/apiUtils', () => mockApiUtils)
 
-vi.mock('@/util/log', () => mockLog)
+vi.mock('../util/log', () => mockLog)
 
 describe('Api', () => {
     let api: Api

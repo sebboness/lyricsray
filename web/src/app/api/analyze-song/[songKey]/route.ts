@@ -1,8 +1,8 @@
 // app/api/analyze-song/[songKey]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getDynamoDbClient } from '@/storage/dynamodb';
-import { AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
-import { logger } from '@/logger/logger';
+import { getDynamoDbClient } from '../../../../storage/dynamodb';
+import { AnalysisResultStorage } from '../../../../storage/AnalysisResultStorage';
+import { logger } from '../../../../logger/logger';
 
 const moduleName = "get-analysis-result";
 

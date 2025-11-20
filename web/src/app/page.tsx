@@ -33,10 +33,10 @@ import {
     Security,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { LYRICS_MAX_LENGTH } from '@/util/defaults';
-import { AltchaWidget } from '@/components/AltchaWidget';
-import { AppropriatenessCard } from '@/components/AppropriatenessCard';
-import { ContainerWithBackground } from '@/components/ContainerWithBackground';
+import { LYRICS_MAX_LENGTH } from '../util/defaults';
+import { AltchaWidget } from '../components/AltchaWidget';
+import { AppropriatenessCard } from '../components/AppropriatenessCard';
+import { ContainerWithBackground } from '../components/ContainerWithBackground';
 
 interface FormData {
     childAge: string;

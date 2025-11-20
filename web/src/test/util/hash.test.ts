@@ -1,4 +1,4 @@
-import { makeKey } from '@/util/hash';
+import { makeKey } from '../../util/hash';
 import { describe, it, expect } from 'vitest';
 
 describe('makeKey', () => {
