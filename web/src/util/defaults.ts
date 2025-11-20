@@ -1,0 +1,1 @@
+export const LYRICS_MAX_LENGTH = 4500;

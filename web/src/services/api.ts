@@ -1,30 +1,6 @@
+import { logger } from "@/logger/logger";
 import { QueryParams, toFetchUrl } from "@/util/apiUtils";
 import { logPrefix } from "@/util/log";
-
-const baseUrl = "https://lrclib.net/api";
-
-export interface SearchSongRequest {
-    songName: string;
-    artist: string;
-}
-
-export interface SongSearchResult {
-    id: string;
-    albumName?: string;
-    artistName: string;
-    duration: number;
-    instrumental: boolean;
-    name: string;
-    plainLyrics?: string;
-    thumbnail?: string;
-    trackName: string;
-    syncedLyrics?: string;
-}
-
-export interface SearchSongResponse {
-    songs: SongSearchResult[];
-    error?: string;
-}
 
 export type CallOptions = {
     payload?: any;
@@ -61,9 +37,9 @@ export class Api {
             };
 
             // Build API URL
-            const url = toFetchUrl(baseUrl, endpoint, opts.queryParams)
+            const url = toFetchUrl(this.baseUri, endpoint, opts.queryParams)
 
-            let noCache = false;
+            const noCache = false;
 
             // Initialize fetch request
             const reqOps: RequestInit = {
@@ -78,14 +54,14 @@ export class Api {
             // Add payload
             if (opts.payload) {
                 reqOps.body = JSON.stringify(opts.payload);
-                console.debug(`${logPrefix(this.name)} request has payload`);
+                logger.debug(`${logPrefix(this.name)} request has payload`);
             }
 
-            console.info(`${logPrefix(this.name)} preparing request ${method.toUpperCase()} ${url}`);
+            logger.info(`${logPrefix(this.name)} preparing request ${method.toUpperCase()} ${url}`);
 
             fetch(url, reqOps)
                 .then((response) => {
-                    console.debug(`${logPrefix(this.name)} response received`, response)
+                    logger.debug(`${logPrefix(this.name)} response received`);
 
                     response.json()
                         .then((obj: T | undefined) => {
@@ -96,7 +72,7 @@ export class Api {
                         });
                 })
                 .catch((err) => {
-                    console.log(`${logPrefix(this.name)} caught fetch error`, err);
+                    logger.error(`${logPrefix(this.name)} caught fetch error`, err);
                     reject(err);
                 });
         });

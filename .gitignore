@@ -42,6 +42,9 @@ yarn-error.log*
 next-env.d.ts
 
 # misc
-/web/.vscode
 /deploy/terraform/.terraform
 /deploy/terraform/.terraform.lock.hcl
+
+# vscode
+/.vscode
+/web/.vscode

@@ -1,170 +1,231 @@
-// app/api/analyze-song/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-import { Model, TextBlock } from '@anthropic-ai/sdk/resources';
 import { logPrefix } from '@/util/log';
+import { logger } from '@/logger/logger';
+import { verifyAltchaSolution } from '@/util/altcha';
+import { makeKey } from '@/util/hash';
+import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
+import moment from 'moment';
+import { AiClient } from '@/services/aiClient';
+import { RateLimiter } from '@/services/rateLimiter';
+import { LYRICS_MAX_LENGTH } from '@/util/defaults';
+import { getDynamoDbClient } from '@/storage/dynamodb';
+import { getClientIp } from '@/util/request';
 
 interface AnalyzeSongRequest {
+    altchaPayload: string;
     childAge: number;
     lyrics: string;
+    albumName?: string;
+    songName?: string;
+    artistName?: string;
 }
 
 interface AnalyzeSongResponse {
-    appropriate: boolean;
+    appropriate: number;
     analysis: string;
     recommendedAge: string;
+    songKey: string;
     error?: string;
 }
 
-const module = "analyze-song";
+const moduleName = "analyze-song";
 
-async function analyzeLyricsWithClaude(lyrics: string, childAge: number): Promise<{
-    appropriate: boolean;
-    analysis: string;
-    recommendedAge: string;
-}> {
-    const prompt = `You are tasked with analyzing song lyrics for age-appropriateness for a specific child's age. Your goal is to provide a thoughtful assessment considering various factors that may impact the suitability of the content for young listeners.
+const aiClient = new AiClient(process.env.ANTHROPIC_MODEL!, process.env.ANTHROPIC_API_KEY!);
 
-Here are the lyrics you need to analyze:
-
-<lyrics>
-${lyrics}
-</lyrics>
-
-The age of the child in question is: ${childAge} years old
-
-When analyzing the lyrics, consider the following factors:
-
-1. Explicit language or profanity
-2. Sexual content or suggestive themes
-3. Violence or disturbing imagery
-4. Drug/alcohol references
-5. Mature themes (relationships, mental health, etc.)
-6. Overall message and values conveyed
-
-Instructions for analysis:
-1. Carefully read through the entire set of lyrics.
-2. Identify any content related to the factors listed above.
-3. Consider the context and how the themes are presented.
-4. Assess the overall appropriateness for a ${childAge}-year-old child.
-5. Determine a minimum recommended age for the song.
-
-Provide your analysis in the following JSON format:
-
-{
-	"appropriate": boolean,
-	"analysis": "Brief explanation of your assessment, including specific concerns if any",
-	"recommendedAge": "Minimum recommended age (e.g., '13+', 'All ages', '16+')"
-}
-
-Remember to tailor your assessment to the specific age of ${childAge} years old. Consider what themes and content are generally appropriate for children of this age, and err on the side of caution if you're unsure about certain elements.`;
-
-    try {
-        const client = new Anthropic({
-            apiKey: process.env.ANTHROPIC_API_KEY!,
-        });
-
-        const response = await client.messages.create({
-            max_tokens: 2048,
-            messages: [
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            model: process.env.ANTHROPIC_MODEL as Model,
-        })
-        .catch(async (err) => {
-            console.log(`${logPrefix(module)} Claude fetch threw error`, err);
-            throw err;
-        });
-
-        console.debug(`${logPrefix(module)} Claude response`, response);
-
-        if (!response) {
-            throw new Error("Claude API error: Nothing returned");
-        }
-
-        if (!response.content || response.content.length === 0)
-            throw new Error("Claude API error: No message response returned");
-
-        const data = response.content[0];
-        let responseText = data.type === "text"
-            ? (data as TextBlock).text
-            : JSON.stringify({
-                appropriate: false,
-                analysis: "Unable to parse analysis response. Please try again.",
-                recommendedAge: "Unknown"
-            });
-
-        const braceOpenIdx = responseText.indexOf('{');
-        const braceCloseIdx = responseText.lastIndexOf('}');
-
-        if (braceOpenIdx < 0 || braceCloseIdx < 0)
-            throw new Error("Analysis response is not a valid JSON");
-
-        responseText = responseText.substring(braceOpenIdx, braceCloseIdx + 1);
-        
-        // Parse JSON response from Claude
-        try {
-            const analysis = JSON.parse(responseText);
-            return {
-                appropriate: analysis.appropriate,
-                analysis: analysis.analysis,
-                recommendedAge: analysis.recommendedAge
-            };
-        } catch (parseError) {
-            // Fallback if JSON parsing fails
-            return {
-                appropriate: false,
-                analysis: "Unable to parse analysis response. Please try again.",
-                recommendedAge: "Unknown"
-            };
-        }
-
-    } catch (error) {
-        console.error('Error calling Claude API:', error);
-        throw new Error('Failed to analyze lyrics with Claude AI');
-    }
+/**
+ * Cleans up lyrics by trimming the string, removing any html elements, and removing any "[" and "]" groups.
+ * @param lyrics The lyrics to clean
+ * @returns Cleaned up lyrics string
+ */
+const cleanUpLyrics = (lyrics?: string): string => {
+    if (!lyrics)
+        return "";
+    
+    return lyrics.trim().replace(/(<[^>]*>)|(\[[^\]]*\])/g, '');
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const body: AnalyzeSongRequest = await request.json();
-        const { childAge, lyrics } = body;
 
-        if (!childAge || childAge < 2 || childAge > 21) {
+        const ddbClient = getDynamoDbClient();
+        const analysisResultDb = new AnalysisResultStorage(ddbClient);
+        const rateLimiter = new RateLimiter(ddbClient);
+
+        const body: AnalyzeSongRequest = await request.json();
+
+        const {
+            albumName,
+            altchaPayload,
+            childAge,
+            songName,
+            artistName
+        } = body;
+
+        let { lyrics } = body;
+
+        const age = parseInt(childAge + "");
+
+        logger.info(`${logPrefix(moduleName)} altchaPayload`, altchaPayload);
+
+        if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
             return NextResponse.json(
-                { error: 'Child age must be between 2 and 21' },
+                { error: 'Human verification failed' },
                 { status: 400 }
             );
         }
 
-        let lyricsToAnalyze: string;
+        lyrics = cleanUpLyrics(lyrics);
 
-        if (!lyrics.trim()) {
+        if (!lyrics) {
             return NextResponse.json(
                 { error: 'Lyrics are required' },
                 { status: 400 }
             );
         }
 
-        lyricsToAnalyze = lyrics.trim();
+        if (!lyrics && lyrics.length > LYRICS_MAX_LENGTH) {
+            lyrics = lyrics.substring(0, LYRICS_MAX_LENGTH);
+        }
 
-        // Analyze lyrics with Claude
-        const analysis = await analyzeLyricsWithClaude(lyricsToAnalyze, childAge);
+        if (!age || age < 2 || age > 21) {
+            return NextResponse.json(
+                { error: 'Child age must be between 2 and 21' },
+                { status: 400 }
+            );
+        }
 
-        const response: AnalyzeSongResponse = {
-            appropriate: analysis.appropriate,
-            analysis: analysis.analysis,
-            recommendedAge: analysis.recommendedAge
-        };
+        // Try to get analysis from storage if it was previously analyzed
+        const songKeyPrefix = `${age}|${artistName}|${songName}`;
+        const songKey = makeKey(lyrics, songKeyPrefix);
+        let song: AnalysisResult | null = null;
 
-        return NextResponse.json(response);
+        try {
+            song = await analysisResultDb.getAnalysisResult(age, songKey);
+
+            const message = !!song
+                ? "Retrieved existing analysis result from storage"
+                : "Analysis result not found in storage";
+
+            logger.info(message, {
+                moduleName,
+                age,
+                artistName,
+                songName,
+                songKey,
+            });
+        }
+        catch (err) {
+            logger.error("Error ocurred while retrieving analysis result from storage", {
+                moduleName,
+                age,
+                artistName,
+                songName,
+                err,
+            })
+        }
+
+        if (song != null) {
+            const response: AnalyzeSongResponse = {
+                appropriate: song.appropriate,
+                analysis: song.analysis,
+                recommendedAge: song.recommendedAge.toString(),
+                songKey,
+            };
+
+            return NextResponse.json(response);
+        }
+        else {
+            const clientIp = getClientIp(request);
+            const rateLimitResult = await rateLimiter.checkAndIncrementRateLimit(clientIp);
+
+            if (!rateLimitResult.allowed) {
+                logger.warn(`Rate limit exceeded for IP ${clientIp}`, {
+                    moduleName,
+                    clientIp,
+                    reason: rateLimitResult.reason,
+                    retryAfter: rateLimitResult.retryAfter
+                });
+                
+                return NextResponse.json(
+                    { 
+                        error: rateLimitResult.reason || 'Rate limit exceeded',
+                        retryAfter: rateLimitResult.retryAfter
+                    },
+                    { 
+                        status: 429,
+                        headers: {
+                            'Retry-After': rateLimitResult.retryAfter?.toString() || '3600',
+                            'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
+                            'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+                        }
+                    }
+                );
+            }
+
+            // Get an estimate prior to analyzing with AI
+            const prompt = aiClient.getLyricsPrompt(lyrics, age);
+            const estimateTokensIn = await aiClient.getTokenInputEstimate(prompt);
+
+            logger.info("Estimated token input for prompt", { moduleName, estimateTokensIn });
+
+            // Analyze lyrics with AI
+            const analysis = await aiClient.analyzeLyrics(lyrics, age);
+
+            const analysisResult: AnalysisResult = {
+                age,
+                appropriate: analysis.appropriate,
+                analysis: analysis.analysis,
+                recommendedAge: analysis.recommendedAge,
+                date: moment.utc().toISOString(),
+                songKey,
+                song: {
+                    albumName,
+                    artistName,
+                    lyrics,
+                    songName,
+                    thumbnailUrl: undefined,
+                    yearReleased: undefined,
+                }
+            }
+
+            // Try saving to database
+            try {
+                await analysisResultDb.saveAnalysisResult(analysisResult);
+
+                logger.info("Analysis result saved to storage", {
+                    moduleName,
+                    age,
+                    artistName,
+                    songName,
+                })
+            }
+            catch (err) {
+                logger.error("Failed to save analysis result to storage", {
+                    moduleName,
+                    age,
+                    artistName,
+                    songName,
+                    err,
+                })
+            }
+
+            const response: AnalyzeSongResponse = {
+                appropriate: analysis.appropriate,
+                analysis: analysis.analysis,
+                recommendedAge: analysis.recommendedAge.toString(),
+                songKey,
+            };
+
+            return NextResponse.json(response, {
+                headers: {
+                    'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
+                    'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+                }
+            });
+        }
 
     } catch (error) {
-        console.error(`${logPrefix(module)} Error analyzing song:`, error);
+        logger.error(`${logPrefix(moduleName)} Error analyzing song:`, error);
         return NextResponse.json(
             { 
                 error: 'Internal server error. Please try again.',

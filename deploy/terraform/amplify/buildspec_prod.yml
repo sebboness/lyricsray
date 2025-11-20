@@ -1,0 +1,35 @@
+version: 1
+applications:
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - 'pwd'
+            - 'nvm install 20.19.4'
+            - 'nvm use 20.19.4'
+            - 'npm cache clean --force'
+            - 'npm install'
+            - 'echo $ENV'
+        build:
+          commands:
+            - ' >> .env'
+            - 'env | grep -e ANTHROPIC_ >> .env'
+            - 'env | grep -e ALTCHA_ >> .env'
+            - 'env | grep -e APP_ >> .env'
+            - 'env | grep -e AWS_REGION >> .env'
+            - 'env | grep -e ENV >> .env'
+            - 'env | grep -e NEXT_PUBLIC_ >> .env'
+            - 'cat .env'
+            - 'export NODE_ENV=production'
+            - 'export NEXT_TELEMETRY_DISABLED=1'
+            - 'rm -rf .next'
+            - 'npm run build'
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .next/cache/**/*
+          - .npm/**/*
+    appRoot: web
