@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
 import { logger } from '@/logger/logger';
+import { getAnalysisDetailsPath, getBaseUrl } from '@/util/routeHelper';
 
 interface PageProps {
     params: Promise<{
@@ -62,11 +63,28 @@ export async function generateMetadata({ params }: PageProps) {
 
     const songTitle = result.song?.songName || 'Unknown Song';
     const artist = result.song?.artistName || 'Unknown Artist';
+    const title =  `LyricsRay Analysis for ${songTitle} by ${artist}`;
+    const description = `Age-appropriate lyrics analysis for "${songTitle}" by ${artist}. `
+            + `Recommended age: ${result.recommendedAge}. `
+            + `Analysis: ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`;
 
     return {
-        title: `${songTitle} by ${artist} - Analysis | LyricsRay`,
-        description: `Age-appropriate lyrics analysis for "${songTitle}" by ${artist}. `
-            + `Recommended age: ${result.recommendedAge}. `
-            + `Analysis ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`,
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: getAnalysisDetailsPath(songKey),
+            siteName: "LyricsRay - Is this song safe for my child?",
+            type: 'website',
+            images: [
+                {
+                    url: `${getBaseUrl()}/images/logo-transparent-no-text.png`,
+                    width: 1024,
+                    height: 880,
+                    alt: "LyricsRay Logo"
+                }
+            ]
+        }
     };
 }

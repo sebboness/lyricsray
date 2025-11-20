@@ -19,6 +19,7 @@ import {
     WhatsApp,
     Share,
 } from '@mui/icons-material';
+import { getAnalysisDetailsPath } from '@/util/routeHelper';
 
 interface ShareButtonWithModalProps  {
     age: number;
@@ -36,11 +37,7 @@ export function ShareButtonWithModal({
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     
-    // Construct the full URL
-    const baseUrl = typeof window !== 'undefined' 
-        ? window.location.origin 
-        : process.env.NEXT_PUBLIC_BASE_URL || '';
-    const shareUrl = `${baseUrl}/analysis/${encodeURIComponent(songKey)}`;
+    const shareUrl = getAnalysisDetailsPath(songKey);
     
     // Share text for social media
     const shareText = `Check out this lyrics analysis for "${songTitle}" by ${artistName} and if it's age-appropriate for a ${age} year-old on LyricsRay!`;
@@ -201,8 +198,9 @@ export function ShareButtonWithModal({
                                             width: 56,
                                             height: 56,
                                             bgcolor: platform.color,
-                                            color: '#dedede',
+                                            color: '#e4e4e4',
                                             '&:hover': {
+                                                bgcolor: platform.color,
                                                 color: '#fff',
                                             },
                                             transition: 'all 0.2s'
