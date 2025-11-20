@@ -19,6 +19,13 @@
       }
     ],
     "paths": {
+      "@/components/*": ["./src/components/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/logger/*": ["./src/logger/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/storage/*": ["./src/storage/*"],
+      "@/theme/*": ["./src/theme/*"],
+      "@/util/*": ["./src/util/*"],
       "@/*": ["./src/*"]
     }
   },
