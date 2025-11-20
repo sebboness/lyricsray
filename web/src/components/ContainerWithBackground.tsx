@@ -98,9 +98,6 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 maxWidth: '768px',
                                 height: 'auto',
                                 display: 'block',
-                                filter: isDarkMode 
-                                    ? 'drop-shadow(0 4px 20px rgba(255, 0, 255, 0.6))' 
-                                    : 'drop-shadow(0 4px 20px rgba(139, 0, 255, 0.4))',
                             }}
                         />
                     </Box>
@@ -190,9 +187,6 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                             maxWidth: '768px',
                             height: 'auto',
                             display: 'block',
-                            filter: isDarkMode 
-                                ? 'drop-shadow(0 2px 10px rgba(255, 0, 255, 0.5))' 
-                                : 'drop-shadow(0 2px 10px rgba(139, 0, 255, 0.3))',
                         }}
                     />
                 </Box>

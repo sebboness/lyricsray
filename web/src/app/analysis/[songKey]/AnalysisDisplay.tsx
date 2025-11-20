@@ -47,14 +47,14 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     {result.song && (
                         <Box mb={4}>
                             <Typography variant="h5" fontWeight="600" mb={2}>
-                                {result.song.songName || 'Unknown Song'}
+                                {result.song.songName || 'Unknown song'}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                                <strong>Artist:</strong> {result.song.artistName || 'Unknown Artist'}
+                                <strong>Artist:</strong> {result.song.artistName || 'Unknown artist'}
                             </Typography>
                             {result.song.albumName && (
                                 <Typography variant="body1" color="text.secondary">
-                                    <strong>Album:</strong> {result.song.albumName}
+                                    <strong>Album:</strong> {result.song.albumName || 'Unknown album"'}
                                 </Typography>
                             )}
                         </Box>
@@ -76,8 +76,13 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         <Typography variant="h6" fontWeight="600" mb={2}>
                             Detailed Analysis
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 2, whiteSpace: 'pre-line' }}>
                             {result.analysis}
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                            <Link href="/about">
+                                <strong>Read more about this analysis and how we do it &raquo;</strong>
+                            </Link>
                         </Typography>
                     </Box>
 
@@ -110,11 +115,9 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
 
                     {/* Disclaimer */}
                     <Typography 
-                        variant="body1" 
+                        variant="h6" 
                         sx={{ 
                             fontWeight: 600,
-                            color: 'text.secondary',
-                            fontStyle: 'italic',
                         }}
                     >
                         Remember: You know your child best. Use LyricsRay as a tool to inform your 
