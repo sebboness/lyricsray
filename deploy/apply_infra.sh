@@ -8,9 +8,11 @@ if [[ "$1" == "dev" || "$1" == "prod" ]]; then
     echo "    app_env  = $app_env"
 
     [[ "$app_env" == "dev" ]] && app_id="d206abp9pyqklk"
+    [[ "$app_env" == "dev" ]] && branch_name="dev"
     [[ "$app_env" == "dev" ]] && role_arn="arn:aws:iam::902557199875:role/lyricsray-amplify-role-dev"
     
-    [[ "$app_env" == "prod" ]] && app_id="d3n9lys8fx0z0r"
+    [[ "$app_env" == "prod" ]] && app_id="d23czrigl0jri9"
+    [[ "$app_env" == "prod" ]] && branch_name="main"
     [[ "$app_env" == "prod" ]] && role_arn="arn:aws:iam::902557199875:role/lyricsray-amplify-role-prod"
 
     echo "    app_id   = $app_id"
@@ -24,7 +26,7 @@ if [[ "$1" == "dev" || "$1" == "prod" ]]; then
 
     aws amplify update-branch \
         --app-id $app_id \
-        --branch-name $app_env \
+        --branch-name $branch_name \
         --compute-role-arn $role_arn
 else
     echo "env argument must be dev or prod (i.e. './apply_infra.sh dev')."

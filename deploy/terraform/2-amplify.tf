@@ -160,7 +160,6 @@ resource "aws_amplify_branch" "main" {
   app_id      = aws_amplify_app.lyricsray.id
   branch_name = local.env == "prod" ? "main" : "dev"
   
-  framework = "Next.js - SSR"
   stage     = local.env == "prod" ? "PRODUCTION" : "DEVELOPMENT"
 
   environment_variables = merge(
