@@ -14,11 +14,7 @@ import {
     ListItemText,
     Link,
 } from '@mui/material';
-import {
-    Shield,
-    CheckCircle,
-    Info,
-} from '@mui/icons-material';
+import { Shield, CheckCircle } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
 export default function PrivacyTerms() {
