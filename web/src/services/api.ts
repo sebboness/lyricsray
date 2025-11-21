@@ -1,6 +1,6 @@
-import { logger } from "../logger/logger";
-import { QueryParams, toFetchUrl } from "../util/apiUtils";
-import { logPrefix } from "../util/log";
+import { logger } from "@/logger/logger";
+import { QueryParams, toFetchUrl } from "@/util/apiUtils";
+import { logPrefix } from "@/util/log";
 
 export type CallOptions = {
     payload?: any;

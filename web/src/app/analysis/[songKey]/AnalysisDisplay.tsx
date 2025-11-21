@@ -10,8 +10,8 @@ import {
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import Link from 'next/link';
-import { AnalysisResult } from '../../../storage/AnalysisResultStorage';
-import { AppropriatenessCard } from '../../../components/AppropriatenessCard';
+import { AnalysisResult } from '@/storage/AnalysisResultStorage';
+import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 
 interface AnalysisDisplayProps {
     result: AnalysisResult;

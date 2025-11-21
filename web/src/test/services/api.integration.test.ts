@@ -1,6 +1,6 @@
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { Api } from '../../services/api'
+import { Api } from '@/services/api'
 
 // Integration tests (these would run against a real server in a test environment)
 describe('Api Integration Tests', () => {

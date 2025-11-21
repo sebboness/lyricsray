@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
-import { AnalysisResult } from '../../../storage/AnalysisResultStorage';
+import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
-import { logger } from '../../../logger/logger';
-import { getAnalysisDetailsPath, getBaseUrl } from '../../../util/routeHelper';
+import { logger } from '@/logger/logger';
+import { getAnalysisDetailsPath, getBaseUrl } from '@/util/routeHelper';
 
 interface PageProps {
     params: Promise<{

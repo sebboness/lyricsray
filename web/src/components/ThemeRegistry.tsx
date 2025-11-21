@@ -3,7 +3,7 @@
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, useTheme as useNextTheme } from 'next-themes';
-import { getTheme } from '../theme/theme';
+import { getTheme } from '@/theme/theme';
 import { useEffect, useState } from 'react';
 
 interface ThemeRegistryProps {
