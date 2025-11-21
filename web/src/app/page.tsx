@@ -498,6 +498,11 @@ export default function Home() {
                                             onstatechange={handleAltchaStateChange}
                                         />
                                     )}
+                                    
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
+                                        By submitting the search request, you agree to 
+                                        our <Link href="/privacy-and-terms">Privacy Policy & Terms of Service</Link>.
+                                    </Typography>
                                 </Box>
 
                                 {/* Submit Button */}
