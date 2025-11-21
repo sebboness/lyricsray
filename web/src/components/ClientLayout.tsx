@@ -162,6 +162,25 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             >
                                 About
                             </Link>
+
+                            <Link 
+                                href="/privacy-and-terms" 
+                                sx={{ 
+                                    color: theme.palette.text.primary,
+                                    textDecoration: 'none',
+                                    fontSize: '1rem',
+                                    fontWeight: 500,
+                                    transition: 'color 0.3s ease',
+                                    '&:hover': {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    opacity: showNavbarLogo ? 1 : 0,
+                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
+                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                }}
+                            >
+                                Privacy &amp; Terms
+                            </Link>
                         </Box>
 
                         <FormControlLabel
@@ -235,6 +254,20 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             }}
                         >
                             About
+                        </Link>
+                        <Link 
+                            href="/privacy-and-terms"
+                            sx={{ 
+                                color: theme.palette.text.secondary,
+                                textDecoration: 'none',
+                                fontSize: '0.9rem',
+                                transition: 'color 0.3s ease',
+                                '&:hover': {
+                                    color: theme.palette.primary.main,
+                                }
+                            }}
+                        >
+                            Privacy &amp; Terms
                         </Link>
                         <Typography variant="body2" color="text.secondary">•</Typography>
                         <Link 
