@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { logger } from '../../../../logger/logger';
-import { createAltchaChallenge } from '../../../../util/altcha';
-import { logPrefix } from '../../../../util/log';
+import { logger } from '@/logger/logger';
+import { createAltchaChallenge } from '@/util/altcha';
+import { logPrefix } from '@/util/log';
 
 const moduleName = "altcha/challenge";
 
