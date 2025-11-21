@@ -8,7 +8,7 @@ applications:
             - 'nvm install 20.19.4'
             - 'nvm use 20.19.4'
             - 'npm cache clean --force'
-            - 'npm install'
+            - 'npm install --include=dev'
             - 'echo $ENV'
         build:
           commands:

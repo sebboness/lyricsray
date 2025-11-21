@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { TransactionCanceledException } from '@aws-sdk/client-dynamodb';
 import moment from 'moment';
-import { RateLimiter } from '../../services/rateLimiter';
+import { RateLimiter } from '@/services/rateLimiter';
 
 // Mock dependencies
-vi.mock('../logger/logger', () => ({
+vi.mock('@/logger/logger', () => ({
     logger: {
         error: vi.fn(),
         warn: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('../logger/logger', () => ({
     },
 }));
 
-vi.mock('../config/rateLimitConfig', () => ({
+vi.mock('@/config/rateLimitConfig', () => ({
     getDefaultRateLimitConfig: vi.fn(() => ({
         hourlyLimit: 10,
         dailyLimit: 100,
