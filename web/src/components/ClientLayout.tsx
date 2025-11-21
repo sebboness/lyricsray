@@ -179,7 +179,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                     transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
                                 }}
                             >
-                                Privacy &amp; Terms
+                                Privacy
                             </Link>
                         </Box>
 
