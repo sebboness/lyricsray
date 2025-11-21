@@ -145,7 +145,7 @@ export default function PrivacyTerms() {
                     </List>
 
                     <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
-                        What we don't collect
+                        What we don&apos;t collect
                     </Typography>
                     <List>
                         <ListItem>
@@ -302,7 +302,7 @@ export default function PrivacyTerms() {
                     <Typography variant="body1">
                         We reserve the right to modify these terms and our privacy policy at any time. 
                         Continued use of LyricsRay after changes constitutes acceptance of updated terms. 
-                        Material changes will be reflected in the "Last updated" date at the top of this page.
+                        Material changes will be reflected in the &quot;Last updated&quot; date at the top of this page.
                     </Typography>
                 </Paper>
 
