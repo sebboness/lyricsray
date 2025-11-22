@@ -149,7 +149,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 sx={{ 
                                     color: theme.palette.text.primary,
                                     textDecoration: 'none',
-                                    fontSize: '1rem',
+                                    fontSize: { xs: '0.85rem', sm: '1rem' },
                                     fontWeight: 500,
                                     transition: 'color 0.3s ease',
                                     '&:hover': {
@@ -168,7 +168,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 sx={{ 
                                     color: theme.palette.text.primary,
                                     textDecoration: 'none',
-                                    fontSize: '1rem',
+                                    fontSize: { xs: '0.85rem', sm: '1rem' },
                                     fontWeight: 500,
                                     transition: 'color 0.3s ease',
                                     '&:hover': {
@@ -203,6 +203,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 <Box sx={{
                                         color: theme.palette.text.primary,
                                         display: 'flex',
+                                        fontSize: { xs: '0.85rem', sm: '1rem' },
                                         alignItems: 'center',
                                         gap: 1 
                                     }}>

@@ -25,6 +25,10 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+            <head>
+                <link rel="preload" href="/images/logo-transparent-no-text-512.png" as="image" type="image/png" fetchPriority="high" />
+                <link rel="preload" href="/images/logo-transparent-no-text-light-512.png" as="image" type="image/png" fetchPriority="high" />
+            </head>
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
