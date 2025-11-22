@@ -180,7 +180,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                 >
                     <Box
                         component="img"
-                        src={`/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}.png`}
+                        src={`/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}-512.png`}
                         alt="LyricsRay Logo"
                         sx={{
                             width: '100%',

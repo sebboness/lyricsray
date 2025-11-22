@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: PageProps) {
             type: 'website',
             images: [
                 {
-                    url: `${getBaseUrl()}/images/logo-transparent-no-text.png`,
+                    url: `${getBaseUrl()}/images/logo-transparent-no-text-512.png`,
                     width: 1024,
                     height: 880,
                     alt: "LyricsRay Logo"
