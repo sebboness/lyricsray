@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
 import { logger } from '@/logger/logger';
-import { getAnalysisDetailsPath, getBaseUrl } from '@/util/routeHelper';
+import { getAnalysisDetailsPath } from '@/util/routeHelper';
 
 interface PageProps {
     params: Promise<{
@@ -77,14 +77,6 @@ export async function generateMetadata({ params }: PageProps) {
             url: getAnalysisDetailsPath(songKey),
             siteName: "LyricsRay - Is this song safe for my child?",
             type: 'website',
-            images: [
-                {
-                    url: `${getBaseUrl()}/images/logo-transparent-no-text-512.png`,
-                    width: 1024,
-                    height: 880,
-                    alt: "LyricsRay Logo"
-                }
-            ]
         }
     };
 }
