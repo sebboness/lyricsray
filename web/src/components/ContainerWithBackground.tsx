@@ -184,7 +184,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                         alt="LyricsRay Logo"
                         sx={{
                             width: '100%',
-                            maxWidth: '768px',
+                            maxWidth: '512px',
                             height: 'auto',
                             display: 'block',
                         }}

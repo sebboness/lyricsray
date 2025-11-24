@@ -37,6 +37,7 @@ import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
+import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 
 interface FormData {
     childAge: string;
@@ -321,6 +322,11 @@ export default function Home() {
         <Box sx={{ position: 'relative', minHeight: '100vh' }}>
             {/* Main Content */}
             <ContainerWithBackground>
+
+                <LoadingAnalysisModal
+                    open={isSearching || isLoading}
+                    type={isSearching ? 'searching' : 'analyzing'}
+                />
 
                 {/* Introduction and Form Card */}
                 <Paper elevation={3} sx={{ p: 4, mb: 4, borderRadius: 3 }}>
