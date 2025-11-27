@@ -71,6 +71,13 @@ export const getTheme = (darkMode: boolean) => createTheme({
         },
     },
     components: {
+        MuiBackdrop: {
+            styleOverrides: {
+                root: {
+                    backdropFilter: 'blur(10px)',
+                }
+            }
+        },
         MuiPaper: {
             styleOverrides: {
                 root: {
