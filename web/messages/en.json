@@ -1,0 +1,33 @@
+{
+    "p": {
+        "home": {
+            "intro": "LyricsRay helps you determine whether a song is appropriate for your child based on its lyrics content. Using advanced AI analysis, we evaluate songs for explicit language, mature themes, and age-appropriate content."
+        },
+        "searchForm": {
+            "intro": "Choose to search for a song by title and artist, or paste lyrics directly if you already have them. We will analyze the content and provide you with a detailed assessment and age recommendation.",
+            "howTo": "Search the database or paste any lyrics directly for instant analysis.",
+            "howToWays": "Two ways to analyze",
+            "humanVerification": "Complete this quick verification to prevent automated abuse of our AI analysis service.",
+            "submitAgreeToTerms": "By submitting the search request, you agree to our",
+            "submitTermsLinkLabel": "Privacy Policy & Terms of Service"
+        }
+    },
+    "labels": {
+        "about": "About",
+        "analyzeSong": "Analyze a song",
+        "searchFormSongTab": "Search by song & artist",
+        "searchFormLyricsTab": "Search lyrics directly",
+        "searchFormLyricsPlaceholder": "Song lyrics",
+        "searchAndAnalyze": "Search & analyze"
+    },
+    "notes": {
+        "searchSongTip": "Tip: You may submit lyrics in any language!",
+        "searchLyricsTip1": "Tip #1: Paste the complete lyrics for the most accurate analysis*",
+        "searchLyricsTip1Note": "Keep in mind that the maximum allowed length of lyrics to analyze is {MAX_CHAR_COUNT} characters. If your lyrics are longer, consider submitting only part of the lyrics.",
+        "searchLyricsTip2": "Tip #2: You may submit lyrics in any language!"
+    },
+    "titles": {
+        "analyzeSong": "Analyze a song",
+        "humanVerification": "Human Verification"
+    }
+}
