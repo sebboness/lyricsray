@@ -1,4 +1,3 @@
-import { logger } from '@/logger/logger';
 import { getRequestConfig } from 'next-intl/server';
 
 export const SupportedLocales = ['en']; //, 'es', 'fr', 'de', 'pt'];
@@ -8,9 +7,11 @@ export default getRequestConfig(async ({ requestLocale }) => {
     let locale = (await requestLocale) || "en";
     
     if (!SupportedLocales.includes(locale as any)) {
-        logger.info(`Requested locale ${locale} not found. Setting to default (en)`, { locale });
+        console.info(`Requested locale ${locale} not found. Setting to default (en)`, { locale });
         locale = "en";
     }
+
+    console.info(`getRequestConfig for locale ${locale}`);
     
     return {
         locale,

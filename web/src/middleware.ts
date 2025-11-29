@@ -20,6 +20,8 @@ export default function middleware(request: NextRequest) {
             path: '/'
         });
     }
+
+    console.info(`middleware got locale ${locale}`);
     
     return response;
 }

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { ClientLayout } from "@/components/ClientLayout";
 import { ThemeRegistry } from "@/components/ThemeRegistry";
 import { getBaseUrl } from "@/util/routeHelper";
+
+// Farsi is RTL (right-to-left) written language
+const rtlLocales = ['fa'];
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -37,13 +42,19 @@ export const metadata: Metadata = {
     }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
+    params,
     }: Readonly<{
     children: React.ReactNode;
+    params: Promise<{locale: string}>;
 }>) {
+    const { locale } = await params;
+    const messages = await getMessages();
+    const direction = rtlLocales.includes(locale) ? 'rtl' : 'ltr';
+
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang={locale} dir={direction} suppressHydrationWarning>
             <head>
                 <link rel="preload" href="/images/logo-transparent-no-text-512.png" as="image" type="image/png" fetchPriority="high" />
                 <link rel="preload" href="/images/logo-transparent-no-text-light-512.png" as="image" type="image/png" fetchPriority="high" />
@@ -58,9 +69,11 @@ export default function RootLayout({
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
                 <ThemeRegistry>
-                    <ClientLayout>
-                        {children}
-                    </ClientLayout>
+                    <NextIntlClientProvider messages={messages}>
+                        <ClientLayout>
+                            {children}
+                        </ClientLayout>
+                    </NextIntlClientProvider>
                 </ThemeRegistry>
 
                 <script
