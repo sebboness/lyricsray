@@ -3,16 +3,19 @@ import { NextRequest } from 'next/server';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
+const { mockVerify, mockSearchLyrics } = vi.hoisted(() => ({
+    mockVerify: vi.fn(),
+    mockSearchLyrics: vi.fn(),
+}));
+
 vi.mock('@/logger/logger', () => ({
     logger: { info: vi.fn(), error: vi.fn() },
 }));
 
-const mockVerify = vi.fn();
 vi.mock('@/util/altcha', () => ({
     verifyAltchaSolution: mockVerify,
 }));
 
-const mockSearchLyrics = vi.fn();
 vi.mock('@/services/lrclib', () => ({
     LrcLibApi: {
         getInstance: () => ({ searchLyrics: mockSearchLyrics }),
@@ -20,6 +23,7 @@ vi.mock('@/services/lrclib', () => ({
 }));
 
 import { POST } from '@/app/api/search-song/route';
+import { SongSearchResult } from '@/services/lrclib';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,14 +36,20 @@ function makeRequest(body: object): NextRequest {
 }
 
 function makeSong(overrides: {
-    id?: number;
+    id?: string;
     trackName?: string;
     artistName?: string;
     albumName?: string;
-    plainLyrics?: string | null;
-} = {}) {
+    plainLyrics?: string;
+    duration?: number;
+    instrumental?: boolean;
+    name?: string;
+} = {}): SongSearchResult {
     return {
-        id: 1,
+        id: "1",
+        duration: 100,
+        instrumental: false,
+        name: 'Test Song',
         trackName: 'Test Song',
         artistName: 'Test Artist',
         albumName: 'Test Album',
@@ -95,9 +105,9 @@ describe('POST /api/search-song', () => {
     describe('filtering', () => {
         it('excludes songs without plainLyrics', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, plainLyrics: 'has lyrics' }),
-                makeSong({ id: 2, plainLyrics: null }),
-                makeSong({ id: 3, plainLyrics: '' }),
+                makeSong({ id: "1", plainLyrics: 'has lyrics' }),
+                makeSong({ id: "2", plainLyrics: undefined }),
+                makeSong({ id: "3", plainLyrics: '' }),
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Test Song' }));
             const body = await res.json();
@@ -107,24 +117,24 @@ describe('POST /api/search-song', () => {
 
         it('deduplicates songs with the same artist and title', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, trackName: 'Song A', artistName: 'Artist X' }),
-                makeSong({ id: 2, trackName: 'Song A', artistName: 'Artist X' }),
-                makeSong({ id: 3, trackName: 'Song A', artistName: 'Artist Y' }),
+                makeSong({ id: "1", trackName: 'Song A', artistName: 'Artist X' }),
+                makeSong({ id: "2", trackName: 'Song A', artistName: 'Artist X' }),
+                makeSong({ id: "3", trackName: 'Song A', artistName: 'Artist Y' }),
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Song A' }));
             const body = await res.json();
             expect(body.songs).toHaveLength(2);
         });
 
-        it('limits results to 10 songs', async () => {
+        it('limits results to 20 songs', async () => {
             mockSearchLyrics.mockResolvedValue(
-                Array.from({ length: 20 }, (_, i) =>
-                    makeSong({ id: i + 1, trackName: `Song ${i}`, artistName: `Artist ${i}` })
+                Array.from({ length: 30 }, (_, i) =>
+                    makeSong({ id: (i + 1).toString(), trackName: `Song ${i}`, artistName: `Artist ${i}` })
                 )
             );
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Song' }));
             const body = await res.json();
-            expect(body.songs).toHaveLength(10);
+            expect(body.songs).toHaveLength(20);
         });
     });
 
@@ -133,8 +143,8 @@ describe('POST /api/search-song', () => {
     describe('relevance sorting', () => {
         it('ranks artist+title match (score 1) first', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 10, trackName: 'Other Song', artistName: 'Other Artist' }),  // score 4
-                makeSong({ id: 20, trackName: 'Hello', artistName: 'Adele' }),              // score 1
+                makeSong({ id: "10", trackName: 'Other Song', artistName: 'Other Artist' }),  // score 4
+                makeSong({ id: "20", trackName: 'Hello', artistName: 'Adele' }),              // score 1
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
@@ -143,8 +153,8 @@ describe('POST /api/search-song', () => {
 
         it('ranks title-only match (score 2) above artist-only match (score 3)', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, trackName: 'Other Song', artistName: 'Adele' }),   // score 3
-                makeSong({ id: 2, trackName: 'Hello', artistName: 'Other Artist' }), // score 2
+                makeSong({ id: "1", trackName: 'Other Song', artistName: 'Adele' }),   // score 3
+                makeSong({ id: "2", trackName: 'Hello', artistName: 'Other Artist' }), // score 2
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
@@ -154,8 +164,8 @@ describe('POST /api/search-song', () => {
 
         it('ranks artist-only match (score 3) above no match (score 4)', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, trackName: 'Random Song', artistName: 'Random Artist' }), // score 4
-                makeSong({ id: 2, trackName: 'Another Song', artistName: 'Adele' }),        // score 3
+                makeSong({ id: "1", trackName: 'Random Song', artistName: 'Random Artist' }), // score 4
+                makeSong({ id: "2", trackName: 'Another Song', artistName: 'Adele' }),        // score 3
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
@@ -164,10 +174,10 @@ describe('POST /api/search-song', () => {
 
         it('uses full order: score 1 > 2 > 3 > 4', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 4, trackName: 'Unrelated', artistName: 'Nobody' }),  // score 4
-                makeSong({ id: 3, trackName: 'Unrelated', artistName: 'Adele' }),   // score 3
-                makeSong({ id: 2, trackName: 'Hello', artistName: 'Nobody' }),      // score 2
-                makeSong({ id: 1, trackName: 'Hello', artistName: 'Adele' }),       // score 1
+                makeSong({ id: "4", trackName: 'Unrelated', artistName: 'Nobody' }),  // score 4
+                makeSong({ id: "3", trackName: 'Unrelated', artistName: 'Adele' }),   // score 3
+                makeSong({ id: "2", trackName: 'Hello', artistName: 'Nobody' }),      // score 2
+                makeSong({ id: "1", trackName: 'Hello', artistName: 'Adele' }),       // score 1
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
@@ -176,7 +186,7 @@ describe('POST /api/search-song', () => {
 
         it('matches case-insensitively', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, trackName: 'HELLO', artistName: 'ADELE' }),
+                makeSong({ id: "1", trackName: 'HELLO', artistName: 'ADELE' }),
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'hello', artist: 'adele' }));
             const body = await res.json();
@@ -186,31 +196,31 @@ describe('POST /api/search-song', () => {
 
         it('matches when query is a substring of track/artist name', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, trackName: 'Hello World', artistName: 'Adele Smith' }),
+                makeSong({ id: "1", trackName: 'Hello World', artistName: 'Adele Smith' }),
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
             expect(body.songs[0].id).toBe('1');
         });
 
-        it('sorts before slicing so top 10 are the most relevant', async () => {
+        it('sorts before slicing so top 20 are the most relevant', async () => {
             // 11 no-match filler songs + 1 perfect match — the perfect match must survive the slice
             mockSearchLyrics.mockResolvedValue([
-                ...Array.from({ length: 11 }, (_, i) =>
-                    makeSong({ id: i + 10, trackName: `Filler ${i}`, artistName: `Filler Artist ${i}` })
+                ...Array.from({ length: 21 }, (_, i) =>
+                    makeSong({ id: (i + 20).toString(), trackName: `Filler ${i}`, artistName: `Filler Artist ${i}` })
                 ),
-                makeSong({ id: 99, trackName: 'Hello', artistName: 'Adele' }), // score 1
+                makeSong({ id: "99", trackName: 'Hello', artistName: 'Adele' }), // score 1
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
             expect(body.songs[0].id).toBe('99');
-            expect(body.songs).toHaveLength(10);
+            expect(body.songs).toHaveLength(20);
         });
 
         it('handles missing artist query gracefully', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 1, trackName: 'Hello', artistName: 'Adele' }),
-                makeSong({ id: 2, trackName: 'Unrelated', artistName: 'Nobody' }),
+                makeSong({ id: "1", trackName: 'Hello', artistName: 'Adele' }),
+                makeSong({ id: "2", trackName: 'Unrelated', artistName: 'Nobody' }),
             ]);
             // No artist provided — title match should still rank above no match
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello' }));
@@ -224,7 +234,7 @@ describe('POST /api/search-song', () => {
     describe('response shape', () => {
         it('maps LrcLib fields to SongSearchResult correctly', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: 42, trackName: 'My Song', artistName: 'My Artist', albumName: 'My Album', plainLyrics: 'la la la' }),
+                makeSong({ id: "42", trackName: 'My Song', artistName: 'My Artist', albumName: 'My Album', plainLyrics: 'la la la' }),
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'My Song' }));
             const body = await res.json();
@@ -239,7 +249,7 @@ describe('POST /api/search-song', () => {
         });
 
         it('returns empty songs array when no results have lyrics', async () => {
-            mockSearchLyrics.mockResolvedValue([makeSong({ plainLyrics: null })]);
+            mockSearchLyrics.mockResolvedValue([makeSong({ plainLyrics: undefined })]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Anything' }));
             const body = await res.json();
             expect(body.songs).toEqual([]);

@@ -71,8 +71,6 @@ export async function POST(request: NextRequest) {
 
         const map = new Map();
 
-        logger.info("Heyyy!!");
-
         // Transform lyrics search response to our format
         const songs: SongSearchResult[] = results
             .filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics)

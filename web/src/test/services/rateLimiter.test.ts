@@ -258,7 +258,7 @@ describe('RateLimiter', () => {
         it('should return condition with daily and hourly limits', () => {
             const condition = rateLimiter['buildIpConditionExpression']();
             expect(condition).toContain('dailyCount < :dailyLimit');
-            expect(condition).toContain('hourlyCount <= :hourlyLimit');
+            expect(condition).toContain('hourlyCount < :hourlyLimit');
             expect(condition).toContain('AND');
         });
     });
