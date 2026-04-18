@@ -22,25 +22,23 @@ import {
 import { getAnalysisDetailsPath } from '@/util/routeHelper';
 
 interface ShareButtonWithModalProps  {
-    age: number;
     songKey: string;
     songTitle?: string;
     artistName?: string;
 }
 
 export function ShareButtonWithModal({
-    age,
-    songKey, 
+    songKey,
     songTitle = 'this song',
     artistName = 'Unknown Artist'
 }: ShareButtonWithModalProps ) {
     const [open, setOpen] = useState(false);
     const [copied, setCopied] = useState(false);
-    
+
     const shareUrl = getAnalysisDetailsPath(songKey);
-    
+
     // Share text for social media
-    const shareText = `Check out this lyrics analysis for "${songTitle}" by ${artistName} and if it's age-appropriate for a ${age} year-old on LyricsRay!`;
+    const shareText = `Check out this lyrics analysis for "${songTitle}" by ${artistName} to see if it's age-appropriate on LyricsRay!`;
     
     const handleCopyLink = async () => {
         try {
