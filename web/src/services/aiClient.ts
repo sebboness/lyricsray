@@ -61,14 +61,13 @@ export class AiClient {
     }
 
     /**
-     * Analizes the given lyrics for the given child's age and returns a promise with the analysis result.
+     * Analizes the given lyrics and returns a promise with the analysis result including a minimum recommended age.
      * @param lyrics The lyrics to analyze.
-     * @param childAge The child's age.
      * @returns The lyrics analysis result
      */
-    public analyzeLyrics = async (lyrics: string, childAge: number): Promise<LyricsAnalysis> => {
+    public analyzeLyrics = async (lyrics: string): Promise<LyricsAnalysis> => {
         return new Promise((resolve, reject) => {
-            const prompt = this.getLyricsPrompt(lyrics, childAge);
+            const prompt = this.getLyricsPrompt(lyrics);
 
             try {
 
@@ -138,20 +137,17 @@ export class AiClient {
     }
 
     /**
-     * Gets the prompt to analyze lyrics based on the given child's age and the content of the lyrics
+     * Gets the prompt to analyze lyrics for age-appropriateness and determine a minimum recommended age
      * @param lyrics The lyrics to analyze
-     * @param childAge The child's age
      * @returns The prompt to analyze lyrics
      */
-    public getLyricsPrompt = (lyrics: string, childAge: number): string => `You are tasked with analyzing song lyrics for age-appropriateness for a specific child's age. Your goal is to provide a thoughtful assessment considering various factors that may impact the suitability of the content for young listeners.
+    public getLyricsPrompt = (lyrics: string): string => `You are tasked with analyzing song lyrics for age-appropriateness and determining the minimum recommended age for the content. Your goal is to provide a thoughtful assessment considering various factors that may impact the suitability of the content for young listeners.
 
 Here are the lyrics to analyze:
 
 <lyrics>
 ${lyrics}
 </lyrics>
-
-The age of the child in question is: ${childAge} years old
 
 When analyzing the lyrics, consider the following factors:
 
@@ -166,16 +162,16 @@ Instructions for analysis:
 1. Carefully read through the entire set of lyrics.
 2. Identify any content related to the factors listed above.
 3. Consider the context and how the themes are presented.
-4. Assess the overall appropriateness for a ${childAge}-year-old child.
-5. Determine a minimum recommended age for the song.
+4. Determine the minimum age at which this content would be appropriate.
+5. Assess the overall appropriateness level based on the content found.
 
 Provide your analysis in the following JSON format:
 
 {
-    "appropriate": "integer: Level of appropriateness, 1 through 3, where 1 = appropriate, 2 = exercise caution, 3 = not appropriate",
+    "appropriate": "integer: Level of appropriateness, 1 through 3, where 1 = generally appropriate for most ages, 2 = exercise caution/parental guidance suggested, 3 = mature content/older audiences only",
     "analysis": "Brief explanation of your assessment, including specific concerns if any",
-    "recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16')"
+    "recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16', '18')"
 }
 
-Please tailor your assessment to the age of ${childAge} years old. Consider what themes and content are generally appropriate for children of this age, and err on the side of caution if you're unsure about certain elements.`;
+Be conservative in your assessment and err on the side of caution when determining the minimum recommended age. Consider what themes and content are generally appropriate for different age groups.`;
 }

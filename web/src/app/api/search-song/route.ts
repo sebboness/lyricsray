@@ -26,6 +26,23 @@ interface SearchSongResponse {
 
 const logName = "search-song";
 
+const normalize = (s: string) => s?.toLowerCase().trim() ?? "";
+
+const relevanceScore = (hit: LrcLibSongSearchResult, songName: string, artist: string): number => {
+    const title = normalize(hit.trackName);
+    const hitArtist = normalize(hit.artistName);
+    const queryTitle = normalize(songName);
+    const queryArtist = normalize(artist);
+
+    const titleMatch = title.includes(queryTitle);
+    const artistMatch = queryArtist && hitArtist.includes(queryArtist);
+
+    if (titleMatch && artistMatch) return 1;
+    if (titleMatch) return 2;
+    if (artistMatch) return 3;
+    return 4;
+};
+
 export async function POST(request: NextRequest) {
     try {
         const body: SearchSongRequest = await request.json();
@@ -54,7 +71,9 @@ export async function POST(request: NextRequest) {
 
         const map = new Map();
 
-        // Transform Genius API response to our format
+        logger.info("Heyyy!!");
+
+        // Transform lyrics search response to our format
         const songs: SongSearchResult[] = results
             .filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics)
             .filter((hit: LrcLibSongSearchResult) => {
@@ -65,7 +84,10 @@ export async function POST(request: NextRequest) {
                 }
                 return false;
             })
-            .slice(0, 10) // Limit to 10 results
+            .sort((a: LrcLibSongSearchResult, b: LrcLibSongSearchResult) =>
+                relevanceScore(a, songName, artist) - relevanceScore(b, songName, artist)
+            )
+            .slice(0, 20) // Limit to 20 results
             .map((hit: LrcLibSongSearchResult) => ({
                 id: hit.id.toString(),
                 title: hit.trackName,

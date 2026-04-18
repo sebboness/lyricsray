@@ -5,17 +5,11 @@ resource "aws_dynamodb_table" "analysis_results" {
     write_capacity= "5"
 
     attribute {
-        name = "age"
-        type = "N"
-    }
-
-    attribute {
         name = "songKey"
         type = "S"
     }
 
-    hash_key = "age"
-    range_key = "songKey"
+    hash_key = "songKey"
 }
 
 resource "aws_dynamodb_table" "analysis_rate_limits" {

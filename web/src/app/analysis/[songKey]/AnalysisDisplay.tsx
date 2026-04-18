@@ -40,7 +40,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     </Typography>
                     
                     <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                        Age-appropriate analysis for <strong>{result.age}</strong> year old
+                        Lyrics analysis with age appropriateness assessment
                     </Typography>
 
                     {/* Song Information */}
@@ -61,8 +61,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     )}
 
                     {/* Appropriateness Card */}
-                    <AppropriatenessCard 
-                        age={result.age}
+                    <AppropriatenessCard
                         appropriate={result.appropriate}
                         recommendedAge={result.recommendedAge}
                         showShareButton={true}

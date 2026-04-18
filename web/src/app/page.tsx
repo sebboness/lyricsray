@@ -23,7 +23,6 @@ import {
     Link,
 } from '@mui/material';
 import {
-    ChildCare,
     MusicNote,
     Search,
     Note,
@@ -40,7 +39,6 @@ import { ContainerWithBackground } from '@/components/ContainerWithBackground';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 
 interface FormData {
-    childAge: string;
     songName: string;
     songArtist?: string;
     lyrics: string;
@@ -72,7 +70,6 @@ is ${LYRICS_MAX_LENGTH} characters. If your lyrics are longer, consider
 submitting only part of the lyrics.`;
 
 const emptyFormData: FormData = {
-    childAge: '',
     songName: '',
     songArtist: '',
     lyrics: '',
@@ -212,7 +209,6 @@ export default function Home() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    childAge: parseInt(formData.childAge),
                     lyrics: song.lyrics,
                     inputMethod: 'lyrics',
                     altchaPayload,
@@ -313,7 +309,7 @@ export default function Home() {
         setFormData(emptyFormData);
     };
 
-    const isFormValid = formData.childAge && (
+    const isFormValid = (
         (formData.inputMethod === 'search' && formData.songName.trim()) ||
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     ) && altchaVerified;
@@ -348,29 +344,6 @@ export default function Home() {
                             
                             {/* Form */}
                             <Box component="form" onSubmit={handleSubmit}>
-                                {/* Child Age Input */}
-                                <Box mb={3}>
-                                    <TextField
-                                        name="childAge"
-                                        label="Child's Age"
-                                        type="number"
-                                        value={formData.childAge}
-                                        onChange={handleInputChange}
-                                        slotProps={{
-                                            htmlInput: { min: 1, max: 21 },
-                                            input: {
-                                                startAdornment: <ChildCare sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                            },
-                                            inputLabel: { shrink: true }
-                                        }}
-                                        placeholder="e.g., 12"
-                                        required
-                                        sx={{ maxWidth: 260 }}
-                                    />
-                                </Box>
-
-                                <Divider sx={{ mb: 3, borderColor: 'rgba(255, 0, 255, 0.2)' }} />
-
                                 {/* Tabbed Interface */}
                                 <Box>
                                     <Tabs 
@@ -579,8 +552,7 @@ export default function Home() {
                                     )}
 
                                     {/* Analysis results card */}
-                                    <AppropriatenessCard 
-                                        age={parseInt(formData.childAge)}
+                                    <AppropriatenessCard
                                         appropriate={result.appropriate}
                                         recommendedAge={result.recommendedAge}
                                         showShareButton={true}
