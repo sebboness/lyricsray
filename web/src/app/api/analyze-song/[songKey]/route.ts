@@ -26,6 +26,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         // Decode the songKey from URL encoding
         const decodedSongKey = decodeURIComponent(songKey);
 
+        console.log("XXX ABC song key:", songKey, "Decoded uri", decodedSongKey);
+
         // Retrieve analysis result from DynamoDB
         const ddbClient = getDynamoDbClient();
         const analysisResultDb = new AnalysisResultStorage(ddbClient);
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
             songKey: decodedSongKey,
             songName: result.song?.songName,
             artistName: result.song?.artistName,
+            isLyricsOnly: !result.song?.songName && !result.song?.artistName,
         });
 
         return NextResponse.json({ result });

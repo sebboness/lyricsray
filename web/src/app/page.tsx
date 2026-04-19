@@ -566,7 +566,7 @@ export default function Home() {
                                     </Typography>
 
                                     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                        <Link href={`/analysis/${encodeURIComponent(result.songKey)}`}>
+                                        <Link href={`/analysis/${result.songKey}`}>
                                             <strong>Analysis details &raquo;</strong>
                                         </Link>
                                     </Typography>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logPrefix } from '@/util/log';
 import { logger } from '@/logger/logger';
 import { verifyAltchaSolution } from '@/util/altcha';
-import { makeKey } from '@/util/hash';
+import { makeSongKey } from '@/util/routeHelper';
 import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
 import moment from 'moment';
 import { AiClient } from '@/services/aiClient';
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
 
 
         // Try to get analysis from storage if it was previously analyzed
-        const songKeyPrefix = `${artistName}|${songName}`;
-        const songKey = makeKey(lyrics, songKeyPrefix);
+        const songKey = makeSongKey(artistName, songName, lyrics);
+        console.log("XXX new song key is", songKey);
         let song: AnalysisResult | null = null;
 
         try {
