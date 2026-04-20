@@ -11,7 +11,7 @@ export function makeKey(input: string, prefix = "K"): string {
         .createHash("sha1")
         .update(input)
         .digest("hex")
-        .slice(0, 16);
+        .slice(0, 24);
 
-    return `${prefix}#${hash}`;
+    return `${prefix}${hash}`;
 }

@@ -6,7 +6,7 @@ import { getAnalysisDetailsPath } from '@/util/routeHelper';
 
 interface PageProps {
     params: Promise<{
-        songKey: string;
+        songKeys: string[];
     }>;
 }
 
@@ -35,8 +35,10 @@ async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null
 }
 
 export default async function AnalysisDetailsPage({ params }: PageProps) {
-    const { songKey } = await params;
-    const decodedSongKey = decodeURIComponent(songKey);
+    const { songKeys } = await params;
+    const songKey = songKeys.join('/');
+
+    const decodedSongKey = songKey.replace(/(\%2B)+/g, '+');
     
     // Fetch the analysis result
     const result = await getAnalysisResult(decodedSongKey);
@@ -51,7 +53,8 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps) {
-    const { songKey } = await params;
+    const { songKeys } = await params;
+    const songKey = songKeys.length === 1 ? songKeys[0] : "";
     const decodedSongKey = decodeURIComponent(songKey);
     const result = await getAnalysisResult(decodedSongKey);
 
