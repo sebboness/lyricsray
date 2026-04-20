@@ -47,11 +47,11 @@ interface FormData {
 
 interface SongSearchResult {
     id: string;
-    artist: string;
+    artist?: string;
     album?: string;
     lyrics: string;
     thumbnail?: string;
-    title: string;
+    title?: string;
 }
 
 interface AnalysisResult {
@@ -262,8 +262,6 @@ export default function Home() {
             const _selectedSong: SongSearchResult = {
                 id: "unknown",
                 lyrics: formData.lyrics,
-                artist: "Unknown artist",
-                title: "Unknown song",
             };
             setSelectedSong(_selectedSong);
             await analyzeLyricsDirectly(_selectedSong);
