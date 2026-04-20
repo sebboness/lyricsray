@@ -5,7 +5,7 @@ import { makeKey } from "./hash";
  * @param query The query string to encode
  * @returns An encoded query string.
  */
-export const encodeUri = (query: string) => encodeURIComponent(query).replace(/\s+/g, '+');
+export const encodeUri = (query: string) => encodeURIComponent(query).replace(/(\%20)+/g, '+');
 
 /**
  * Gets the base URL of this app and handles SSR/client.

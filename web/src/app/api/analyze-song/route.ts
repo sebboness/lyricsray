@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
 
         // Try to get analysis from storage if it was previously analyzed
         const songKey = makeSongKey(artistName, songName, lyrics);
-        console.log("XXX new song key is", songKey);
         let song: AnalysisResult | null = null;
 
         try {

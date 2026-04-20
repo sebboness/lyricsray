@@ -37,9 +37,8 @@ async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null
 export default async function AnalysisDetailsPage({ params }: PageProps) {
     const { songKeys } = await params;
     const songKey = songKeys.join('/');
-    console.log("XXX BBB song key:", songKey);
 
-    const decodedSongKey = decodeURIComponent(songKey);
+    const decodedSongKey = songKey.replace(/(\%2B)+/g, '+');
     
     // Fetch the analysis result
     const result = await getAnalysisResult(decodedSongKey);
