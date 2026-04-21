@@ -18,11 +18,13 @@ export function getCachedAltcha() {
 }
 
 export function setCachedAltcha(payload: string) {
-    typeof localStorage !== 'undefined'
-        && localStorage.setItem(ALTCHA_CACHE_KEY, JSON.stringify({ payload, timestamp: Date.now() }));
+    if (typeof localStorage === 'undefined')
+        return;
+    localStorage.setItem(ALTCHA_CACHE_KEY, JSON.stringify({ payload, timestamp: Date.now() }));
 }
 
 export function clearCachedAltcha() {
-    typeof localStorage !== 'undefined'
-        && localStorage.removeItem(ALTCHA_CACHE_KEY);
+    if (typeof localStorage === 'undefined')
+        return;
+    localStorage.removeItem(ALTCHA_CACHE_KEY);
 }
