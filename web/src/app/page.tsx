@@ -37,6 +37,7 @@ import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
+import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 
 interface FormData {
     songName: string;
@@ -95,7 +96,13 @@ export default function Home() {
 
     // Load ALTCHA challenge on component mount
     useEffect(() => {
-        loadAltchaChallenge();
+        const cached = getCachedAltcha();
+        if (cached) {
+            setAltchaPayload(cached);
+            setAltchaVerified(true);
+        } else {
+            loadAltchaChallenge();
+        }
     }, []);
 
     const loadAltchaChallenge = async () => {
@@ -112,9 +119,16 @@ export default function Home() {
         if (event.detail.state === 'verified') {
             setAltchaPayload(event.detail.payload);
             setAltchaVerified(true);
+            setCachedAltcha(event.detail.payload);
         } else if (event.detail.state === 'unverified') {
             setAltchaPayload('');
             setAltchaVerified(false);
+            clearCachedAltcha();
+        } else if (event.detail.state === 'expired') {
+            clearCachedAltcha();
+            setAltchaPayload('');
+            setAltchaVerified(false);
+            loadAltchaChallenge();
         }
     };
 
@@ -163,6 +177,11 @@ export default function Home() {
                     songKey: '',
                     error: data.error
                 });
+
+                // Only reset Altcha if the error is verification-related
+                if (data.error.includes('Human verification') || data.error.includes('verification failed')) {
+                    resetAltcha();
+                }
                 return;
             }
 
@@ -219,6 +238,12 @@ export default function Home() {
             });
 
             const data: AnalysisResult = await response.json();
+
+            // Check if there was a verification error
+            if (data.error && (data.error.includes('Human verification') || data.error.includes('verification failed'))) {
+                resetAltcha();
+            }
+
             setResult(data);
 
             setTimeout(() => {
@@ -265,8 +290,6 @@ export default function Home() {
             };
             setSelectedSong(_selectedSong);
             await analyzeLyricsDirectly(_selectedSong);
-
-            resetAltcha();
         }
     };
 
@@ -289,9 +312,9 @@ export default function Home() {
     const handleTryAgainButton = () => {
         setResult(null);
         resetForm();
-        resetAltcha();
         setSelectedSong(null);
         setSearchResults([]);
+        // Keep Altcha verification - don't reset unless it has expired
     };
 
     const resetAltcha = () => {
@@ -458,22 +481,29 @@ export default function Home() {
                                             <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
                                         )}
                                     </Box>
-                                    
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                        Complete this quick verification to prevent automated abuse of our AI analysis service.
-                                    </Typography>
 
                                     {/* ALTCHA Widget Container */}
-                                    {altchaChallenge && (
-                                        <AltchaWidget
-                                            challengeurl="/api/altcha/challenge"
-                                            style={{
-                                                '--altcha-color-base': theme.palette.background.paper,
-                                                '--altcha-color-text': theme.palette.text.primary,
-                                                '--altcha-border-radius': '8px',
-                                            }}
-                                            onstatechange={handleAltchaStateChange}
-                                        />
+                                    {altchaChallenge && !altchaVerified && (
+                                        <>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                                Complete this quick verification to prevent automated abuse of our AI analysis service.
+                                            </Typography>
+
+                                            <AltchaWidget
+                                                challengeurl="/api/altcha/challenge"
+                                                style={{
+                                                    '--altcha-color-base': theme.palette.background.paper,
+                                                    '--altcha-color-text': theme.palette.text.primary,
+                                                    '--altcha-border-radius': '8px',
+                                                }}
+                                                onstatechange={handleAltchaStateChange}
+                                            />
+                                        </>
+                                    )}
+                                    {altchaVerified && (
+                                        <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <CheckCircle fontSize="small" /> Verification complete
+                                        </Typography>
                                     )}
                                     
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>

@@ -1,6 +1,7 @@
 import { logger } from '@/logger/logger';
 import { createChallenge, verifySolution } from 'altcha-lib';
 import { logPrefix } from './log';
+import { ALTCHA_EXPIRY_MS } from './altchaClient';
 
 const moduleName = "util/altcha";
 
@@ -8,8 +9,7 @@ export async function createAltchaChallenge() {
     try {
         const challenge = await createChallenge({
             hmacKey: process.env.ALTCHA_SECRET!,
-            // Optional: set expiration (default: 5 minutes)
-            expires: new Date(Date.now() + 5 * 60 * 1000)
+            expires: new Date(Date.now() + ALTCHA_EXPIRY_MS),
         });
         
         return challenge;
