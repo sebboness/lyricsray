@@ -117,7 +117,7 @@ export default function PrivacyTerms() {
                             </ListItemIcon>
                             <ListItemText 
                                 primary="Analysis data"
-                                secondary="When you submit lyrics for analysis, we process: child's age, song name (if provided), artist name (if provided), and lyrics content. This information is used only to generate the analysis results. The analysis results are stored in a database for later retrieval."
+                                secondary="When you submit lyrics for analysis, we process: song name (if provided), artist name (if provided), and lyrics content. This information is used only to generate the analysis results. The analysis results are stored in a database for later retrieval."
                             />
                         </ListItem>
                     </List>
@@ -310,7 +310,7 @@ export default function PrivacyTerms() {
                         </Typography>
                         <Typography variant="body1">
                             If you have questions about our privacy practices or terms of service, please visit the creators
-                            of this app (<a href="https://hexonite.net" target="_blank" rel="noopener noreferrer">Hexonite</a>) for 
+                            of this app (<a href="https://www.hexonite.net/sebastian" target="_blank" rel="noopener noreferrer">Sebastian Stefaniuk @ Hexonite</a>) for 
                             more information about LyricsRay and our mission. Read more about how this app works on 
                             our <Link href="/about">About</Link> page.
                         </Typography>
