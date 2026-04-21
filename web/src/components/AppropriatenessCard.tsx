@@ -4,7 +4,6 @@ import { ShareButtonWithModal } from './ShareButtonWithModal';
 
 interface AppropriatenessCardProps {
     appropriate: number;
-    age: number;
     recommendedAge: number;
     size?: 'small' | 'medium' | 'large';
     songKey?: string;
@@ -34,17 +33,17 @@ const getAppropriateData = (appropriate: number, iconSize: number): AppropriateD
         case 1:
             icon = <CheckCircle sx={{ color: 'success.main', fontSize: iconSize }} />;
             color = 'success.main';
-            text = 'Appropriate for your child';
+            text = 'Generally appropriate content';
             break;
         case 2:
             icon = <WarningRounded sx={{ color: 'warning.main', fontSize: iconSize }} />;
             color = 'warning.main';
-            text = 'Contains themes that may not be appropriate for your child';
+            text = 'Contains themes requiring parental guidance';
             break;
         case 3:
             icon = <Error sx={{ color: 'error.main', fontSize: iconSize }} />;
             color = 'error.main';
-            text = 'May not be appropriate for your child';
+            text = 'Contains mature content for mature audiences';
             break;
         default:
             icon = <Error sx={{ color: 'text.secondary', fontSize: iconSize }} />;
@@ -56,10 +55,9 @@ const getAppropriateData = (appropriate: number, iconSize: number): AppropriateD
     return { icon, color, text };
 };
 
-export function AppropriatenessCard({ 
-    age,
-    appropriate, 
-    recommendedAge, 
+export function AppropriatenessCard({
+    appropriate,
+    recommendedAge,
     size = 'medium',
     songKey,
     showShareButton = false,
@@ -94,7 +92,7 @@ export function AppropriatenessCard({
                                 </Typography>
 
                                 <Typography variant="body2" color="text.secondary">
-                                    <strong>Recommended age:</strong> {recommendedAge}
+                                    <strong>Minimum age:</strong> {recommendedAge}
                                 </Typography>
                             </Box>
                         </Box>
@@ -102,7 +100,6 @@ export function AppropriatenessCard({
                         {/* Right side: Share button with modal */}
                         {showShareButton && songKey && (
                             <ShareButtonWithModal
-                                age={age}
                                 songKey={songKey}
                                 songTitle={songTitle}
                                 artistName={artistName}

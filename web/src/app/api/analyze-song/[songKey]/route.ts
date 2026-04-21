@@ -23,32 +23,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
             );
         }
 
-        // Decode the songKey from URL encoding
-        const decodedSongKey = decodeURIComponent(songKey);
-
-        // Extract age from songKey (format: "age|artist|song")
-        const songKeyParts = decodedSongKey.split('|');
-        const age = parseInt(songKeyParts[0]);
-
-        if (isNaN(age)) {
-            logger.warn(`Invalid age in songKey: ${decodedSongKey}`, { moduleName });
-            return NextResponse.json(
-                { error: 'Invalid songKey format' },
-                { status: 400 }
-            );
-        }
-
         // Retrieve analysis result from DynamoDB
         const ddbClient = getDynamoDbClient();
         const analysisResultDb = new AnalysisResultStorage(ddbClient);
-        
-        const result = await analysisResultDb.getAnalysisResult(age, decodedSongKey);
+
+        const result = await analysisResultDb.getAnalysisResult(songKey);
 
         if (!result) {
-            logger.info(`Analysis result not found for songKey: ${decodedSongKey}`, { 
-                moduleName, 
-                age, 
-                songKey: decodedSongKey 
+            logger.info(`Analysis result not found for songKey: ${songKey}`, {
+                moduleName,
+                songKey,
             });
             return NextResponse.json(
                 { error: 'Analysis result not found' },
@@ -58,10 +42,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
         logger.info(`Successfully retrieved analysis result`, {
             moduleName,
-            age,
-            songKey: decodedSongKey,
+            songKey,
             songName: result.song?.songName,
             artistName: result.song?.artistName,
+            isLyricsOnly: !result.song?.songName && !result.song?.artistName,
         });
 
         return NextResponse.json({ result });

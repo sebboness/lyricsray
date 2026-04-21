@@ -23,7 +23,6 @@ import {
     Link,
 } from '@mui/material';
 import {
-    ChildCare,
     MusicNote,
     Search,
     Note,
@@ -38,9 +37,9 @@ import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
+import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 
 interface FormData {
-    childAge: string;
     songName: string;
     songArtist?: string;
     lyrics: string;
@@ -49,11 +48,11 @@ interface FormData {
 
 interface SongSearchResult {
     id: string;
-    artist: string;
+    artist?: string;
     album?: string;
     lyrics: string;
     thumbnail?: string;
-    title: string;
+    title?: string;
 }
 
 interface AnalysisResult {
@@ -72,7 +71,6 @@ is ${LYRICS_MAX_LENGTH} characters. If your lyrics are longer, consider
 submitting only part of the lyrics.`;
 
 const emptyFormData: FormData = {
-    childAge: '',
     songName: '',
     songArtist: '',
     lyrics: '',
@@ -98,7 +96,13 @@ export default function Home() {
 
     // Load ALTCHA challenge on component mount
     useEffect(() => {
-        loadAltchaChallenge();
+        const cached = getCachedAltcha();
+        if (cached) {
+            setAltchaPayload(cached);
+            setAltchaVerified(true);
+        } else {
+            loadAltchaChallenge();
+        }
     }, []);
 
     const loadAltchaChallenge = async () => {
@@ -115,9 +119,16 @@ export default function Home() {
         if (event.detail.state === 'verified') {
             setAltchaPayload(event.detail.payload);
             setAltchaVerified(true);
+            setCachedAltcha(event.detail.payload);
         } else if (event.detail.state === 'unverified') {
             setAltchaPayload('');
             setAltchaVerified(false);
+            clearCachedAltcha();
+        } else if (event.detail.state === 'expired') {
+            clearCachedAltcha();
+            setAltchaPayload('');
+            setAltchaVerified(false);
+            loadAltchaChallenge();
         }
     };
 
@@ -166,6 +177,11 @@ export default function Home() {
                     songKey: '',
                     error: data.error
                 });
+
+                // Only reset Altcha if the error is verification-related
+                if (data.error.includes('Human verification') || data.error.includes('verification failed')) {
+                    resetAltcha();
+                }
                 return;
             }
 
@@ -212,7 +228,6 @@ export default function Home() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    childAge: parseInt(formData.childAge),
                     lyrics: song.lyrics,
                     inputMethod: 'lyrics',
                     altchaPayload,
@@ -223,6 +238,12 @@ export default function Home() {
             });
 
             const data: AnalysisResult = await response.json();
+
+            // Check if there was a verification error
+            if (data.error && (data.error.includes('Human verification') || data.error.includes('verification failed'))) {
+                resetAltcha();
+            }
+
             setResult(data);
 
             setTimeout(() => {
@@ -266,13 +287,9 @@ export default function Home() {
             const _selectedSong: SongSearchResult = {
                 id: "unknown",
                 lyrics: formData.lyrics,
-                artist: "Unknown artist",
-                title: "Unknown song",
             };
             setSelectedSong(_selectedSong);
             await analyzeLyricsDirectly(_selectedSong);
-
-            resetAltcha();
         }
     };
 
@@ -295,9 +312,9 @@ export default function Home() {
     const handleTryAgainButton = () => {
         setResult(null);
         resetForm();
-        resetAltcha();
         setSelectedSong(null);
         setSearchResults([]);
+        // Keep Altcha verification - don't reset unless it has expired
     };
 
     const resetAltcha = () => {
@@ -313,7 +330,7 @@ export default function Home() {
         setFormData(emptyFormData);
     };
 
-    const isFormValid = formData.childAge && (
+    const isFormValid = (
         (formData.inputMethod === 'search' && formData.songName.trim()) ||
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     ) && altchaVerified;
@@ -348,29 +365,6 @@ export default function Home() {
                             
                             {/* Form */}
                             <Box component="form" onSubmit={handleSubmit}>
-                                {/* Child Age Input */}
-                                <Box mb={3}>
-                                    <TextField
-                                        name="childAge"
-                                        label="Child's Age"
-                                        type="number"
-                                        value={formData.childAge}
-                                        onChange={handleInputChange}
-                                        slotProps={{
-                                            htmlInput: { min: 1, max: 21 },
-                                            input: {
-                                                startAdornment: <ChildCare sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                            },
-                                            inputLabel: { shrink: true }
-                                        }}
-                                        placeholder="e.g., 12"
-                                        required
-                                        sx={{ maxWidth: 260 }}
-                                    />
-                                </Box>
-
-                                <Divider sx={{ mb: 3, borderColor: 'rgba(255, 0, 255, 0.2)' }} />
-
                                 {/* Tabbed Interface */}
                                 <Box>
                                     <Tabs 
@@ -487,22 +481,29 @@ export default function Home() {
                                             <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
                                         )}
                                     </Box>
-                                    
-                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                        Complete this quick verification to prevent automated abuse of our AI analysis service.
-                                    </Typography>
 
                                     {/* ALTCHA Widget Container */}
-                                    {altchaChallenge && (
-                                        <AltchaWidget
-                                            challengeurl="/api/altcha/challenge"
-                                            style={{
-                                                '--altcha-color-base': theme.palette.background.paper,
-                                                '--altcha-color-text': theme.palette.text.primary,
-                                                '--altcha-border-radius': '8px',
-                                            }}
-                                            onstatechange={handleAltchaStateChange}
-                                        />
+                                    {altchaChallenge && !altchaVerified && (
+                                        <>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                                Complete this quick verification to prevent automated abuse of our AI analysis service.
+                                            </Typography>
+
+                                            <AltchaWidget
+                                                challengeurl="/api/altcha/challenge"
+                                                style={{
+                                                    '--altcha-color-base': theme.palette.background.paper,
+                                                    '--altcha-color-text': theme.palette.text.primary,
+                                                    '--altcha-border-radius': '8px',
+                                                }}
+                                                onstatechange={handleAltchaStateChange}
+                                            />
+                                        </>
+                                    )}
+                                    {altchaVerified && (
+                                        <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <CheckCircle fontSize="small" /> Verification complete
+                                        </Typography>
                                     )}
                                     
                                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
@@ -579,8 +580,7 @@ export default function Home() {
                                     )}
 
                                     {/* Analysis results card */}
-                                    <AppropriatenessCard 
-                                        age={parseInt(formData.childAge)}
+                                    <AppropriatenessCard
                                         appropriate={result.appropriate}
                                         recommendedAge={result.recommendedAge}
                                         showShareButton={true}
@@ -594,7 +594,7 @@ export default function Home() {
                                     </Typography>
 
                                     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                        <Link href={`/analysis/${encodeURIComponent(result.songKey)}`}>
+                                        <Link href={`/analysis/${result.songKey}`}>
                                             <strong>Analysis details &raquo;</strong>
                                         </Link>
                                     </Typography>

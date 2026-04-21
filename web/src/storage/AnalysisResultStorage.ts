@@ -6,7 +6,6 @@ const moduleName = "AnalysisResultStorage";
 const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-results`;
 
 export interface AnalysisResult {
-    age: number;
     songKey: string;
     date: string;
     song: AnalysisSongDetails;
@@ -33,18 +32,16 @@ export class AnalysisResultStorage {
     }
 
     /**
-     * Gets the analysis result for a song targeted for a specific youth age from storage.
-     * @param age The target age
+     * Gets the analysis result for a song from storage.
      * @param songKey The unique song key
      * @returns An instance of analysis result
      */
-    public getAnalysisResult(age: number, songKey: string): Promise<AnalysisResult | null> {
+    public getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
         return new Promise((resolve, reject) => {
 
             const command = new GetCommand({
                 TableName: tableName,
                 Key: {
-                    age,
                     songKey,
                 },
             });

@@ -272,7 +272,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                         </Link>
                         <Typography variant="body2" color="text.secondary">•</Typography>
                         <Link 
-                            href="https://hexonite.net"
+                            href="https://www.hexonite.net/sebastian"
                             target="_blank"
                             rel="noopener noreferrer"
                             sx={{ 
@@ -285,7 +285,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 }
                             }}
                         >
-                            Created by Hexonite
+                            Created by Sebastian Stefaniuk
                         </Link>
                     </Box>
                     <Typography 

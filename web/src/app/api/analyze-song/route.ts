@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logPrefix } from '@/util/log';
 import { logger } from '@/logger/logger';
 import { verifyAltchaSolution } from '@/util/altcha';
-import { makeKey } from '@/util/hash';
+import { makeSongKey } from '@/util/routeHelper';
 import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
 import moment from 'moment';
 import { AiClient } from '@/services/aiClient';
@@ -13,7 +13,6 @@ import { getClientIp } from '@/util/request';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
-    childAge: number;
     lyrics: string;
     albumName?: string;
     songName?: string;
@@ -56,14 +55,11 @@ export async function POST(request: NextRequest) {
         const {
             albumName,
             altchaPayload,
-            childAge,
             songName,
             artistName
         } = body;
 
         let { lyrics } = body;
-
-        const age = parseInt(childAge + "");
 
         logger.info(`${logPrefix(moduleName)} altchaPayload`, altchaPayload);
 
@@ -87,20 +83,13 @@ export async function POST(request: NextRequest) {
             lyrics = lyrics.substring(0, LYRICS_MAX_LENGTH);
         }
 
-        if (!age || age < 2 || age > 21) {
-            return NextResponse.json(
-                { error: 'Child age must be between 2 and 21' },
-                { status: 400 }
-            );
-        }
 
         // Try to get analysis from storage if it was previously analyzed
-        const songKeyPrefix = `${age}|${artistName}|${songName}`;
-        const songKey = makeKey(lyrics, songKeyPrefix);
+        const songKey = makeSongKey(artistName, songName, lyrics);
         let song: AnalysisResult | null = null;
 
         try {
-            song = await analysisResultDb.getAnalysisResult(age, songKey);
+            song = await analysisResultDb.getAnalysisResult(songKey);
 
             const message = !!song
                 ? "Retrieved existing analysis result from storage"
@@ -108,7 +97,6 @@ export async function POST(request: NextRequest) {
 
             logger.info(message, {
                 moduleName,
-                age,
                 artistName,
                 songName,
                 songKey,
@@ -117,7 +105,6 @@ export async function POST(request: NextRequest) {
         catch (err) {
             logger.error("Error ocurred while retrieving analysis result from storage", {
                 moduleName,
-                age,
                 artistName,
                 songName,
                 err,
@@ -163,16 +150,15 @@ export async function POST(request: NextRequest) {
             }
 
             // Get an estimate prior to analyzing with AI
-            const prompt = aiClient.getLyricsPrompt(lyrics, age);
+            const prompt = aiClient.getLyricsPrompt(lyrics);
             const estimateTokensIn = await aiClient.getTokenInputEstimate(prompt);
 
             logger.info("Estimated token input for prompt", { moduleName, estimateTokensIn });
 
             // Analyze lyrics with AI
-            const analysis = await aiClient.analyzeLyrics(lyrics, age);
+            const analysis = await aiClient.analyzeLyrics(lyrics);
 
             const analysisResult: AnalysisResult = {
-                age,
                 appropriate: analysis.appropriate,
                 analysis: analysis.analysis,
                 recommendedAge: analysis.recommendedAge,
@@ -194,7 +180,6 @@ export async function POST(request: NextRequest) {
 
                 logger.info("Analysis result saved to storage", {
                     moduleName,
-                    age,
                     artistName,
                     songName,
                 })
@@ -202,7 +187,6 @@ export async function POST(request: NextRequest) {
             catch (err) {
                 logger.error("Failed to save analysis result to storage", {
                     moduleName,
-                    age,
                     artistName,
                     songName,
                     err,
