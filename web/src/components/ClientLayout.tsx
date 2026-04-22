@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useTheme as useNextTheme } from 'next-themes';
-import { KO_FI_LINK } from './SupportCard';
+import { KO_FI_LINK } from '@/util/supportDev';
 
 interface ClientLayoutProps {
     children: React.ReactNode;

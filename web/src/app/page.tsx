@@ -32,13 +32,13 @@ import {
     Security,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
-import { SupportCard } from '@/components/SupportCard';
+import { LYRICS_MAX_LENGTH } from '@/util/defaults';
+import { KO_FI_LINK } from '@/util/supportDev';
 
 interface FormData {
     songName: string;
@@ -608,21 +608,34 @@ export default function Home() {
                                     
                                     <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
                         
-                                    <Typography 
-                                        variant="h6" 
-                                        sx={{ 
-                                            fontWeight: 600,
-                                        }}
-                                    >
+                                    <Typography variant="h6" mb={3} sx={{ fontWeight: 600 }}>
                                         Remember: You know your child best. Use LyricsRay as a tool to inform your 
                                         decisions, but always trust your parental instincts and family values when 
                                         determining what&apos;s right for your children.
                                     </Typography>
 
-                                    <SupportCard variant="result" />
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        Did this analysis help you?
+                                    </Typography>
+
+                                    <Typography variant="body2" color="text.secondary">
+                                        If so, consider supporting the project to cover some of the development and
+                                        hosting costs ❤️
+                                    </Typography>
 
                                     {/* Analyze another song button */}
-                                    <Box textAlign="center" mt={4} className="submit-wrapper">
+                                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }} mt={4} className="submit-wrapper">
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            href={KO_FI_LINK}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="large"
+                                            sx={{ px: 4, py: 1.5 }}
+                                        >
+                                            ☕ Support on Ko-fi
+                                        </Button>
                                         <Button
                                             type="button"
                                             variant="contained"

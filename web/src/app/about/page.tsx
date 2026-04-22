@@ -18,6 +18,7 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
+    Button,
 } from '@mui/material';
 import {
     ExpandMore,
@@ -30,7 +31,7 @@ import {
     Visibility,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { SupportCard } from '@/components/SupportCard';
+import { KO_FI_LINK } from '@/util/supportDev';
 
 export default function About() {
     const theme = useTheme();
@@ -350,8 +351,35 @@ export default function About() {
                             always trust your parental instincts and family values when determining what&apos;s right 
                             for your children, and consider whether the themes portraied in popular media is appropriate.
                         </Typography>
+                    </CardContent>
+                </Card>
 
-                        <SupportCard variant="full" />
+                {/* Support section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Support the work
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            If analyzing lyrics helped you make a decision, consider supporting the project to cover
+                            some of the development and hosting costs, and to keep this tool free for parents and
+                            guardians who are looking to keep their kids, well, kids ❤️
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            href={KO_FI_LINK}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                            }}
+                        >
+                            Support on Ko-fi ☕
+                        </Button>
                     </CardContent>
                 </Card>
 
