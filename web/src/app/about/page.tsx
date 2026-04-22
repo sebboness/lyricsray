@@ -18,6 +18,7 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
+    Button,
 } from '@mui/material';
 import {
     ExpandMore,
@@ -30,6 +31,7 @@ import {
     Visibility,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { KO_FI_LINK } from '@/util/supportDev';
 
 export default function About() {
     const theme = useTheme();
@@ -101,7 +103,7 @@ export default function About() {
                         </Typography>
                     </Box>
                     <Typography variant="body1" sx={{ mb: 4, fontSize: '1.1rem' }}>
-                        LyricsRay leverages Claude AI, an advanced artificial intelligence system developed by Anthropic, 
+                        LyricsRay leverages AI, an advanced artificial intelligence system, 
                         to perform comprehensive lyrical analysis. Our AI-powered approach examines songs across 
                         multiple dimensions:
                     </Typography>
@@ -352,6 +354,35 @@ export default function About() {
                     </CardContent>
                 </Card>
 
+                {/* Support section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Support the work
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            If analyzing lyrics helped you make a decision, consider supporting the project to cover
+                            some of the development and hosting costs, and to keep this tool free for parents and
+                            guardians who are looking to keep their kids, well, kids ❤️
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            href={KO_FI_LINK}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                            }}
+                        >
+                            Support on Ko-fi ☕
+                        </Button>
+                    </CardContent>
+                </Card>
+
                 {/* Important Disclaimers Section */}
                 <Card sx={{ mb: 4 }}>
                     <CardContent sx={{ p: 4 }}>
@@ -387,7 +418,7 @@ export default function About() {
                                     Technology Limitations
                                 </Typography>
                                 <Typography variant="body2">
-                                    While Claude AI is highly advanced, no automated system is perfect. Our analysis:
+                                    While AI is highly advanced, no automated system is perfect. Our analysis:
                                 </Typography>
                                 <List dense sx={{ mt: 1 }}>
                                     <ListItem sx={{ py: 0 }}>

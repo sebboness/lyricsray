@@ -277,7 +277,7 @@ export default function PrivacyTerms() {
                         Third-party services
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 2 }}>
-                        LyricsRay uses Claude AI by Anthropic for lyric analysis and may use third-party 
+                        LyricsRay uses AI for lyric analysis and may use third-party 
                         services for song lyric retrieval. We are not affiliated with any media corporations, 
                         record labels, streaming services, or entertainment businesses.
                     </Typography>
