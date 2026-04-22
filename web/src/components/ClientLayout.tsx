@@ -18,10 +18,13 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useTheme as useNextTheme } from 'next-themes';
+import { KO_FI_LINK } from './SupportCard';
 
 interface ClientLayoutProps {
     children: React.ReactNode;
 }
+
+const bulletPoint = () => <Typography variant="body2" color="text.secondary">•</Typography>;
 
 export function ClientLayout({ children }: ClientLayoutProps) {
     const theme = useTheme();
@@ -270,7 +273,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                         >
                             Privacy &amp; Terms
                         </Link>
-                        <Typography variant="body2" color="text.secondary">•</Typography>
+                        {bulletPoint()}
                         <Link 
                             href="https://www.hexonite.net/sebastian"
                             target="_blank"
@@ -287,6 +290,23 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                         >
                             Created by Sebastian Stefaniuk
                         </Link>
+                        {bulletPoint()}
+                        <Link 
+                            href={KO_FI_LINK}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ 
+                                color: theme.palette.text.secondary,
+                                textDecoration: 'none',
+                                fontSize: '0.9rem',
+                                transition: 'color 0.3s ease',
+                                '&:hover': {
+                                    color: theme.palette.secondary.main,
+                                }
+                            }}
+                        >
+                            ☕ Help keep this free
+                        </Link>
                     </Box>
                     <Typography 
                         variant="caption" 
@@ -298,7 +318,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             opacity: 0.7
                         }}
                     >
-                        © 2025 LyricsRay. AI-powered lyric analysis for child safety.
+                        © {new Date().getFullYear()} LyricsRay. AI-powered lyric analysis for child safety.
                     </Typography>
                 </Container>
             </Box>

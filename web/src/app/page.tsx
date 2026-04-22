@@ -38,6 +38,7 @@ import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
+import { SupportCard } from '@/components/SupportCard';
 
 interface FormData {
     songName: string;
@@ -617,6 +618,8 @@ export default function Home() {
                                         decisions, but always trust your parental instincts and family values when 
                                         determining what&apos;s right for your children.
                                     </Typography>
+
+                                    <SupportCard variant="result" />
 
                                     {/* Analyze another song button */}
                                     <Box textAlign="center" mt={4} className="submit-wrapper">

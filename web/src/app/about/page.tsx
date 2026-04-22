@@ -30,6 +30,7 @@ import {
     Visibility,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import { SupportCard } from '@/components/SupportCard';
 
 export default function About() {
     const theme = useTheme();
@@ -101,7 +102,7 @@ export default function About() {
                         </Typography>
                     </Box>
                     <Typography variant="body1" sx={{ mb: 4, fontSize: '1.1rem' }}>
-                        LyricsRay leverages Claude AI, an advanced artificial intelligence system developed by Anthropic, 
+                        LyricsRay leverages AI, an advanced artificial intelligence system, 
                         to perform comprehensive lyrical analysis. Our AI-powered approach examines songs across 
                         multiple dimensions:
                     </Typography>
@@ -349,6 +350,8 @@ export default function About() {
                             always trust your parental instincts and family values when determining what&apos;s right 
                             for your children, and consider whether the themes portraied in popular media is appropriate.
                         </Typography>
+
+                        <SupportCard variant="full" />
                     </CardContent>
                 </Card>
 
@@ -387,7 +390,7 @@ export default function About() {
                                     Technology Limitations
                                 </Typography>
                                 <Typography variant="body2">
-                                    While Claude AI is highly advanced, no automated system is perfect. Our analysis:
+                                    While AI is highly advanced, no automated system is perfect. Our analysis:
                                 </Typography>
                                 <List dense sx={{ mt: 1 }}>
                                     <ListItem sx={{ py: 0 }}>
