@@ -7,13 +7,11 @@ import {
     Paper,
     List,
     ListItem,
-    ListItemIcon,
     ListItemText,
-    Alert,
     CircularProgress,
     Link,
 } from '@mui/material';
-import { CheckCircle, Warning, Error, MusicNote } from '@mui/icons-material';
+import { CheckCircle, Warning, Error } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
 interface PopularSongItem {
