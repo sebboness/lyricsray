@@ -362,7 +362,7 @@ export default function Home() {
                     </Typography>
 
                     {!result && (
-                        <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 140 }}>
+                        <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
                             <Typography variant="h5" fontWeight="600" mb={3}>
                                 Analyze a Song
                             </Typography>

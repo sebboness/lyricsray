@@ -179,6 +179,20 @@ export function PopularSongs({
                                         >
                                             Age {analysis.recommendedAge}+ ({display.label})
                                         </Typography>
+                                        <Typography
+                                            component="span"
+                                            variant="caption"
+                                            sx={{
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 1,
+                                                fontWeight: 500,
+                                            }}
+                                        >
+                                            <Link href={`/analysis/${analysis.songKey}`}>
+                                                Find out why &raquo;
+                                            </Link>
+                                        </Typography>
                                     </>
                                 }
                             />
