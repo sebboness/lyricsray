@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
                 recommendedAge: analysis.recommendedAge,
                 date: moment.utc().toISOString(),
                 songKey,
+                entityType: "ANALYSIS",
                 song: {
                     albumName,
                     artistName,

@@ -52,7 +52,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
 
     // Handle scroll to main content
     const handleScrollToContent = () => {
-        const element = document.getElementById('top-analyze-song-button');
+        const element = document.getElementById('analyze-form-wrapper');
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -119,7 +119,6 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                     {/* Buttons */}
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                         <Button
-                            id="top-analyze-song-button"
                             variant="contained"
                             size="large"
                             onClick={handleScrollToContent}
