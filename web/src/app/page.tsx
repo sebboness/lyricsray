@@ -36,6 +36,7 @@ import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
+import { PopularSongs } from '@/components/PopularSongs';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
@@ -346,6 +347,13 @@ export default function Home() {
                     type={isSearching ? 'searching' : 'analyzing'}
                 />
 
+                {/* Popular Songs Section */}
+                <PopularSongs
+                    title="Popular Songs Kids Listen To"
+                    maxItems={5}
+                    showTitle={true}
+                />
+
                 {/* Introduction and Form Card */}
                 <Paper elevation={3} sx={{ p: 4, mb: 4, borderRadius: 3 }}>
                     <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
@@ -354,16 +362,16 @@ export default function Home() {
                     </Typography>
 
                     {!result && (
-                        <Box id="analyze-form-wrapper">
+                        <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
                             <Typography variant="h5" fontWeight="600" mb={3}>
                                 Analyze a Song
                             </Typography>
-                            
+
                             <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
-                                <strong>Two ways to analyze:</strong> Search the database or paste any lyrics directly 
+                                <strong>Two ways to analyze:</strong> Search the database or paste any lyrics directly
                                 for instant analysis.
                             </Typography>
-                            
+
                             {/* Form */}
                             <Box component="form" onSubmit={handleSubmit}>
                                 {/* Tabbed Interface */}
@@ -535,7 +543,8 @@ export default function Home() {
                                     )}
                                 </Box>
                             </Box>
-                        </Box>)}
+                        </Box>
+                    )}
 
                     {result && (
                         <Box id="analyze-results-wrapper">
