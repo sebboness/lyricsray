@@ -3,6 +3,8 @@ import { PopularSongsClient } from '@/components/PopularSongsClient';
 import { LyricsAnalysisForm } from '@/components/LyricsAnalysisForm';
 import { getPopularSongs } from '@/lib/getPopularSongs';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
 
     // Fetch popular songs data on the server
