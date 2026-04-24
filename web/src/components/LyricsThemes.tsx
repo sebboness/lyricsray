@@ -4,7 +4,6 @@ import {
     Stack,
     Chip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
 interface PopularSongsClientProps {
     maxItems?: number;
@@ -15,8 +14,6 @@ export function LyricsThemes({
     maxItems,
     themes,
 }: PopularSongsClientProps) {
-    const theme = useTheme();
-
     if (!themes || themes.length === 0) {
         return null;
     }
