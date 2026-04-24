@@ -7,13 +7,12 @@ import {
     List,
     ListItem,
     Box,
-    Stack,
-    Chip,
     ListItemButton,
 } from '@mui/material';
 import { CheckCircle, Warning, Error } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { PopularSongItem } from '@/lib/getPopularSongs';
+import { LyricsThemes } from './LyricsThemes';
 
 interface PopularSongsClientProps {
     title?: string;
@@ -149,27 +148,7 @@ export function PopularSongsClient({
                                     </Box>
 
                                     {/* ROW 2: Theme tags */}
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        sx={{
-                                            mt: 1,
-                                            flexWrap: 'wrap',
-                                        }}
-                                    >
-                                        {analysis.themes?.slice(0, 5).map((theme: string) => (
-                                            <Chip
-                                                key={theme}
-                                                label={theme}
-                                                size="small"
-                                                sx={{
-                                                    fontSize: '0.7rem',
-                                                    height: 22,
-                                                    mt: 2,
-                                                }}
-                                            />
-                                        ))}
-                                    </Stack>
+                                    <LyricsThemes themes={analysis.themes} maxItems={4} />
 
                                 </Box>
                             </ListItemButton>
