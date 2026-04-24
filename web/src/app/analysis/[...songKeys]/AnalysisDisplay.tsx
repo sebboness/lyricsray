@@ -7,14 +7,13 @@ import {
     Paper,
     Divider,
     Button,
-    Stack,
-    Chip,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import Link from 'next/link';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { LyricsThemes } from '@/components/LyricsThemes';
 
 interface AnalysisDisplayProps {
     result: AnalysisResult;
@@ -89,29 +88,9 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         <Typography variant="h6" fontWeight="600" mb={2}>
                             Themes
                         </Typography>
-                        <Stack
-                            direction="row"
-                            mb={2}
-                            spacing={1}
-                            sx={{
-                                mt: 1,
-                                flexWrap: 'wrap',
-                            }}
-                        >
-                            {result.themes?.map((theme: string) => (
-                                <Chip
-                                    key={theme}
-                                    label={theme}
-                                    size="small"
-                                    sx={{
-                                        height: 24,
-                                        mt: 2,
-                                    }}
-                                />
-                            ))}
-                        </Stack>
+                        <LyricsThemes themes={result.themes} />
                         
-                        <Typography variant="body1" color="text.secondary">
+                        <Typography variant="body1" color="text.secondary" mt={2}>
                             <Link href="/about">
                                 <strong>Read more about this analysis and how we do it &raquo;</strong>
                             </Link>
