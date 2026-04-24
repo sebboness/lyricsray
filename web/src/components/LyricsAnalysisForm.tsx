@@ -21,6 +21,8 @@ import {
     ListItemAvatar,
     Avatar,
     Link,
+    Stack,
+    Chip,
 } from '@mui/material';
 import {
     MusicNote,
@@ -60,6 +62,7 @@ interface AnalysisResult {
     analysis: string;
     recommendedAge: number;
     songKey: string;
+    themes: string[];
     error?: string;
 }
 
@@ -175,6 +178,7 @@ export function LyricsAnalysisForm() {
                     analysis: '',
                     recommendedAge: 0,
                     songKey: '',
+                    themes: [],
                     error: data.error
                 });
 
@@ -200,6 +204,7 @@ export function LyricsAnalysisForm() {
                     analysis: '',
                     recommendedAge: 0,
                     songKey: '',
+                    themes: [],
                     error: 'No songs found. Please try different search terms or paste lyrics directly.'
                 });
             }
@@ -210,6 +215,7 @@ export function LyricsAnalysisForm() {
                 analysis: '',
                 recommendedAge: 0,
                 songKey: '',
+                themes: [],
                 error: 'Failed to search songs. Please try again.'
             });
         } finally {
@@ -258,6 +264,7 @@ export function LyricsAnalysisForm() {
                 analysis: '',
                 recommendedAge: 0,
                 songKey: '',
+                themes: [],
                 error: 'Failed to analyze lyrics. Please try again.'
             });
         } finally {
@@ -276,6 +283,7 @@ export function LyricsAnalysisForm() {
                 analysis: '',
                 recommendedAge: 0,
                 songKey: '',
+                themes: [],
                 error: 'Please complete the human verification first.'
             });
             return;
@@ -594,6 +602,31 @@ export function LyricsAnalysisForm() {
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     {result.analysis}
                                 </Typography>
+                                
+                                <Typography variant="h6" fontWeight="600" mb={2}>
+                                    Themes
+                                </Typography>
+                                <Stack
+                                    direction="row"
+                                    mb={2}
+                                    spacing={1}
+                                    sx={{
+                                        mt: 1,
+                                        flexWrap: 'wrap',
+                                    }}
+                                >
+                                    {result.themes?.map((theme: string) => (
+                                        <Chip
+                                            key={theme}
+                                            label={theme}
+                                            size="small"
+                                            sx={{
+                                                height: 24,
+                                                mt: 2,
+                                            }}
+                                        />
+                                    ))}
+                                </Stack>
 
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     <Link href={`/analysis/${result.songKey}`}>

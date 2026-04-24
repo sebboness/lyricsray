@@ -1,12 +1,16 @@
 'use client';
 
+import NextLink from 'next/link';
 import {
     Typography,
     Paper,
     List,
     ListItem,
-    ListItemText,
     Link,
+    Box,
+    Stack,
+    Chip,
+    ListItemButton,
 } from '@mui/material';
 import { CheckCircle, Warning, Error } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -78,7 +82,7 @@ export function PopularSongsClient({
                             key={analysis.songKey}
                             sx={{
                                 px: 0,
-                                py: 1,
+                                py: 0,
                                 borderBottom: index < songs.length - 1 ? '1px solid' : 'none',
                                 borderColor: 'rgba(255, 0, 255, 0.1)',
                                 '&:hover': {
@@ -87,56 +91,89 @@ export function PopularSongsClient({
                                 },
                             }}
                         >
-                            <ListItemText
-                                primary={
-                                    <Link
-                                        href={`/analysis/${analysis.songKey}`}
+                            <ListItemButton
+                                component={NextLink}
+                                href={`/analysis/${analysis.songKey}`}
+                                sx={{
+                                    py: 1.5,
+                                    px: 0,
+                                    alignItems: 'flex-start',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255, 0, 255, 0.05)',
+                                    },
+                                }}
+                            >
+                                <Box sx={{ width: '100%' }}>
+
+                                    {/* ROW 1: Title + meta */}
+                                    <Box
                                         sx={{
-                                            textDecoration: 'none',
-                                            color: 'text.primary',
-                                            fontWeight: 500,
-                                            '&:hover': {
-                                                color: 'primary.main',
-                                            },
+                                            display: 'flex',
+                                            flexDirection: { xs: 'column', sm: 'row' },
+                                            justifyContent: 'space-between',
+                                            alignItems: { xs: 'flex-start', sm: 'center' },
+                                            gap: 1,
                                         }}
                                     >
-                                        <strong>{analysis.songName}</strong> by {analysis.artistName}
-                                    </Link>
-                                }
-                                secondary={
-                                    <>
-                                        <Typography
-                                            component="span"
-                                            variant="caption"
-                                            sx={{
-                                                backgroundColor: `${display.color}15`,
-                                                color: display.color,
-                                                px: 1,
-                                                py: 0.25,
-                                                borderRadius: 1,
-                                                fontWeight: 500,
-                                                mr: 1,
-                                            }}
-                                        >
-                                            Age {analysis.recommendedAge}+ ({display.label})
+                                        {/* Title */}
+                                        <Typography fontWeight={500}>
+                                            <strong>{analysis.songName}</strong> by {analysis.artistName}
                                         </Typography>
-                                        <Typography
-                                            component="span"
-                                            variant="caption"
+
+                                        {/* Right side (age + link) */}
+                                        <Box
                                             sx={{
-                                                px: 1,
-                                                py: 0.25,
-                                                borderRadius: 1,
-                                                fontWeight: 500,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1,
+                                                flexWrap: 'wrap',
                                             }}
                                         >
-                                            <Link href={`/analysis/${analysis.songKey}`}>
+                                            {/* Age tag */}
+                                            <Typography
+                                                sx={{
+                                                    backgroundColor: `${display.color}15`,
+                                                    color: display.color,
+                                                    px: 1,
+                                                    py: 0.25,
+                                                    borderRadius: 1,
+                                                    fontWeight: 500,
+                                                }}
+                                            >
+                                                <strong>Age {analysis.recommendedAge}+</strong>
+                                            </Typography>
+
+                                            <Typography sx={{ fontWeight: 500 }}>
                                                 Find out why &raquo;
-                                            </Link>
-                                        </Typography>
-                                    </>
-                                }
-                            />
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* ROW 2: Theme tags */}
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        sx={{
+                                            mt: 1,
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        {analysis.themes?.slice(0, 5).map((theme: string) => (
+                                            <Chip
+                                                key={theme}
+                                                label={theme}
+                                                size="small"
+                                                sx={{
+                                                    fontSize: '0.7rem',
+                                                    height: 22,
+                                                    mt: 2,
+                                                }}
+                                            />
+                                        ))}
+                                    </Stack>
+
+                                </Box>
+                            </ListItemButton>
                         </ListItem>
                     );
                 })}

@@ -24,6 +24,7 @@ interface AnalyzeSongResponse {
     analysis: string;
     recommendedAge: string;
     songKey: string;
+    themes: string[];
     error?: string;
 }
 
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
                 appropriate: song.appropriate,
                 analysis: song.analysis,
                 recommendedAge: song.recommendedAge.toString(),
+                themes: song.themes || [],
                 songKey,
             };
 
@@ -162,6 +164,7 @@ export async function POST(request: NextRequest) {
                 appropriate: analysis.appropriate,
                 analysis: analysis.analysis,
                 recommendedAge: analysis.recommendedAge,
+                themes: analysis.themes || [],
                 date: moment.utc().toISOString(),
                 songKey,
                 entityType: "ANALYSIS",
@@ -198,6 +201,7 @@ export async function POST(request: NextRequest) {
                 appropriate: analysis.appropriate,
                 analysis: analysis.analysis,
                 recommendedAge: analysis.recommendedAge.toString(),
+                themes: analysis.themes || [],
                 songKey,
             };
 
