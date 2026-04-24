@@ -1,3 +1,5 @@
+'use client';
+
 import {
     Typography,
     Paper,
@@ -7,101 +9,55 @@ import {
     Link,
 } from '@mui/material';
 import { CheckCircle, Warning, Error } from '@mui/icons-material';
-import { getDynamoDbClient } from '@/storage/dynamodb';
-import { AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
+import { useTheme } from '@mui/material/styles';
+import { PopularSongItem } from '@/lib/getPopularSongs';
 
-interface PopularSongItem {
-    songKey: string;
-    songName: string;
-    artistName: string;
-    recommendedAge: number;
-    appropriate: number;
-    date: string;
-}
-
-interface PopularSongsServerProps {
+interface PopularSongsClientProps {
     title?: string;
-    maxItems?: number;
     showTitle?: boolean;
+    songs: PopularSongItem[];
 }
 
 /**
  * Gets the appropriate icon and color based on appropriateness level
  */
-const getAppropriatenessDisplay = (appropriate: number) => {
+const getAppropriatenessDisplay = (appropriate: number, theme: any) => {
     switch (appropriate) {
         case 1:
             return {
                 icon: <CheckCircle sx={{ color: 'success.main' }} />,
-                colorClass: 'success.main',
+                color: theme.palette.success.main,
                 label: 'Parent-friendly'
             };
         case 2:
             return {
                 icon: <Warning sx={{ color: 'warning.main' }} />,
-                colorClass: 'warning.main',
+                color: theme.palette.warning.main,
                 label: 'Use caution'
             };
         case 3:
             return {
                 icon: <Error sx={{ color: 'error.main' }} />,
-                colorClass: 'error.main',
+                color: theme.palette.error.main,
                 label: 'For mature audiences'
             };
         default:
             return {
                 icon: <Error sx={{ color: 'text.secondary' }} />,
-                colorClass: 'text.secondary',
+                color: theme.palette.text.secondary,
                 label: 'Unknown'
             };
     }
 };
 
-async function getPopularSongs(maxItems: number = 5): Promise<PopularSongItem[]> {
-    try {
-        const ddbClient = getDynamoDbClient();
-        const analysisResultDb = new AnalysisResultStorage(ddbClient);
-
-        const recentAnalyses = await analysisResultDb.getRecentAnalyses(20, "POPULAR");
-
-        if (!recentAnalyses || recentAnalyses.length === 0) {
-            return [];
-        }
-
-        // Transform the data for the frontend
-        const formattedAnalyses: PopularSongItem[] = recentAnalyses
-            .filter(item =>
-                item.song?.songName &&
-                item.song?.artistName &&
-                item.recommendedAge &&
-                item.appropriate &&
-                item.date
-            )
-            .map(item => ({
-                songKey: item.songKey,
-                songName: item.song.songName || 'Unknown Song',
-                artistName: item.song.artistName || 'Unknown Artist',
-                recommendedAge: item.recommendedAge,
-                appropriate: item.appropriate,
-                date: item.date
-            }));
-
-        // Randomize and limit results
-        return formattedAnalyses.slice(0, maxItems).sort(() => 0.5 - Math.random());
-    } catch (error) {
-        console.error('Error fetching popular songs:', error);
-        return [];
-    }
-}
-
-export async function PopularSongsServer({
+export function PopularSongsClient({
     title = "Popular",
-    maxItems = 5,
-    showTitle = true
-}: PopularSongsServerProps) {
-    const popularSongs = await getPopularSongs(maxItems);
+    showTitle = true,
+    songs
+}: PopularSongsClientProps) {
+    const theme = useTheme();
 
-    if (popularSongs.length === 0) {
+    if (songs.length === 0) {
         return null;
     }
 
@@ -114,8 +70,8 @@ export async function PopularSongsServer({
             )}
 
             <List sx={{ py: 0 }}>
-                {popularSongs.map((analysis, index) => {
-                    const display = getAppropriatenessDisplay(analysis.appropriate);
+                {songs.map((analysis, index) => {
+                    const display = getAppropriatenessDisplay(analysis.appropriate, theme);
 
                     return (
                         <ListItem
@@ -123,7 +79,7 @@ export async function PopularSongsServer({
                             sx={{
                                 px: 0,
                                 py: 1,
-                                borderBottom: index < popularSongs.length - 1 ? '1px solid' : 'none',
+                                borderBottom: index < songs.length - 1 ? '1px solid' : 'none',
                                 borderColor: 'rgba(255, 0, 255, 0.1)',
                                 '&:hover': {
                                     backgroundColor: 'rgba(255, 0, 255, 0.05)',
@@ -153,11 +109,8 @@ export async function PopularSongsServer({
                                             component="span"
                                             variant="caption"
                                             sx={{
-                                                backgroundColor: display.colorClass === 'success.main' ? 'rgba(46, 125, 50, 0.15)' :
-                                                                  display.colorClass === 'warning.main' ? 'rgba(237, 108, 2, 0.15)' :
-                                                                  display.colorClass === 'error.main' ? 'rgba(211, 47, 47, 0.15)' :
-                                                                  'rgba(128, 128, 128, 0.15)',
-                                                color: display.colorClass,
+                                                backgroundColor: `${display.color}15`,
+                                                color: display.color,
                                                 px: 1,
                                                 py: 0.25,
                                                 borderRadius: 1,
