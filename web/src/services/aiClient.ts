@@ -8,6 +8,7 @@ export interface LyricsAnalysis {
     appropriate: number;
     analysis: string;
     recommendedAge: number;
+    themes: string[];
     tokensIn: number;
     tokensOut: number;
 }
@@ -111,6 +112,7 @@ export class AiClient {
                             appropriate: analysis.appropriate,
                             analysis: analysis.analysis,
                             recommendedAge: analysis.recommendedAge,
+                            themes: analysis.themes || [],
                             tokensIn: response.usage.input_tokens,
                             tokensOut: response.usage.output_tokens,
                         });
@@ -152,11 +154,16 @@ ${lyrics}
 When analyzing the lyrics, consider the following factors:
 
 1. Explicit language or profanity
-2. Sexual content or suggestive themes
+2. Sexual content or suggestive themes, including innuendo, double entendres, and euphemisms for sexual acts or availability, even if not explicitly stated
 3. Violence or disturbing imagery
 4. Drug/alcohol references
 5. Mature themes (relationships, mental health, etc.)
 6. Overall message and values conveyed
+
+Important scoring rules:
+- If lyrics contain sexual innuendo, double entendres, or euphemisms for sex/hookups, treat this as equivalent to mild explicit sexual content and score accordingly.
+- Any song where a primary theme involves sexual availability, seduction, or casual sexual encounters should receive a recommendedAge of at least "16", regardless of how playfully or indirectly it is expressed.
+- Reserve "13" for content with only very mild romantic themes (e.g., crushes, hand-holding, emotional longing) and no sexual undertones.
 
 Instructions for analysis:
 1. Carefully read through the entire set of lyrics.
@@ -170,7 +177,8 @@ Provide your analysis in the following JSON format:
 {
     "appropriate": "integer: Level of appropriateness, 1 through 3, where 1 = generally appropriate for most ages, 2 = exercise caution/parental guidance suggested, 3 = mature content/older audiences only",
     "analysis": "Brief explanation of your assessment, including specific concerns if any",
-    "recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16', '18')"
+    "recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16', '18')",
+    "themes": "string array: List of themes in the lyrics as keywords"
 }
 
 Be conservative in your assessment and err on the side of caution when determining the minimum recommended age. Consider what themes and content are generally appropriate for different age groups.`;
