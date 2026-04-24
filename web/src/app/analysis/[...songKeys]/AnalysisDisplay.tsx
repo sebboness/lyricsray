@@ -12,6 +12,7 @@ import { ArrowBack } from '@mui/icons-material';
 import Link from 'next/link';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
+import { KO_FI_LINK } from '@/util/supportDev';
 
 interface AnalysisDisplayProps {
     result: AnalysisResult;
@@ -46,15 +47,19 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     {/* Song Information */}
                     {result.song && (
                         <Box mb={4}>
-                            <Typography variant="h5" fontWeight="600" mb={2}>
-                                {result.song.songName || 'Unknown song'}
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                                <strong>Artist:</strong> {result.song.artistName || 'Unknown artist'}
-                            </Typography>
+                            {result.song.artistName || result.song.songName ? (
+                                <>
+                                    <Typography variant="h5" fontWeight="600" mb={2}>
+                                        {result.song.songName || 'Unknown song'}
+                                    </Typography>
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Artist:</strong> {result.song.artistName || 'Unknown artist'}
+                                    </Typography>
+                                </>
+                            ) : <></>}
                             {result.song.albumName && (
                                 <Typography variant="body1" color="text.secondary">
-                                    <strong>Album:</strong> {result.song.albumName || 'Unknown album"'}
+                                    <strong>Album:</strong> {result.song.albumName}
                                 </Typography>
                             )}
                         </Box>
@@ -115,6 +120,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     {/* Disclaimer */}
                     <Typography 
                         variant="h6" 
+                        mb={3}
                         sx={{ 
                             fontWeight: 600,
                         }}
@@ -124,8 +130,27 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         determining what&apos;s right for your children.
                     </Typography>
 
+                    <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                        Did this analysis help you?
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary">
+                        If so, consider supporting the project to cover some of the development and
+                        hosting costs ❤️
+                    </Typography>
+
                     {/* Action Buttons */}
                     <Box display="flex" gap={2} mt={4}>
+                        <Button
+                            variant="contained"
+                            href={KO_FI_LINK}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            size="large"
+                            sx={{ px: 4, py: 1.5 }}
+                        >
+                            ☕ Support on Ko-fi
+                        </Button>
                         <Button
                             component={Link}
                             href="/"

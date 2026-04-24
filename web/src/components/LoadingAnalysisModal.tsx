@@ -8,6 +8,7 @@ import {
     Typography,
 } from '@mui/material';
 import { useTheme as useNextTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 type LoadingType = 'searching' | 'analyzing';
 
@@ -26,8 +27,14 @@ export function LoadingAnalysisModal({
     type,
 }: LoadingAnalysisModalProps ) {
     const { theme: currentTheme, systemTheme } = useNextTheme();
+    const [mounted, setMounted] = useState(false);
     const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
     const isDarkMode = effectiveTheme === 'dark';
+    
+    // Ensure theme is resolved before rendering theme-dependent content
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     return (
         <Backdrop
@@ -41,7 +48,7 @@ export function LoadingAnalysisModal({
                 <Box display="flex" flexDirection="column" alignItems="center">
                     <Box
                         component="img"
-                        src={`/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}-512.png`}
+                        src={`/images/logo-transparent-no-text${mounted && isDarkMode ? "" : "-light"}-512.png`}
                         alt="LyricsRay Logo"
                         sx={{
                             width: '100%',

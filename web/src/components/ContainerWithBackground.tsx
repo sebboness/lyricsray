@@ -12,10 +12,16 @@ interface ContainerWithBackgroundProps {
 export function ContainerWithBackground({ children }: ContainerWithBackgroundProps) {
 
     const { theme: currentTheme, systemTheme } = useNextTheme();
+    const [mounted, setMounted] = useState(false);
 
     // Determine the effective theme (accounting for system preference)
     const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
     const isDarkMode = effectiveTheme === 'dark';
+
+    // Ensure theme is resolved before rendering theme-dependent content
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const [isHeaderLogoVisible, setIsHeaderLogoVisible] = useState(true);
 
@@ -52,7 +58,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
 
     // Handle scroll to main content
     const handleScrollToContent = () => {
-        const element = document.getElementById('top-analyze-song-button');
+        const element = document.getElementById('analyze-form-wrapper');
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -119,7 +125,6 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                     {/* Buttons */}
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                         <Button
-                            id="top-analyze-song-button"
                             variant="contained"
                             size="large"
                             onClick={handleScrollToContent}
@@ -129,12 +134,12 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 py: 1.5,
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                boxShadow: isDarkMode
+                                boxShadow: mounted && isDarkMode
                                     ? '0 2px 10px rgba(255, 0, 255, 0.5)'
                                     : '0 2px 10px rgba(139, 0, 255, 0.4)',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
-                                    boxShadow: isDarkMode
+                                    boxShadow: mounted && isDarkMode
                                         ? '0 2px 15px rgba(255, 0, 255, 0.6)'
                                         : '0 2px 15px rgba(139, 0, 255, 0.5)',
                                 },
@@ -153,12 +158,12 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 py: 1.5,
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                boxShadow: isDarkMode
+                                boxShadow: mounted && isDarkMode
                                     ? '0 2px 10px rgba(255, 0, 255, 0.5)'
                                     : '0 2px 10px rgba(139, 0, 255, 0.4)',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
-                                    boxShadow: isDarkMode
+                                    boxShadow: mounted && isDarkMode
                                         ? '0 2px 15px rgba(255, 0, 255, 0.6)'
                                         : '0 2px 15px rgba(139, 0, 255, 0.5)',
                                 },
@@ -180,13 +185,17 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                 >
                     <Box
                         component="img"
-                        src={`/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}-512.png`}
+                        src={mounted
+                            ? `/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}-512.png`
+                            : "/images/logo-transparent-no-text-light-512.png" // Default fallback
+                        }
                         alt="LyricsRay Logo"
                         sx={{
                             width: '100%',
                             maxWidth: '512px',
                             height: 'auto',
                             display: 'block',
+                            opacity: mounted ? 1 : 0,
                         }}
                     />
                 </Box>
