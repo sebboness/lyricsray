@@ -1,23 +1,26 @@
-import { Box } from '@mui/material';
 import { ContainerWithBackground } from '@/components/ContainerWithBackground';
-import { PopularSongsServer } from '@/components/PopularSongsServer';
+import { PopularSongsClient } from '@/components/PopularSongsClient';
 import { LyricsAnalysisForm } from '@/components/LyricsAnalysisForm';
+import { getPopularSongs } from '@/lib/getPopularSongs';
 
-export default function Home() {
+export default async function Home() {
+
+    // Fetch popular songs data on the server
+    const popularSongs = await getPopularSongs(5);
 
     return (
-        <Box sx={{ position: 'relative', minHeight: '100vh' }}>
+        <div style={{ position: 'relative', minHeight: '100vh' }}>
             <ContainerWithBackground>
-                {/* Popular Songs Section - Pre-loaded on server */}
-                <PopularSongsServer
+                {/* Popular Songs Section - Pre-loaded on server, rendered on client */}
+                <PopularSongsClient
                     title="Popular Songs Kids Listen To"
-                    maxItems={5}
                     showTitle={true}
+                    songs={popularSongs}
                 />
 
                 {/* Analysis Form - Client-side interactive component */}
                 <LyricsAnalysisForm />
             </ContainerWithBackground>
-        </Box>
+        </div>
     );
 }
