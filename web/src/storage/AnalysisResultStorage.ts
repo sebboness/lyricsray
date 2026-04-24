@@ -10,6 +10,7 @@ export interface AnalysisResult {
     date: string;
     song: AnalysisSongDetails;
     recommendedAge: number;
+    themes: string[];
     analysis: string;
     appropriate: number;
     entityType: string;
@@ -108,7 +109,7 @@ export class AnalysisResultStorage {
                 },
                 ScanIndexForward: false, // Sort by date descending (newest first)
                 Limit: limit,
-                ProjectionExpression: "songKey, #dateField, song.songName, song.artistName, recommendedAge, appropriate, analysis",
+                ProjectionExpression: "songKey, #dateField, song.songName, song.artistName, recommendedAge, themes, appropriate, analysis",
                 ExpressionAttributeNames: {
                     "#dateField": "date"
                 }
@@ -152,7 +153,7 @@ export class AnalysisResultStorage {
                 RequestItems: {
                     [tableName]: {
                         Keys: keys,
-                        ProjectionExpression: "songKey, #dateField, song.songName, song.artistName, recommendedAge, appropriate, analysis",
+                        ProjectionExpression: "songKey, #dateField, song.songName, song.artistName, recommendedAge, themes, appropriate, analysis",
                         ExpressionAttributeNames: {
                             "#dateField": "date"
                         }

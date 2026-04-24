@@ -6,6 +6,7 @@ export interface PopularSongItem {
     songName: string;
     artistName: string;
     recommendedAge: number;
+    themes: string[];
     appropriate: number;
     date: string;
 }
@@ -35,6 +36,7 @@ export async function getPopularSongs(maxItems: number = 5): Promise<PopularSong
                 songName: item.song.songName || 'Unknown Song',
                 artistName: item.song.artistName || 'Unknown Artist',
                 recommendedAge: item.recommendedAge,
+                themes: item.themes || [],
                 appropriate: item.appropriate,
                 date: item.date
             }));

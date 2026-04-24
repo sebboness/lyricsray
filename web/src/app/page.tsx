@@ -15,7 +15,7 @@ export default async function Home() {
             <ContainerWithBackground>
                 {/* Popular Songs Section - Pre-loaded on server, rendered on client */}
                 <PopularSongsClient
-                    title="Popular Songs Kids Listen To"
+                    title="Popular songs kids listen to"
                     showTitle={true}
                     songs={popularSongs}
                 />

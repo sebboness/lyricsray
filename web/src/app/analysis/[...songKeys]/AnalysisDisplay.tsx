@@ -7,6 +7,8 @@ import {
     Paper,
     Divider,
     Button,
+    Stack,
+    Chip,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import Link from 'next/link';
@@ -83,6 +85,32 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         <Typography variant="body1" color="text.secondary" sx={{ mb: 2, whiteSpace: 'pre-line' }}>
                             {result.analysis}
                         </Typography>
+
+                        <Typography variant="h6" fontWeight="600" mb={2}>
+                            Themes
+                        </Typography>
+                        <Stack
+                            direction="row"
+                            mb={2}
+                            spacing={1}
+                            sx={{
+                                mt: 1,
+                                flexWrap: 'wrap',
+                            }}
+                        >
+                            {result.themes?.map((theme: string) => (
+                                <Chip
+                                    key={theme}
+                                    label={theme}
+                                    size="small"
+                                    sx={{
+                                        height: 24,
+                                        mt: 2,
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                        
                         <Typography variant="body1" color="text.secondary">
                             <Link href="/about">
                                 <strong>Read more about this analysis and how we do it &raquo;</strong>
