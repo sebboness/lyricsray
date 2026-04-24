@@ -16,7 +16,7 @@ export async function getPopularSongs(maxItems: number = 5): Promise<PopularSong
         const ddbClient = getDynamoDbClient();
         const analysisResultDb = new AnalysisResultStorage(ddbClient);
 
-        const recentAnalyses = await analysisResultDb.getRecentAnalyses(20, "POPULAR");
+        const recentAnalyses = await analysisResultDb.getRecentAnalyses(maxItems * 4, "POPULAR");
 
         if (!recentAnalyses || recentAnalyses.length === 0) {
             return [];
@@ -42,7 +42,7 @@ export async function getPopularSongs(maxItems: number = 5): Promise<PopularSong
             }));
 
         // Randomize and limit results
-        return formattedAnalyses.slice(0, maxItems).sort(() => 0.5 - Math.random());
+        return formattedAnalyses.sort(() => 0.5 - Math.random()).slice(0, maxItems);
     } catch (error) {
         console.error('Error fetching popular songs:', error);
         return [];

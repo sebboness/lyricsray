@@ -21,8 +21,6 @@ import {
     ListItemAvatar,
     Avatar,
     Link,
-    Stack,
-    Chip,
 } from '@mui/material';
 import {
     MusicNote,
@@ -40,6 +38,7 @@ import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { LyricsThemes } from './LyricsThemes';
 
 interface FormData {
     songName: string;
@@ -107,6 +106,24 @@ export function LyricsAnalysisForm() {
             loadAltchaChallenge();
         }
     }, []);
+
+    // Continously keep checking altcha expiration
+    useEffect(() => {
+        if (!altchaVerified) return;
+
+        const interval = setInterval(() => {
+            const cached = getCachedAltcha();
+
+            if (!cached) {
+                // Expired → reset + reload challenge
+                setAltchaVerified(false);
+                setAltchaPayload('');
+                loadAltchaChallenge();
+            }
+        }, 10 * 1000); // check every 10s
+
+        return () => clearInterval(interval);
+    }, [altchaVerified]);
 
     const loadAltchaChallenge = async () => {
         try {
@@ -606,29 +623,9 @@ export function LyricsAnalysisForm() {
                                 <Typography variant="h6" fontWeight="600" mb={2}>
                                     Themes
                                 </Typography>
-                                <Stack
-                                    direction="row"
-                                    mb={2}
-                                    spacing={1}
-                                    sx={{
-                                        mt: 1,
-                                        flexWrap: 'wrap',
-                                    }}
-                                >
-                                    {result.themes?.map((theme: string) => (
-                                        <Chip
-                                            key={theme}
-                                            label={theme}
-                                            size="small"
-                                            sx={{
-                                                height: 24,
-                                                mt: 2,
-                                            }}
-                                        />
-                                    ))}
-                                </Stack>
+                                <LyricsThemes themes={result.themes} />
 
-                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                                <Typography variant="body1" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
                                     <Link href={`/analysis/${result.songKey}`}>
                                         <strong>Analysis details &raquo;</strong>
                                     </Link>
