@@ -147,7 +147,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     </Typography>
 
                     {/* Action Buttons */}
-                    <Box display="flex" gap={2} mt={4}>
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }} mt={4}>
                         <Button
                             variant="contained"
                             href={KO_FI_LINK}
