@@ -3,6 +3,7 @@
 import {
     Stack,
     Chip,
+    Box,
 } from '@mui/material';
 
 interface PopularSongsClientProps {
@@ -23,25 +24,53 @@ export function LyricsThemes({
         : themes;
 
     return (
-        <Stack
-            direction="row"
-            spacing={1}
+        <Box
             sx={{
-                mt: 1,
-                flexWrap: 'wrap',
+                position: 'relative',
+                overflow: 'hidden',
             }}
         >
-            {displayThemes.map((theme: string) => (
-                <Chip
-                    key={theme}
-                    label={theme.replace(/_/g, " ")}
-                    size="small"
-                    sx={{
-                        height: 24,
-                        mt: 2,
-                    }}
-                />
-            ))}
-        </Stack>
+            <Stack
+                direction="row"
+                sx={{
+                    flexWrap: { xs: 'nowrap', sm: 'wrap' },
+                    gap: 1,
+                    overflowX: { xs: 'auto', sm: 'visible' },
+                    overflowY: 'hidden',
+                    scrollbarWidth: 'none', '&::-webkit-scrollbar': {
+                        display: 'none',
+                    },
+                    WebkitOverflowScrolling: 'touch',
+                }}
+            >
+                {displayThemes.map((t: string) => (
+                    <Chip
+                        key={t}
+                        label={t.replace(/_/g, " ")}
+                        size="small"
+                        sx={{
+                            height: 24,
+                            mt: 0,
+                            flexShrink: 0,
+                        }}
+                    />
+                ))}
+            </Stack>
+
+            {/* Fade overlay */}
+            <Box
+                sx={{
+                    display: { xs: 'inherit', sm: 'none' },
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: 36,
+                    pointerEvents: 'none',
+                    background: (theme) =>
+                        `linear-gradient(to right, transparent, ${theme.palette.background.paper})`,
+                }}
+            />
+        </Box>
     );
 }

@@ -402,20 +402,20 @@ export function LyricsAnalysisForm() {
                                         },
                                         '& .MuiTabs-indicator': {
                                             background: 'linear-gradient(90deg, #ff00ff, #00ccff)',
-                                            height: 3,
+                                            height: 5,
                                         },
                                     }}
                                     variant="fullWidth"
                                 >
                                     <Tab
                                         value="search"
-                                        label="Search by Song & Artist"
+                                        label="Search by Song"
                                         icon={<Search />}
                                         iconPosition="start"
                                     />
                                     <Tab
                                         value="lyrics"
-                                        label="Paste Lyrics Directly"
+                                        label="Paste Lyrics"
                                         icon={<Note />}
                                         iconPosition="start"
                                     />

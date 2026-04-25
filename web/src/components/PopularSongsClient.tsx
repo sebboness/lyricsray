@@ -13,6 +13,7 @@ import { CheckCircle, Warning, Error } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { PopularSongItem } from '@/lib/getPopularSongs';
 import { LyricsThemes } from './LyricsThemes';
+import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
 
 interface PopularSongsClientProps {
     title?: string;
@@ -94,8 +95,9 @@ export function PopularSongsClient({
                                 href={`/analysis/${analysis.songKey}`}
                                 sx={{
                                     py: 1.5,
-                                    px: 0,
+                                    px: 1.5,
                                     alignItems: 'flex-start',
+                                    backgroundColor: index % 2 === 0 ? 'transparent' : 'rgba(255, 0, 255, 0.1)',
                                     '&:hover': {
                                         backgroundColor: 'rgba(255, 0, 255, 0.05)',
                                     },
@@ -107,15 +109,17 @@ export function PopularSongsClient({
                                     <Box
                                         sx={{
                                             display: 'flex',
-                                            flexDirection: { xs: 'column', sm: 'row' },
+                                            flexDirection: 'row',
                                             justifyContent: 'space-between',
-                                            alignItems: { xs: 'flex-start', sm: 'center' },
+                                            alignItems: 'center',
                                             gap: 1,
+                                            mb: 1,
                                         }}
                                     >
                                         {/* Title */}
-                                        <Typography fontWeight={500}>
-                                            <strong>{analysis.songName}</strong> by {analysis.artistName}
+                                        <Typography fontWeight={500} sx={{fontSize: { xs: '0.8em', sm: '1em' }}}>
+                                            <strong>{analysis.songName}</strong> &nbsp;
+                                            <Box component="span" sx={{ fontSize: '0.9em', fontStyle: 'italic' }}>by {analysis.artistName}</Box>
                                         </Typography>
 
                                         {/* Right side (age + link) */}
@@ -132,23 +136,20 @@ export function PopularSongsClient({
                                                 sx={{
                                                     backgroundColor: `${display.color}15`,
                                                     color: display.color,
+                                                    fontSize: { xs: '0.8em', sm: '1em' },
                                                     px: 1,
                                                     py: 0.25,
                                                     borderRadius: 1,
                                                     fontWeight: 500,
                                                 }}
                                             >
-                                                <strong>Age {analysis.recommendedAge}+</strong>
-                                            </Typography>
-
-                                            <Typography sx={{ fontWeight: 500 }}>
-                                                Find out why &raquo;
+                                                <strong>{getRecommendedAgeDisplay(analysis.recommendedAge)}</strong>
                                             </Typography>
                                         </Box>
                                     </Box>
 
                                     {/* ROW 2: Theme tags */}
-                                    <LyricsThemes themes={analysis.themes} maxItems={4} />
+                                    <LyricsThemes themes={analysis.themes} />
 
                                 </Box>
                             </ListItemButton>
