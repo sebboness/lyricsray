@@ -33,6 +33,41 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { KO_FI_LINK } from '@/util/supportDev';
 
+const researchItems = [
+    {
+        title: 'Music influences mood, identity, and social behavior',
+        summary:
+            'Research from the American Academy of Pediatrics highlights how music plays an important role in emotional regulation, identity formation, and social development.',
+        sourceLabel:
+            'Impact of Music, Music Lyrics, and Music Videos on Children and Youth (Pediatrics, 2009)',
+        url: 'https://publications.aap.org/pediatrics/article/124/5/1488/72119/Impact-of-Music-Music-Lyrics-and-Music-Videos-on',
+    },
+    {
+        title: 'Exposure to certain lyrical themes is linked to behavior patterns',
+        summary:
+            'A longitudinal study found that adolescents exposed to degrading sexual lyrics were more likely to initiate and progress in sexual behavior over time (association, not causation).',
+        sourceLabel:
+            'Exposure to Degrading Versus Nondegrading Music Lyrics and Sexual Behavior Among Youth (Pediatrics, 2006)',
+        url: 'https://publications.aap.org/pediatrics/article/118/2/e430/68914/Exposure-to-Degrading-Versus-Nondegrading-Music',
+    },
+    {
+        title: 'Content matters, especially repeated exposure',
+        summary:
+            'Research suggests repeated exposure to lyrics involving sex, drugs, or violence can shape attitudes and influence what young listeners perceive as normal or acceptable.',
+        sourceLabel:
+            'AAP Policy Statement on Music, Music Lyrics, and Music Videos',
+        url: 'https://publications.aap.org/pediatrics/article/124/5/1488/72119/Impact-of-Music-Music-Lyrics-and-Music-Videos-on',
+    },
+    {
+        title: 'Younger listeners may misinterpret lyrical content',
+        summary:
+            'Developmental psychology research shows children and pre-teens may not fully understand or may misinterpret lyrical meaning due to cognitive development stages.',
+        sourceLabel:
+            'Children\'s comprehension of media messages (Journal of Early Adolescence)',
+        url: 'https://journals.sagepub.com/doi/10.1177/0272431687073007',
+    },
+];
+
 export default function About() {
     const theme = useTheme();
     const [scrollY, setScrollY] = useState(0);
@@ -325,6 +360,89 @@ export default function About() {
                     </CardContent>
                 </Card>
 
+                {/* Inspired by research section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Why LyricsRay exists
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            As a parent, I started wondering how much the lyrics in today’s music actually matter for
+                            kids. After digging into research from pediatric and behavioral experts, one thing became clear:
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem', fontWeight: 600 }}>
+                            Music itself isn’t the problem — but lyrical content can play a meaningful role in how kids
+                            think, feel, and develop.
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            LyricsRay was built to help parents better understand that content and make informed
+                            decisions for their own families.
+                        </Typography>
+                        
+                        <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                What research suggests
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            Here are a few research-backed insights that shaped the idea behind LyricsRay:
+                        </Typography>
+
+                        <Grid container spacing={3}>
+                            {researchItems.map((item, index) => (
+                                <Grid size={{ xs: 12 }} key={index}>
+                                    <Card
+                                        sx={{
+                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                            background:
+                                                index % 2 === 0
+                                                    ? 'rgba(255, 0, 255, 0.04)'
+                                                    : 'rgba(0, 204, 255, 0.04)',
+                                            transition: 'transform 0.2s ease-in-out',
+                                            '&:hover': {
+                                                transform: 'translateY(-2px)',
+                                            },
+                                        }}
+                                    >
+                                        <CardContent>
+                                            <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                                                {item.title}
+                                            </Typography>
+
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ mb: 2, fontSize: '1rem', lineHeight: 1.6 }}
+                                                color="text.secondary"
+                                            >
+                                                {item.summary}
+                                            </Typography>
+
+                                            <Typography variant="caption" color="text.secondary">
+                                                Source:{' '}
+                                                <a
+                                                    href={item.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        color: theme.palette.primary.main,
+                                                        textDecoration: 'none',
+                                                    }}
+                                                >
+                                                    {item.sourceLabel}
+                                                </a>
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </CardContent>
+                </Card>
+
                 {/* Final Commitment Section */}
                 <Card sx={{ mb: 4 }}>
                     <CardContent sx={{ p: 4 }}>
@@ -343,9 +461,7 @@ export default function About() {
                         
                         <Typography 
                             variant="h6" 
-                            sx={{ 
-                                fontWeight: 600,
-                            }}
+                            sx={{ fontWeight: 600 }}
                         >
                             Remember: You know your child best. Use LyricsRay as a tool to inform your decisions, but 
                             always trust your parental instincts and family values when determining what&apos;s right 
