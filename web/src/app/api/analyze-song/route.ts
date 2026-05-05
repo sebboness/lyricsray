@@ -10,6 +10,7 @@ import { RateLimiter } from '@/services/rateLimiter';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { getDynamoDbClient } from '@/storage/dynamodb';
 import { getClientIp } from '@/util/request';
+import { hashIp } from '@/util/hash';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -128,9 +129,9 @@ export async function POST(request: NextRequest) {
             const rateLimitResult = await rateLimiter.checkAndIncrementRateLimit(clientIp);
 
             if (!rateLimitResult.allowed) {
-                logger.warn(`Rate limit exceeded for IP ${clientIp}`, {
+                logger.warn(`Rate limit exceeded`, {
                     moduleName,
-                    clientIp,
+                    hashedIp: hashIp(clientIp),
                     reason: rateLimitResult.reason,
                     retryAfter: rateLimitResult.retryAfter
                 });

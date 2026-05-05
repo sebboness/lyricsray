@@ -59,7 +59,7 @@ export default function PrivacyTerms() {
                         Privacy Policy & Terms of Service
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                        Last updated: November 21, 2025
+                        Last updated: May 5, 2026
                     </Typography>
                 </Paper>
 
@@ -97,18 +97,18 @@ export default function PrivacyTerms() {
                             <ListItemIcon>
                                 <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
                             </ListItemIcon>
-                            <ListItemText 
-                                primary="IP address for rate limiting"
-                                secondary="We collect your IP address solely to implement rate limiting and prevent abuse of our service. This helps ensure fair access for all users and protects against automated attacks."
+                            <ListItemText
+                                primary="Theme preference"
+                                secondary="Your light/dark mode preference is stored locally in your browser using localStorage. This data never leaves your device."
                             />
                         </ListItem>
                         <ListItem>
                             <ListItemIcon>
                                 <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
                             </ListItemIcon>
-                            <ListItemText 
-                                primary="Theme preference"
-                                secondary="Your light/dark mode preference is stored locally in your browser using localStorage. This data never leaves your device."
+                            <ListItemText
+                                primary="Human verification"
+                                secondary="When you use the service, we briefly remember that you passed our &quot;are you a human?&quot; check so you don&apos;t have to repeat it on every request, and is stored locally in your browser using localStorage.. This is forgotten after 60 minutes."
                             />
                         </ListItem>
                         <ListItem>
@@ -118,24 +118,6 @@ export default function PrivacyTerms() {
                             <ListItemText 
                                 primary="Analysis data"
                                 secondary="When you submit lyrics for analysis, we process: song name (if provided), artist name (if provided), and lyrics content. This information is used only to generate the analysis results. The analysis results are stored in a database for later retrieval."
-                            />
-                        </ListItem>
-                    </List>
-
-                    <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
-                        How we use your information
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                        Your information is used exclusively for the following purposes:
-                    </Typography>
-                    <List>
-                        <ListItem>
-                            <ListItemIcon>
-                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Your IP address is used for rate limiting in order to prevent service abuse"
-                                secondary="Specifically there is a limit on how often the service can be used per unique user. The IP address is unique to your device and/or network."
                             />
                         </ListItem>
                     </List>
@@ -174,19 +156,9 @@ export default function PrivacyTerms() {
                     </List>
 
                     <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
-                        Data linking
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                        Your IP address is <strong>not linked</strong> to any personally identifiable information. 
-                        It is used strictly for rate limiting purposes and is not associated with your analysis 
-                        requests, theme preferences, or any other data that could identify you as an individual.
-                    </Typography>
-
-                    <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
                         Data storage and security
                     </Typography>
                     <Typography variant="body1">
-                        IP addresses used for rate limiting are stored temporarily and automatically expire. 
                         Analysis data related to a song and its lyric content is processed in real-time and permanently
                         stored on our servers. We implement industry-standard security measures to protect all data transmission.
                     </Typography>
