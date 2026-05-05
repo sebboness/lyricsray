@@ -1,4 +1,4 @@
-import { makeKey } from '@/util/hash';
+import { makeKey, hashIp } from '@/util/hash';
 import { describe, it, expect } from 'vitest';
 
 describe('makeKey', () => {
@@ -119,7 +119,40 @@ describe('makeKey', () => {
         const input2 = 'test  string';
         const result1 = makeKey(input1);
         const result2 = makeKey(input2);
-        
+
         expect(result1).not.toBe(result2);
+    });
+});
+
+describe('hashIp', () => {
+    it('should return a 24-character hex string', () => {
+        const result = hashIp('192.168.1.1');
+        expect(result).toMatch(/^[a-f0-9]{24}$/);
+        expect(result.length).toBe(24);
+    });
+
+    it('should produce consistent hashes for the same IP', () => {
+        const ip = '10.0.0.1';
+        expect(hashIp(ip)).toBe(hashIp(ip));
+    });
+
+    it('should produce different hashes for different IPs', () => {
+        expect(hashIp('192.168.1.1')).not.toBe(hashIp('192.168.1.2'));
+    });
+
+    it('should handle IPv6 addresses', () => {
+        const result = hashIp('2001:db8::1');
+        expect(result).toMatch(/^[a-f0-9]{24}$/);
+    });
+
+    it('should not include the raw IP in the output', () => {
+        const ip = '1.2.3.4';
+        expect(hashIp(ip)).not.toContain(ip);
+    });
+
+    it('should produce a hash with no prefix (unlike makeKey)', () => {
+        const result = hashIp('192.168.1.1');
+        // makeKey adds a "K" prefix; hashIp must not
+        expect(result.startsWith('K')).toBe(false);
     });
 });
