@@ -3,6 +3,7 @@ import { DynamoDBDocumentClient, GetCommand, TransactWriteCommand } from '@aws-s
 import moment from 'moment';
 import { getDefaultRateLimitConfig } from '@/config/rateLimitConfig';
 import { logger } from '@/logger/logger';
+import { hashIp } from '@/util/hash';
 
 const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-rate-limits`;
 
@@ -67,11 +68,12 @@ export class RateLimiter {
      * @returns {Promise<RateLimitResult>} Promise resolving to rate limit result with allowed status and remaining counts
      */
     async checkAndIncrementRateLimit(ipAddress: string): Promise<RateLimitResult> {
+        const hashedIp = hashIp(ipAddress);
         const now = moment.utc();
         const dateStr = now.format('YYYY-MM-DD');
         const hourStr = now.format('YYYY-MM-DD-HH');
         const globalId = `GLOBAL-${dateStr}`;
-        const ipId = `IP-${ipAddress}-${dateStr}`;
+        const ipId = `IP-${hashedIp}-${dateStr}`;
         const ttl = moment.utc().add(2, 'days').unix();
         let currentRecord: RateLimitRecord | undefined = undefined;
 
@@ -158,7 +160,7 @@ export class RateLimiter {
 
             // Transaction succeeded - both counters were updated atomically
             logger.info('Rate limit transaction succeeded', {
-                ipAddress,
+                hashedIp,
                 globalId,
                 ipId,
                 newDailyCount,
@@ -187,7 +189,7 @@ export class RateLimiter {
             };
 
         } catch (error) {
-            return this.handleTransactionError(error, ipAddress, currentRecord, hourStr);
+            return this.handleTransactionError(error, hashedIp, currentRecord, hourStr);
         }
     }
 
@@ -245,8 +247,8 @@ export class RateLimiter {
      * @private
      */
     private handleTransactionError(
-        error: any, 
-        ipAddress: string, 
+        error: any,
+        hashedIp: string,
         currentRecord: RateLimitRecord | undefined,
         hourStr: string
     ): RateLimitResult {
@@ -254,7 +256,7 @@ export class RateLimiter {
 
             // Transaction was cancelled due to condition failure
             logger.warn('Rate limit transaction cancelled - limits exceeded', {
-                ipAddress,
+                hashedIp,
                 config: this.config,
                 error,
                 hourStr,
@@ -309,7 +311,7 @@ export class RateLimiter {
         // Other errors - log and fail open for availability
         logger.error('Rate limit transaction failed with unexpected error', {
             error,
-            ipAddress
+            hashedIp
         });
 
         return {
@@ -430,10 +432,11 @@ export class RateLimiter {
         daily: number;
         burst: number;
     }> {
+        const hashedIp = hashIp(ipAddress);
         const now = moment.utc();
         const dateStr = now.format('YYYY-MM-DD');
         const hourStr = now.format('YYYY-MM-DD-HH');
-        const ipId = `IP-${ipAddress}-${dateStr}`;
+        const ipId = `IP-${hashedIp}-${dateStr}`;
 
         try {
             const result = await this.dbClient.send(new GetCommand({
@@ -467,7 +470,7 @@ export class RateLimiter {
             };
 
         } catch (error) {
-            logger.error('Failed to get current usage', { error, ipAddress });
+            logger.error('Failed to get current usage', { error, hashedIp });
             return { hourly: 0, daily: 0, burst: 0 };
         }
     }
