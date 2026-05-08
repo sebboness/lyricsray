@@ -28,9 +28,9 @@ export const metadata: Metadata = {
         type: 'website',
         images: [
             {
-                url: `${getBaseUrl()}/images/logo-transparent-no-text-512.png`,
+                url: `${getBaseUrl()}/images/logo-512.jpg`,
                 width: 512,
-                height: 440,
+                height: 512,
                 alt: "LyricsRay Logo"
             }
         ]
