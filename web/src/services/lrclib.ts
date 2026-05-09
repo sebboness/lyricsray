@@ -15,6 +15,7 @@ export interface SongSearchResult {
     instrumental: boolean;
     name: string;
     plainLyrics?: string;
+    relevance: number;
     thumbnail?: string;
     trackName: string;
     syncedLyrics?: string;
