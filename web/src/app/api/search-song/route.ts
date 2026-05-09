@@ -15,6 +15,7 @@ interface SongSearchResult {
     artist?: string;
     album?: string;
     lyrics: string;
+    relevance: number;
     thumbnail?: string;
     title: string;
 }
@@ -34,13 +35,16 @@ const relevanceScore = (hit: LrcLibSongSearchResult, songName: string, artist: s
     const queryTitle = normalize(songName);
     const queryArtist = normalize(artist);
 
+    const exactTitleMatch = queryTitle === title;
+    const exactArtistMatch = queryArtist === hitArtist;
     const titleMatch = title.includes(queryTitle);
     const artistMatch = queryArtist && hitArtist.includes(queryArtist);
 
-    if (titleMatch && artistMatch) return 1;
-    if (titleMatch) return 2;
-    if (artistMatch) return 3;
-    return 4;
+    if (exactTitleMatch && exactArtistMatch) return 1;
+    if (exactTitleMatch && queryArtist === "") return 2;
+    if (titleMatch) return 3;
+    if (artistMatch) return 4;
+    return 5;
 };
 
 export async function POST(request: NextRequest) {
@@ -72,7 +76,7 @@ export async function POST(request: NextRequest) {
         const map = new Map();
 
         // Transform lyrics search response to our format
-        const songs: SongSearchResult[] = results
+        let songs: SongSearchResult[] = results
             .filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics)
             .filter((hit: LrcLibSongSearchResult) => {
                 const key = `${hit.artistName} - ${hit.trackName}`;
@@ -82,8 +86,12 @@ export async function POST(request: NextRequest) {
                 }
                 return false;
             })
+            .map((hit: LrcLibSongSearchResult) => ({
+                ...hit,
+                relevance: relevanceScore(hit, songName, artist),
+            }))
             .sort((a: LrcLibSongSearchResult, b: LrcLibSongSearchResult) =>
-                relevanceScore(a, songName, artist) - relevanceScore(b, songName, artist)
+                a.relevance - b.relevance
             )
             .slice(0, 20) // Limit to 20 results
             .map((hit: LrcLibSongSearchResult) => ({
@@ -92,8 +100,14 @@ export async function POST(request: NextRequest) {
                 artist: hit.artistName,
                 album: hit.albumName,
                 lyrics: hit.plainLyrics!,
+                relevance: hit.relevance,
                 thumbnail: "" // TODO figure out how to display those
             }));
+            
+        // If there are exact matches, then limit the songs results to just the first exact match
+        const exactMatches = songs.filter((hit: SongSearchResult) => hit.relevance === 1)
+        if (exactMatches.length > 0)
+            songs = [exactMatches[0]];
 
         const response: SearchSongResponse = {
             songs
