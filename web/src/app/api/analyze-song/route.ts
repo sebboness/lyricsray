@@ -45,6 +45,17 @@ const cleanUpLyrics = (lyrics?: string): string => {
     return lyrics.trim().replace(/(<[^>]*>)|(\[[^\]]*\])/g, '');
 }
 
+/**
+ * The value trying to be parsed of any type.
+ * @param value The value to parse
+ * @param defaultValue The default value (defaults to 0)
+ * @returns An integer value
+ */
+const tryParseInt = (value: any, defaultValue: number = 0): number => {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? defaultValue : parsed;
+}
+
 export async function POST(request: NextRequest) {
     try {
 
@@ -160,6 +171,7 @@ export async function POST(request: NextRequest) {
 
             // Analyze lyrics with AI
             const analysis = await aiClient.analyzeLyrics(lyrics);
+            analysis.appropriate = tryParseInt(analysis.appropriate);
 
             const analysisResult: AnalysisResult = {
                 appropriate: analysis.appropriate,
