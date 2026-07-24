@@ -166,9 +166,9 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 About
                             </Link>
 
-                            <Link 
-                                href="/privacy-and-terms" 
-                                sx={{ 
+                            <Link
+                                href="/privacy-and-terms"
+                                sx={{
                                     color: theme.palette.text.primary,
                                     textDecoration: 'none',
                                     fontSize: { xs: '0.85rem', sm: '1rem' },
@@ -183,6 +183,26 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 }}
                             >
                                 Privacy
+                            </Link>
+
+                            <Link
+                                href="/recent-searches"
+                                sx={{
+                                    display: { xs: 'none', sm: 'inline' },
+                                    color: theme.palette.text.primary,
+                                    textDecoration: 'none',
+                                    fontSize: { xs: '0.85rem', sm: '1rem' },
+                                    fontWeight: 500,
+                                    transition: 'color 0.3s ease',
+                                    '&:hover': {
+                                        color: theme.palette.primary.main,
+                                    },
+                                    opacity: showNavbarLogo ? 1 : 0,
+                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
+                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                }}
+                            >
+                                Recent Searches
                             </Link>
                         </Box>
 

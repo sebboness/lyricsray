@@ -172,16 +172,27 @@ describe('POST /api/search-song', () => {
             expect(body.songs[0].id).toBe('2');
         });
 
-        it('uses full order: score 1 > 2 > 3 > 4', async () => {
+        it('orders non-exact matches: title match > artist match > no match', async () => {
             mockSearchLyrics.mockResolvedValue([
-                makeSong({ id: "4", trackName: 'Unrelated', artistName: 'Nobody' }),  // score 4
-                makeSong({ id: "3", trackName: 'Unrelated', artistName: 'Adele' }),   // score 3
-                makeSong({ id: "2", trackName: 'Hello', artistName: 'Nobody' }),      // score 2
-                makeSong({ id: "1", trackName: 'Hello', artistName: 'Adele' }),       // score 1
+                makeSong({ id: "5", trackName: 'Unrelated', artistName: 'Nobody' }),  // score 5 (no match)
+                makeSong({ id: "4", trackName: 'Unrelated', artistName: 'Adele' }),   // score 4 (artist match)
+                makeSong({ id: "3", trackName: 'Hello', artistName: 'Nobody' }),      // score 3 (title match)
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
-            expect(body.songs.map((s: { id: string }) => s.id)).toEqual(['1', '2', '3', '4']);
+            expect(body.songs.map((s: { id: string }) => s.id)).toEqual(['3', '4', '5']);
+        });
+
+        it('collapses to the single exact match when one exists, even among lower-relevance results', async () => {
+            mockSearchLyrics.mockResolvedValue([
+                makeSong({ id: "4", trackName: 'Unrelated', artistName: 'Nobody' }),  // score 5
+                makeSong({ id: "3", trackName: 'Unrelated', artistName: 'Adele' }),   // score 4
+                makeSong({ id: "2", trackName: 'Hello', artistName: 'Nobody' }),      // score 3
+                makeSong({ id: "1", trackName: 'Hello', artistName: 'Adele' }),       // score 1 (exact match)
+            ]);
+            const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
+            const body = await res.json();
+            expect(body.songs.map((s: { id: string }) => s.id)).toEqual(['1']);
         });
 
         it('matches case-insensitively', async () => {
@@ -204,17 +215,30 @@ describe('POST /api/search-song', () => {
         });
 
         it('sorts before slicing so top 20 are the most relevant', async () => {
-            // 11 no-match filler songs + 1 perfect match — the perfect match must survive the slice
+            // 21 no-match filler songs (score 5) + 1 title-only match (score 3) — the best match must survive the slice
             mockSearchLyrics.mockResolvedValue([
                 ...Array.from({ length: 21 }, (_, i) =>
                     makeSong({ id: (i + 20).toString(), trackName: `Filler ${i}`, artistName: `Filler Artist ${i}` })
                 ),
-                makeSong({ id: "99", trackName: 'Hello', artistName: 'Adele' }), // score 1
+                makeSong({ id: "99", trackName: 'Hello', artistName: 'Nobody' }), // score 3
             ]);
             const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
             const body = await res.json();
             expect(body.songs[0].id).toBe('99');
             expect(body.songs).toHaveLength(20);
+        });
+
+        it('collapses to a single exact match even among many filler results', async () => {
+            mockSearchLyrics.mockResolvedValue([
+                ...Array.from({ length: 21 }, (_, i) =>
+                    makeSong({ id: (i + 20).toString(), trackName: `Filler ${i}`, artistName: `Filler Artist ${i}` })
+                ),
+                makeSong({ id: "99", trackName: 'Hello', artistName: 'Adele' }), // score 1 (exact match)
+            ]);
+            const res = await POST(makeRequest({ altchaPayload: 'valid', songName: 'Hello', artist: 'Adele' }));
+            const body = await res.json();
+            expect(body.songs).toHaveLength(1);
+            expect(body.songs[0].id).toBe('99');
         });
 
         it('handles missing artist query gracefully', async () => {
