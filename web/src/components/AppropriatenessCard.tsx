@@ -1,6 +1,7 @@
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { CheckCircle, Error, WarningRounded } from '@mui/icons-material';
 import { ShareButtonWithModal } from './ShareButtonWithModal';
+import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
 
 interface AppropriatenessCardProps {
     appropriate: number;
@@ -92,7 +93,7 @@ export function AppropriatenessCard({
                                 </Typography>
 
                                 <Typography variant="body2" color="text.secondary">
-                                    <strong>Minimum age:</strong> {recommendedAge}
+                                    <strong>Minimum age:</strong> {getRecommendedAgeDisplay(recommendedAge)}
                                 </Typography>
                             </Box>
                         </Box>

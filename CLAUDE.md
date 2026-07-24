@@ -92,6 +92,27 @@ The heart of the app is the AI-powered lyrics analysis pipeline. When working in
 - **Components**: Use functional components with hooks. No class components.
 - **Styling**: Check existing patterns before introducing new CSS approaches.
 
+## Updating code / Code standards
+
+When adding new code to the project, ensure it follows the below standards:
+
+- Maintain SOLID principles and keep responsibilities isolated
+- For APIs, maintain RESTful principles
+- After having updated code, ensure existing unit tests pass
+- If new logic has been added, ensure new unit tests are added
+- Review if added/edited code can be refactored to follow SOLID principles
+- When updating front end tsx files, always look for opportunities to refactor into smaller reusable components
+- When making infrastructure changes (new tables, GSIs, endpoints, etc.), always check whether IAM policies need updating:
+  - **Amplify role** (`deploy/terraform/2-amplify.tf`) — add permissions if Amplify SSR needs direct AWS resource access
+- When adding or renaming environment variables, update them in **both** Terraform files:
+  - **Amplify env vars** — `environment_variables` block in `deploy/terraform/2-amplify.tf`
+  - Note the distinction between server-side vars (Lambda + Amplify SSR, no prefix) and client-side vars (`NEXT_PUBLIC_*`, Amplify only — baked into the browser bundle at build time)
+- After each major code update, check if this CLAUDE.md file should be updated to reflect updated schemas, architecture, or other relevant information to maintain this project
+
+## Testing
+
+**Vitest** is used for both `api/` and `web/`. All code should have unit tests and we strive to have 100% code coverage. Any code that was edited or removed should result in an analysis of unit tests, and whether any unit tests should be added, updated, or removed.
+
 ## Sensitive Areas — Be Careful
 
 - **Anthropic prompt changes**: The system prompt for lyrical analysis is sensitive. Changes can silently degrade output quality. Always test with a variety of songs (clean, explicit, borderline).
