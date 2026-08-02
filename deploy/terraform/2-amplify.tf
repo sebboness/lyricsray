@@ -40,22 +40,6 @@ resource "aws_iam_role_policy" "amplify_policy" {
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Query"
-        ]
-        Resource = [
-          aws_dynamodb_table.analysis_results.arn,
-          "${aws_dynamodb_table.analysis_results.arn}/index/*",
-          aws_dynamodb_table.analysis_rate_limits.arn,
-          "${aws_dynamodb_table.analysis_rate_limits.arn}/index/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "sts:GetCallerIdentity",
           "sts:AssumeRole"
         ]
@@ -173,20 +157,15 @@ resource "aws_amplify_branch" "main" {
     },
     # Add secret environment variables
     {
-      APP_NAME                  = local.ssm_secrets.APP_NAME
-      APP_URL                   = local.ssm_secrets.APP_URL
-      APP_VERSION               = local.ssm_secrets.APP_VERSION
-      ALTCHA_KEY                = local.ssm_secrets.ALTCHA_KEY
-      ALTCHA_SECRET             = local.ssm_secrets.ALTCHA_SECRET
-      ANTHROPIC_API_KEY         = local.ssm_secrets.ANTHROPIC_API_KEY
-      ANTHROPIC_MODEL           = local.ssm_secrets.ANTHROPIC_MODEL
+      APP_NAME    = local.ssm_secrets.APP_NAME
+      APP_URL     = local.ssm_secrets.APP_URL
+      APP_VERSION = local.ssm_secrets.APP_VERSION
 
-      APP_FREE_TIER_GLOBAL_DAILY_LIMIT   = local.ssm_secrets.APP_FREE_TIER_GLOBAL_DAILY_LIMIT
-      APP_FREE_TIER_HOURLY_LIMIT         = local.ssm_secrets.APP_FREE_TIER_HOURLY_LIMIT
-      APP_FREE_TIER_DAILY_LIMIT          = local.ssm_secrets.APP_FREE_TIER_DAILY_LIMIT
-      APP_FREE_TIER_BURST_LIMIT          = local.ssm_secrets.APP_FREE_TIER_BURST_LIMIT
-      APP_FREE_TIER_BURST_WINDOW_MINUTES = local.ssm_secrets.APP_FREE_TIER_BURST_WINDOW_MINUTES
-      
+      # Server-only — base URL of the api/ Lambda behind API Gateway (see apigateway.tf/domain.tf).
+      # The Next.js app proxies to this from its own /api/* route handlers (BFF pattern);
+      # the browser never calls it directly, so no CORS/NEXT_PUBLIC_ exposure is needed.
+      API_URL = "https://api.${local.env == "prod" ? "lyricsray.com" : "lyricsray.hexonite.net"}"
+
       _AMPLIFY_COMPUTE_ROLE_ARN = aws_iam_role.amplify_role.arn
     }
   )
@@ -228,13 +207,6 @@ resource "aws_amplify_domain_association" "lyricsray_dev_domain" {
   wait_for_verification = false
 }
 
-# Webhook for automated deployments (optional)
-resource "aws_amplify_webhook" "lyricsray_webhook" {
-  app_id      = aws_amplify_app.lyricsray.id
-  branch_name = aws_amplify_branch.main.branch_name
-  description = "Webhook for ${local.env} deployments"
-}
-
 # Outputs
 output "amplify_app_id" {
   description = "Amplify App ID"
@@ -244,12 +216,6 @@ output "amplify_app_id" {
 output "amplify_default_domain" {
   description = "Amplify default domain"
   value       = "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.lyricsray.default_domain}"
-}
-
-output "amplify_webhook_url" {
-  description = "Amplify webhook URL for deployments"
-  value       = aws_amplify_webhook.lyricsray_webhook.url
-  sensitive   = true
 }
 
 output "custom_domain_url" {

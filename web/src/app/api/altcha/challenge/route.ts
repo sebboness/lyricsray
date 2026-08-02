@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
 import { logger } from '@/logger/logger';
-import { createAltchaChallenge } from '@/util/altcha';
-import { logPrefix } from '@/util/log';
-
-const moduleName = "altcha/challenge";
+import { apiGetPublic } from '@/lib/api';
 
 export async function GET() {
     try {
-        const challenge = await createAltchaChallenge();
-        return NextResponse.json(challenge);
+        const { data } = await apiGetPublic('/v1/altcha/challenge');
+        return NextResponse.json(data);
     } catch (error) {
-        logger.error(`${logPrefix(moduleName)}Error creating ALTCHA challenge:`, error);
+        logger.error('Error creating ALTCHA challenge:', error);
         return NextResponse.json(
             { error: 'Failed to create challenge' },
             { status: 500 }

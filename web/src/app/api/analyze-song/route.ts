@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logPrefix } from '@/util/log';
 import { logger } from '@/logger/logger';
-import { verifyAltchaSolution } from '@/util/altcha';
-import { makeSongKey } from '@/util/routeHelper';
-import { AnalysisResult, AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
-import moment from 'moment';
-import { AiClient } from '@/services/aiClient';
-import { RateLimiter } from '@/services/rateLimiter';
-import { LYRICS_MAX_LENGTH } from '@/util/defaults';
-import { getDynamoDbClient } from '@/storage/dynamodb';
-import { getClientIp } from '@/util/request';
-import { hashIp } from '@/util/hash';
+import { ApiRequestError, apiPostPublic, forwardHeaders } from '@/lib/api';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -29,207 +19,41 @@ interface AnalyzeSongResponse {
     error?: string;
 }
 
-const moduleName = "analyze-song";
-
-const aiClient = new AiClient(process.env.ANTHROPIC_MODEL!, process.env.ANTHROPIC_API_KEY!);
-
-/**
- * Cleans up lyrics by trimming the string, removing any html elements, and removing any "[" and "]" groups.
- * @param lyrics The lyrics to clean
- * @returns Cleaned up lyrics string
- */
-const cleanUpLyrics = (lyrics?: string): string => {
-    if (!lyrics)
-        return "";
-    
-    return lyrics.trim().replace(/(<[^>]*>)|(\[[^\]]*\])/g, '');
-}
-
-/**
- * The value trying to be parsed of any type.
- * @param value The value to parse
- * @param defaultValue The default value (defaults to 0)
- * @returns An integer value
- */
-const tryParseInt = (value: any, defaultValue: number = 0): number => {
-    const parsed = parseInt(value, 10);
-    return isNaN(parsed) ? defaultValue : parsed;
-}
+const RATE_LIMIT_HEADERS = ['X-RateLimit-Remaining-Hourly', 'X-RateLimit-Remaining-Daily'];
 
 export async function POST(request: NextRequest) {
     try {
-
-        const ddbClient = getDynamoDbClient();
-        const analysisResultDb = new AnalysisResultStorage(ddbClient);
-        const rateLimiter = new RateLimiter(ddbClient);
-
         const body: AnalyzeSongRequest = await request.json();
 
-        const {
-            albumName,
-            altchaPayload,
-            songName,
-            artistName
-        } = body;
+        const { data, headers } = await apiPostPublic<AnalyzeSongResponse>('/v1/analyze-song', body);
 
-        let { lyrics } = body;
-
-        logger.info(`${logPrefix(moduleName)} altchaPayload`, altchaPayload);
-
-        if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
-            return NextResponse.json(
-                { error: 'Human verification failed' },
-                { status: 400 }
-            );
-        }
-
-        lyrics = cleanUpLyrics(lyrics);
-
-        if (!lyrics) {
-            return NextResponse.json(
-                { error: 'Lyrics are required' },
-                { status: 400 }
-            );
-        }
-
-        if (!lyrics && lyrics.length > LYRICS_MAX_LENGTH) {
-            lyrics = lyrics.substring(0, LYRICS_MAX_LENGTH);
-        }
-
-
-        // Try to get analysis from storage if it was previously analyzed
-        const songKey = makeSongKey(artistName, songName, lyrics);
-        let song: AnalysisResult | null = null;
-
-        try {
-            song = await analysisResultDb.getAnalysisResult(songKey);
-
-            const message = !!song
-                ? "Retrieved existing analysis result from storage"
-                : "Analysis result not found in storage";
-
-            logger.info(message, {
-                moduleName,
-                artistName,
-                songName,
-                songKey,
-            });
-        }
-        catch (err) {
-            logger.error("Error ocurred while retrieving analysis result from storage", {
-                moduleName,
-                artistName,
-                songName,
-                err,
-            })
-        }
-
-        if (song != null) {
-            const response: AnalyzeSongResponse = {
-                appropriate: song.appropriate,
-                analysis: song.analysis,
-                recommendedAge: song.recommendedAge.toString(),
-                themes: song.themes || [],
-                songKey,
-            };
-
-            return NextResponse.json(response);
-        }
-        else {
-            const clientIp = getClientIp(request);
-            const rateLimitResult = await rateLimiter.checkAndIncrementRateLimit(clientIp);
-
-            if (!rateLimitResult.allowed) {
-                logger.warn(`Rate limit exceeded`, {
-                    moduleName,
-                    hashedIp: hashIp(clientIp),
-                    reason: rateLimitResult.reason,
-                    retryAfter: rateLimitResult.retryAfter
-                });
-                
+        return NextResponse.json(data, {
+            headers: forwardHeaders(headers, RATE_LIMIT_HEADERS),
+        });
+    } catch (error) {
+        if (error instanceof ApiRequestError) {
+            if (error.statusCode === 429) {
                 return NextResponse.json(
-                    { 
-                        error: rateLimitResult.reason || 'Rate limit exceeded',
-                        retryAfter: rateLimitResult.retryAfter
+                    {
+                        error: error.errors[0] ?? 'Rate limit exceeded',
+                        retryAfter: error.headers.get('Retry-After') ? parseInt(error.headers.get('Retry-After')!, 10) : undefined,
                     },
-                    { 
+                    {
                         status: 429,
-                        headers: {
-                            'Retry-After': rateLimitResult.retryAfter?.toString() || '3600',
-                            'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
-                            'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
-                        }
+                        headers: forwardHeaders(error.headers, ['Retry-After', ...RATE_LIMIT_HEADERS]),
                     }
                 );
             }
 
-            // Get an estimate prior to analyzing with AI
-            const prompt = aiClient.getLyricsPrompt(lyrics);
-            const estimateTokensIn = await aiClient.getTokenInputEstimate(prompt);
-
-            logger.info("Estimated token input for prompt", { moduleName, estimateTokensIn });
-
-            // Analyze lyrics with AI
-            const analysis = await aiClient.analyzeLyrics(lyrics);
-            analysis.appropriate = tryParseInt(analysis.appropriate);
-
-            const analysisResult: AnalysisResult = {
-                appropriate: analysis.appropriate,
-                analysis: analysis.analysis,
-                recommendedAge: analysis.recommendedAge,
-                themes: analysis.themes || [],
-                date: moment.utc().toISOString(),
-                songKey,
-                entityType: "ANALYSIS",
-                song: {
-                    albumName,
-                    artistName,
-                    lyrics,
-                    songName,
-                    thumbnailUrl: undefined,
-                    yearReleased: undefined,
-                }
-            }
-
-            // Try saving to database
-            try {
-                await analysisResultDb.saveAnalysisResult(analysisResult);
-
-                logger.info("Analysis result saved to storage", {
-                    moduleName,
-                    artistName,
-                    songName,
-                })
-            }
-            catch (err) {
-                logger.error("Failed to save analysis result to storage", {
-                    moduleName,
-                    artistName,
-                    songName,
-                    err,
-                })
-            }
-
-            const response: AnalyzeSongResponse = {
-                appropriate: analysis.appropriate,
-                analysis: analysis.analysis,
-                recommendedAge: analysis.recommendedAge.toString(),
-                themes: analysis.themes || [],
-                songKey,
-            };
-
-            return NextResponse.json(response, {
-                headers: {
-                    'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
-                    'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
-                }
-            });
+            return NextResponse.json(
+                { error: error.errors[0] ?? error.message },
+                { status: error.statusCode }
+            );
         }
 
-    } catch (error) {
-        logger.error(`${logPrefix(moduleName)} Error analyzing song:`, error);
+        logger.error('Error analyzing song:', error);
         return NextResponse.json(
-            { 
+            {
                 error: 'Internal server error. Please try again.',
                 appropriate: false,
                 analysis: '',

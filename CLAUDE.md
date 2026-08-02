@@ -108,10 +108,15 @@ When adding new code to the project, ensure it follows the below standards:
   - **Amplify env vars** — `environment_variables` block in `deploy/terraform/2-amplify.tf`
   - Note the distinction between server-side vars (Lambda + Amplify SSR, no prefix) and client-side vars (`NEXT_PUBLIC_*`, Amplify only — baked into the browser bundle at build time)
 - After each major code update, check if this CLAUDE.md file should be updated to reflect updated schemas, architecture, or other relevant information to maintain this project
+- All code updates related to UI changes or changes to pages should ensure a mobile-friendly experience
+- When writing any text for UI, refrain from using "m-dashes" please. Use comma, colons, or new sentences instead.
 
 ## Testing
 
-**Vitest** is used for both `api/` and `web/`. All code should have unit tests and we strive to have 100% code coverage. Any code that was edited or removed should result in an analysis of unit tests, and whether any unit tests should be added, updated, or removed.
+**Vitest** is used for both `api/` and `web/`. All new/changed code should have unit tests. Test scaffolding exists: add `__tests__/` directories alongside the code as it's written, following the pattern each package's `package.json` already wires up (`npm test` / `npm run test:watch`).
+
+Any UI tests should not include assertions against CSS styles or text unless the behavior is dynamic and is being updated
+via some logic that needs testing.
 
 ## Sensitive Areas — Be Careful
 
