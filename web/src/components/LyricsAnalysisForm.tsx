@@ -30,6 +30,7 @@ import {
     RecordVoiceOver,
     Close,
     Security,
+    HourglassTop,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { AltchaWidget } from '@/components/AltchaWidget';
@@ -38,7 +39,11 @@ import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { clearRateLimitedUntil, formatRemainingTime, getRateLimitedUntil, setRateLimitedUntil } from '@/util/rateLimitClient';
 import { LyricsThemes } from './LyricsThemes';
+
+const DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3600;
+const FRIENDLY_SERVER_ERROR_MESSAGE = "Something went wrong on our end. Please try again in a little while.";
 
 interface FormData {
     songName: string;
@@ -63,6 +68,10 @@ interface AnalysisResult {
     songKey: string;
     themes: string[];
     error?: string;
+    // 'validation' errors (bad input, failed human verification) show the server's
+    // specific message; 'server' errors (500s, network failures) show a generic,
+    // friendlier message instead of exposing backend error details.
+    errorKind?: 'validation' | 'server';
 }
 
 const tip1 = `Paste the complete lyrics for the most accurate analysis*`;
@@ -95,6 +104,42 @@ export function LyricsAnalysisForm() {
     const [altchaPayload, setAltchaPayload] = useState<string>('');
     const [altchaChallenge, setAltchaChallenge] = useState<any>(null);
     const [altchaVerified, setAltchaVerified] = useState<boolean>(false);
+
+    // Rate-limit cooldown state. rateLimitedUntil is an absolute timestamp persisted to
+    // sessionStorage (see @/util/rateLimitClient) so a page refresh mid-cooldown still shows
+    // the wait message instead of an empty form inviting an immediate resubmit that the
+    // server would just reject again. `now` ticks every second while a cooldown is active to
+    // drive the live countdown; the server's rate limiter remains the actual source of truth.
+    const [rateLimitedUntil, setRateLimitedUntilState] = useState<number | null>(null);
+    const [now, setNow] = useState<number>(() => Date.now());
+
+    const remainingCooldownSeconds = rateLimitedUntil ? Math.max(0, Math.ceil((rateLimitedUntil - now) / 1000)) : 0;
+    const isRateLimited = remainingCooldownSeconds > 0;
+
+    // Restore any cooldown still active from a previous page load in this session
+    useEffect(() => {
+        const until = getRateLimitedUntil();
+        if (until) {
+            setRateLimitedUntilState(until);
+            setNow(Date.now());
+        }
+    }, []);
+
+    // Tick the countdown once per second while a cooldown is active
+    useEffect(() => {
+        if (!rateLimitedUntil) return;
+
+        const timer = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, [rateLimitedUntil]);
+
+    // Clear the cooldown (state + storage) once it elapses
+    useEffect(() => {
+        if (rateLimitedUntil && remainingCooldownSeconds === 0) {
+            clearRateLimitedUntil();
+            setRateLimitedUntilState(null);
+        }
+    }, [remainingCooldownSeconds, rateLimitedUntil]);
 
     // Load ALTCHA challenge on component mount
     useEffect(() => {
@@ -240,6 +285,14 @@ export function LyricsAnalysisForm() {
         }
     };
 
+    const scrollToResults = () => {
+        setTimeout(() => {
+            const element = document.getElementById('analyze-results-wrapper');
+            if (element)
+                element.scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+    };
+
     const analyzeLyricsDirectly = async (song: SongSearchResult) => {
         setIsLoading(true);
         setShowSongModal(false);
@@ -260,20 +313,39 @@ export function LyricsAnalysisForm() {
                 }),
             });
 
-            const data: AnalysisResult = await response.json();
+            const data = await response.json();
 
-            // Check if there was a verification error
-            if (data.error && (data.error.includes('Human verification') || data.error.includes('verification failed'))) {
-                resetAltcha();
+            if (response.status === 429) {
+                const retryAfterSeconds = typeof data.retryAfter === 'number' ? data.retryAfter : DEFAULT_RATE_LIMIT_RETRY_SECONDS;
+                const until = setRateLimitedUntil(retryAfterSeconds);
+                setRateLimitedUntilState(until);
+                setNow(Date.now());
+                return;
+            }
+
+            if (!response.ok) {
+                const isServerError = response.status >= 500;
+
+                // Check if there was a verification error
+                if (!isServerError && data.error && (data.error.includes('Human verification') || data.error.includes('verification failed'))) {
+                    resetAltcha();
+                }
+
+                setResult({
+                    appropriate: 0,
+                    analysis: '',
+                    recommendedAge: 0,
+                    songKey: '',
+                    themes: [],
+                    error: isServerError ? FRIENDLY_SERVER_ERROR_MESSAGE : data.error,
+                    errorKind: isServerError ? 'server' : 'validation',
+                });
+                scrollToResults();
+                return;
             }
 
             setResult(data);
-
-            setTimeout(() => {
-                const element = document.getElementById('analyze-results-wrapper');
-                if (element)
-                    element.scrollIntoView({ behavior: 'smooth' });
-            }, 500);
+            scrollToResults();
         } catch (error) {
             console.error('Error analyzing lyrics:', error);
             setResult({
@@ -282,7 +354,8 @@ export function LyricsAnalysisForm() {
                 recommendedAge: 0,
                 songKey: '',
                 themes: [],
-                error: 'Failed to analyze lyrics. Please try again.'
+                error: FRIENDLY_SERVER_ERROR_MESSAGE,
+                errorKind: 'server',
             });
         } finally {
             setIsLoading(false);
@@ -291,6 +364,7 @@ export function LyricsAnalysisForm() {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (isRateLimited) return; // the form isn't shown during a cooldown, but guard defensively
         setResult(null); // Clear previous results
 
         // Check ALTCHA verification first
@@ -374,7 +448,28 @@ export function LyricsAnalysisForm() {
                     We will analyze the content and provide you with a detailed assessment and age recommendation.
                 </Typography>
 
-                {!result && (
+                {isRateLimited && (
+                    <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
+                        <Alert
+                            severity="info"
+                            icon={<HourglassTop />}
+                            sx={{
+                                background: 'rgba(0, 204, 255, 0.08)',
+                                border: '1px solid rgba(0, 204, 255, 0.25)',
+                            }}
+                        >
+                            <Typography variant="body1" fontWeight="600" sx={{ mb: 0.5 }}>
+                                We&apos;re taking a quick breather!
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                We&apos;ve hit our limit for new analyses right now. Please check back
+                                in about {formatRemainingTime(remainingCooldownSeconds)}.
+                            </Typography>
+                        </Alert>
+                    </Box>
+                )}
+
+                {!result && !isRateLimited && (
                     <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
                         <Typography variant="h5" fontWeight="600" mb={3}>
                             Analyze a Song
@@ -567,15 +662,28 @@ export function LyricsAnalysisForm() {
 
                         {result.error ? (
                             <>
-                                <Alert
-                                    severity="error"
-                                    sx={{
-                                        background: 'rgba(255, 51, 102, 0.1)',
-                                        border: '1px solid rgba(255, 51, 102, 0.3)',
-                                    }}
-                                >
-                                    {result.error}
-                                </Alert>
+                                {result.errorKind === 'server' ? (
+                                    <Alert
+                                        severity="info"
+                                        icon={<HourglassTop />}
+                                        sx={{
+                                            background: 'rgba(0, 204, 255, 0.08)',
+                                            border: '1px solid rgba(0, 204, 255, 0.25)',
+                                        }}
+                                    >
+                                        {result.error}
+                                    </Alert>
+                                ) : (
+                                    <Alert
+                                        severity="error"
+                                        sx={{
+                                            background: 'rgba(255, 51, 102, 0.1)',
+                                            border: '1px solid rgba(255, 51, 102, 0.3)',
+                                        }}
+                                    >
+                                        {result.error}
+                                    </Alert>
+                                )}
 
                                 {/* Try again Button */}
                                 <Box textAlign="center" mt={4} className="submit-wrapper">

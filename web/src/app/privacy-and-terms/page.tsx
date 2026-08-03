@@ -115,9 +115,18 @@ export default function PrivacyTerms() {
                             <ListItemIcon>
                                 <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
                             </ListItemIcon>
-                            <ListItemText 
+                            <ListItemText
                                 primary="Analysis data"
                                 secondary="When you submit lyrics for analysis, we process: song name (if provided), artist name (if provided), and lyrics content. This information is used only to generate the analysis results. The analysis results are stored in a database for later retrieval."
+                            />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Rate-limit status"
+                                secondary="If you reach our usage limit for new analyses, we remember when you'll be able to try again using your browser's sessionStorage, so refreshing the page still shows an accurate wait time instead of an empty form. This is cleared automatically once the wait period ends, and is cleared entirely when you close your browser tab. This data never leaves your device."
                             />
                         </ListItem>
                     </List>

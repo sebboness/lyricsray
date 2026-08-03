@@ -1,7 +1,5 @@
 import { logger } from '@/logger/logger';
-import { LrcLibApi, SongSearchResult as LrcLibSongSearchResult } from '@/services/lrclib';
-import { verifyAltchaSolution } from '@/util/altcha';
-import { logPrefix } from '@/util/log';
+import { ApiRequestError, apiPostPublic } from '@/lib/api';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface SearchSongRequest {
@@ -25,97 +23,21 @@ interface SearchSongResponse {
     error?: string;
 }
 
-const logName = "search-song";
-
-const normalize = (s: string) => s?.toLowerCase().trim() ?? "";
-
-const relevanceScore = (hit: LrcLibSongSearchResult, songName: string, artist: string): number => {
-    const title = normalize(hit.trackName);
-    const hitArtist = normalize(hit.artistName);
-    const queryTitle = normalize(songName);
-    const queryArtist = normalize(artist);
-
-    const exactTitleMatch = queryTitle === title;
-    const exactArtistMatch = queryArtist === hitArtist;
-    const titleMatch = title.includes(queryTitle);
-    const artistMatch = queryArtist && hitArtist.includes(queryArtist);
-
-    if (exactTitleMatch && exactArtistMatch) return 1;
-    if (exactTitleMatch && queryArtist === "") return 2;
-    if (titleMatch) return 3;
-    if (artistMatch) return 4;
-    return 5;
-};
-
 export async function POST(request: NextRequest) {
     try {
         const body: SearchSongRequest = await request.json();
-        const { altchaPayload, songName, artist } = body;
 
-        logger.info(`${logPrefix(logName)} altchaPayload`, altchaPayload);
-        
-        if (!altchaPayload || !await verifyAltchaSolution(altchaPayload)) {
-            return NextResponse.json(
-                { error: 'Human verification failed' },
-                { status: 400 }
-            );
-        }
+        const { data } = await apiPostPublic<SearchSongResponse>('/v1/search-song', body);
 
-        if (!songName?.trim()) {
-            return NextResponse.json(
-                { error: 'Song name is required' },
-                { status: 400 }
-            );
-        }
-
-        const api = LrcLibApi.getInstance();
-        const results = await api.searchLyrics(songName.trim(), artist?.trim());
-
-        logger.info(`${logPrefix(logName)} found songs with lyrics`, results.filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics).length);
-
-        const map = new Map();
-
-        // Transform lyrics search response to our format
-        let songs: SongSearchResult[] = results
-            .filter((hit: LrcLibSongSearchResult) => !!hit.plainLyrics)
-            .filter((hit: LrcLibSongSearchResult) => {
-                const key = `${hit.artistName} - ${hit.trackName}`;
-                if (!map.has(key)) {
-                    map.set(key, true);
-                    return true;
-                }
-                return false;
-            })
-            .map((hit: LrcLibSongSearchResult) => ({
-                ...hit,
-                relevance: relevanceScore(hit, songName, artist),
-            }))
-            .sort((a: LrcLibSongSearchResult, b: LrcLibSongSearchResult) =>
-                a.relevance - b.relevance
-            )
-            .slice(0, 20) // Limit to 20 results
-            .map((hit: LrcLibSongSearchResult) => ({
-                id: hit.id.toString(),
-                title: hit.trackName,
-                artist: hit.artistName,
-                album: hit.albumName,
-                lyrics: hit.plainLyrics!,
-                relevance: hit.relevance,
-                thumbnail: "" // TODO figure out how to display those
-            }));
-            
-        // If there are exact matches, then limit the songs results to just the first exact match
-        const exactMatches = songs.filter((hit: SongSearchResult) => hit.relevance === 1)
-        if (exactMatches.length > 0)
-            songs = [exactMatches[0]];
-
-        const response: SearchSongResponse = {
-            songs
-        };
-
-        return NextResponse.json(response);
-
+        return NextResponse.json(data);
     } catch (error) {
+        if (error instanceof ApiRequestError) {
+            return NextResponse.json(
+                { error: error.errors[0] ?? error.message },
+                { status: error.statusCode }
+            );
+        }
+
         logger.error('Error in search-song endpoint:', error);
         return NextResponse.json(
             { error: 'Failed to search songs. Please try pasting lyrics directly.' },
