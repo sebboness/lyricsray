@@ -17,7 +17,7 @@ interface PageProps {
  */
 async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:2099';
         const response = await fetch(`${baseUrl}/api/analyze-song/${encodeURIComponent(songKey)}`, {
             cache: 'no-store', // Ensure fresh data on each request
         });

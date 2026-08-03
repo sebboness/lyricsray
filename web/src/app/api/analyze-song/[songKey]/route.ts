@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDynamoDbClient } from '@/storage/dynamodb';
-import { AnalysisResultStorage } from '@/storage/AnalysisResultStorage';
 import { logger } from '@/logger/logger';
-
-const moduleName = "get-analysis-result";
+import { ApiRequestError, apiGetPublic } from '@/lib/api';
+import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 
 interface RouteContext {
     params: Promise<{
@@ -22,39 +20,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
             );
         }
 
-        // Retrieve analysis result from DynamoDB
-        const ddbClient = getDynamoDbClient();
-        const analysisResultDb = new AnalysisResultStorage(ddbClient);
+        const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song/${encodeURIComponent(songKey)}`);
 
-        const result = await analysisResultDb.getAnalysisResult(songKey);
-
-        if (!result) {
-            logger.info(`Analysis result not found for songKey: ${songKey}`, {
-                moduleName,
-                songKey,
-            });
+        return NextResponse.json(data);
+    } catch (error) {
+        if (error instanceof ApiRequestError) {
             return NextResponse.json(
-                { error: 'Analysis result not found' },
-                { status: 404 }
+                { error: error.errors[0] ?? error.message },
+                { status: error.statusCode }
             );
         }
 
-        logger.info(`Successfully retrieved analysis result`, {
-            moduleName,
-            songKey,
-            songName: result.song?.songName,
-            artistName: result.song?.artistName,
-            isLyricsOnly: !result.song?.songName && !result.song?.artistName,
-        });
-
-        return NextResponse.json({ result });
-
-    } catch (error) {
-        logger.error(`Error retrieving analysis result:`, {
-            moduleName,
-            error,
-        });
-        
+        logger.error('Error retrieving analysis result:', error);
         return NextResponse.json(
             { error: 'Internal server error. Please try again.' },
             { status: 500 }
