@@ -44,18 +44,10 @@ resource "aws_iam_policy" "policy" {
         {
           "Effect" : "Allow",
           "Action" : [
-            "cognito-idp:AdminCreateUser",
-            "cognito-idp:AdminSetUserPassword",
-            "cognito-idp:AdminGetUser",
-            "cognito-idp:AdminUpdateUserAttributes",
-            "cognito-idp:ForgotPassword",
-            "cognito-idp:ConfirmForgotPassword",
-            "cognito-idp:ResendConfirmationCode",
-            "logs:CreateLogGroup",
-            "logs:CreateLogStream",
-            "logs:PutLogEvents"
+            "cognito-idp:InitiateAuth",
+            "cognito-idp:RespondToAuthChallenge"
           ],
-          "Resource" : "arn:aws:logs:*:*:*"
+          "Resource" : "arn:aws:cognito-idp:*:*:userpool/*"
         }
       ]
     }
@@ -102,6 +94,12 @@ resource "aws_lambda_function" "main" {
       ANTHROPIC_API_KEY = local.ssm_secrets["ANTHROPIC_API_KEY"]
       ANTHROPIC_MODEL   = local.ssm_secrets["ANTHROPIC_MODEL"]
       ALTCHA_SECRET     = local.ssm_secrets["ALTCHA_SECRET"]
+
+      # Admin authentication — single Cognito admin user, manually provisioned (see CLAUDE.md).
+      # No API Gateway authorizer: the Lambda verifies the id token itself (api/src/auth/verifyJwt.ts).
+      COGNITO_USER_POOL_ID  = local.ssm_secrets["COGNITO_USER_POOL_ID"]
+      COGNITO_CLIENT_ID     = local.ssm_secrets["COGNITO_CLIENT_ID"]
+      COGNITO_CLIENT_SECRET = local.ssm_secrets["COGNITO_CLIENT_SECRET"]
 
       APP_FREE_TIER_GLOBAL_DAILY_LIMIT   = local.ssm_secrets["APP_FREE_TIER_GLOBAL_DAILY_LIMIT"]
       APP_FREE_TIER_HOURLY_LIMIT         = local.ssm_secrets["APP_FREE_TIER_HOURLY_LIMIT"]

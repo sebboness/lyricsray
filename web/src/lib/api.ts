@@ -59,3 +59,20 @@ export async function apiPostPublic<T>(path: string, payload: unknown): Promise<
   });
   return handleResponse<T>(res);
 }
+
+export async function apiGetAuthed<T>(path: string, idToken: string): Promise<ApiResult<T>> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  return handleResponse<T>(res);
+}
+
+export async function apiPostAuthed<T>(path: string, idToken: string, payload: unknown): Promise<ApiResult<T>> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<T>(res);
+}
