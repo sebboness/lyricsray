@@ -42,13 +42,13 @@ describe('response helpers', () => {
   });
 
   it('optionsResponse() returns 204 with no body', () => {
-    const res = optionsResponse('http://localhost:3000');
+    const res = optionsResponse('http://localhost:2099');
     expect(res.statusCode).toBe(204);
     expect(res.body).toBe('');
   });
 
   it('corsHeaders() only sets Allow-Origin for known origins', () => {
-    expect(corsHeaders('http://localhost:3000')['Access-Control-Allow-Origin']).toBe('http://localhost:3000');
+    expect(corsHeaders('http://localhost:2099')['Access-Control-Allow-Origin']).toBe('http://localhost:2099');
     expect(corsHeaders('https://evil.example.com')['Access-Control-Allow-Origin']).toBeUndefined();
   });
 });

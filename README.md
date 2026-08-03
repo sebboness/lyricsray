@@ -31,7 +31,7 @@ Next, create a .env with the following variables:
 ```
 APP_NAME=LyricsRay
 APP_VERSION=v1.0
-APP_URL=https://localhost:3000
+APP_URL=https://localhost:2099
 ENV=dev
 IS_LOCAL=1
 ANTHROPIC_MODEL=claude-4-sonnet-20250514
@@ -48,7 +48,7 @@ Below are some commands to start up the app in the browser and other helpful com
 ```bash
 npm run dev
 ```
-_Will start up under `http://localhost:3000`_
+_Will start up under `http://localhost:2099`_
 
 ### To run tests
 

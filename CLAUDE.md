@@ -40,7 +40,7 @@ Create a `.env` file in `web/`:
 ```env
 APP_NAME=LyricsRay
 APP_VERSION=v1.0
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:2099
 ENV=dev
 IS_LOCAL=1
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
@@ -52,7 +52,7 @@ ALTCHA_SECRET=<your secret>
 ## Common Commands
 
 ```bash
-npm run dev      # Start dev server at http://localhost:3000
+npm run dev      # Start dev server at http://localhost:2099
 npm run test     # Run tests
 npm run lint     # Run ESLint
 npm run build    # Build for production

@@ -13,7 +13,7 @@ dotenv.config({ path: path.join(__dirname, '.env.local') });
 // Import handler after env is loaded so env vars are available during init
 import { handler } from './index';
 
-const PORT = parseInt(process.env.PORT ?? '14099', 10);
+const PORT = parseInt(process.env.PORT ?? '12099', 10);
 
 function parseQuery(rawUrl: string): Record<string, string> | null {
   const idx = rawUrl.indexOf('?');
@@ -51,7 +51,7 @@ const mockContext: Context = {
   awsRequestId: '',
   logGroupName: '/local/dev',
   logStreamName: 'local',
-  getRemainingTimeInMillis: () => 30000,
+  getRemainingTimeInMillis: () => 20990,
   done: () => {},
   fail: () => {},
   succeed: () => {},

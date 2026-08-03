@@ -33,7 +33,7 @@ const CORS_HEADERS = {
 // Only relevant for local/direct testing against API Gateway — production browser
 // traffic goes through the Next.js BFF proxy (same-origin), not directly here.
 const ALLOWED_ORIGINS = new Set([
-  'http://localhost:3000',
+  'http://localhost:2099',
   'https://lyricsray.com',
   'https://www.lyricsray.com',
   'https://lyricsray.hexonite.net',
