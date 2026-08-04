@@ -14,7 +14,7 @@ vi.mock('next/headers', () => ({
     })),
 }));
 
-import { SESSION_COOKIE, setSession, setRefreshCookie, clearSession, getIdToken, getSession } from '@/lib/session';
+import { SESSION_COOKIE, setSession, setRefreshCookie, completeLogin, clearSession, getIdToken, getSession } from '@/lib/session';
 import { REFRESH_COOKIE } from '@/lib/jwt';
 
 function makeToken(claims: object): string {
@@ -49,6 +49,30 @@ describe('setRefreshCookie', () => {
             JSON.stringify({ username: 'admin', refreshToken: 'some-refresh-token' }),
             expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' }),
         );
+    });
+});
+
+describe('completeLogin', () => {
+    it('sets the session cookie from the id token and the refresh cookie using the canonical username', async () => {
+        const token = makeToken({ sub: 'user-1', 'cognito:username': 'admin', exp: Math.floor(Date.now() / 1000) + 3600 });
+
+        await completeLogin({ idToken: token, refreshToken: 'some-refresh-token', expiresIn: 3600 });
+
+        expect(mockSet).toHaveBeenCalledWith(SESSION_COOKIE, token, expect.objectContaining({ maxAge: 3600 }));
+        expect(mockSet).toHaveBeenCalledWith(
+            REFRESH_COOKIE,
+            JSON.stringify({ username: 'admin', refreshToken: 'some-refresh-token' }),
+            expect.objectContaining({ httpOnly: true }),
+        );
+    });
+
+    it('does not set a refresh cookie when there is no refresh token', async () => {
+        const token = makeToken({ sub: 'user-1', 'cognito:username': 'admin', exp: Math.floor(Date.now() / 1000) + 3600 });
+
+        await completeLogin({ idToken: token, refreshToken: '', expiresIn: 3600 });
+
+        expect(mockSet).toHaveBeenCalledTimes(1);
+        expect(mockSet).toHaveBeenCalledWith(SESSION_COOKIE, token, expect.anything());
     });
 });
 
@@ -106,5 +130,19 @@ describe('getSession', () => {
             fullName: 'Admin Person',
             username: 'admin',
         });
+    });
+
+    it('derives fullName from given_name/family_name when "name" is absent', async () => {
+        const token = makeToken({
+            sub: 'user-1',
+            email: 'admin@example.com',
+            given_name: 'Admin',
+            family_name: 'Person',
+            'cognito:username': 'admin',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+        });
+        mockGet.mockReturnValue({ value: token });
+
+        expect(await getSession()).toMatchObject({ fullName: 'Admin Person' });
     });
 });

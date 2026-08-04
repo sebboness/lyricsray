@@ -3,16 +3,17 @@ import { ApiRequestError, apiPostPublic } from '@/lib/api';
 import { finalizeLoginResult, RawLoginResult } from '@/lib/adminAuthResponse';
 import { NextRequest, NextResponse } from 'next/server';
 
-interface LoginRequest {
+interface NewPasswordRequest {
     username: string;
-    password: string;
+    session: string;
+    newPassword: string;
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const body: LoginRequest = await request.json();
+        const body: NewPasswordRequest = await request.json();
 
-        const { data } = await apiPostPublic<RawLoginResult>('/v1/admin/auth/login', body);
+        const { data } = await apiPostPublic<RawLoginResult>('/v1/admin/auth/new-password', body);
 
         return NextResponse.json(await finalizeLoginResult(data));
     } catch (error) {
@@ -23,9 +24,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        logger.error('Error in admin login endpoint:', error);
+        logger.error('Error in admin new-password endpoint:', error);
         return NextResponse.json(
-            { error: 'Login failed. Please try again.' },
+            { error: 'Could not set new password. Please try again.' },
             { status: 500 }
         );
     }

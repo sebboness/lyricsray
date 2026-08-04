@@ -5,6 +5,7 @@ import {
     REFRESH_TOKEN_MAX_AGE_SECONDS,
     RefreshCookiePayload,
     decodeIdToken,
+    fullNameFromClaims,
     isValidSessionToken,
 } from './jwt';
 
@@ -38,6 +39,29 @@ export async function setRefreshCookie(username: string, refreshToken: string): 
     });
 }
 
+export interface LoginTokens {
+    idToken: string;
+    refreshToken: string;
+    expiresIn: number;
+}
+
+/**
+ * Establishes the admin session from a completed Cognito auth result (tokens),
+ * regardless of which step produced them — login, new-password, or verify can
+ * each end this way depending on whether Cognito still has a follow-up challenge
+ * (e.g. EMAIL_OTP) to run. Uses the canonical username from the token's own claims
+ * (not whatever the caller typed) so the refresh flow's SECRET_HASH always matches
+ * what Cognito expects.
+ */
+export async function completeLogin(tokens: LoginTokens): Promise<void> {
+    await setSession(tokens.idToken, tokens.expiresIn);
+
+    const claims = decodeIdToken(tokens.idToken);
+    if (claims?.['cognito:username'] && tokens.refreshToken) {
+        await setRefreshCookie(claims['cognito:username'], tokens.refreshToken);
+    }
+}
+
 export async function clearSession(): Promise<void> {
     const store = await cookies();
     store.delete(SESSION_COOKIE);
@@ -59,7 +83,7 @@ export async function getSession(): Promise<Session | null> {
     return {
         userId: claims.sub,
         email: claims.email ?? '',
-        fullName: claims.name ?? '',
+        fullName: fullNameFromClaims(claims),
         username: claims['cognito:username'] ?? '',
     };
 }

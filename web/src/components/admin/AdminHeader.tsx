@@ -17,11 +17,11 @@ import { ADMIN_NAV_WIDTH } from './AdminSideNav';
 
 interface AdminHeaderProps {
     fullName: string;
-    username: string;
+    email: string;
     onMenuClick: () => void;
 }
 
-export function AdminHeader({ fullName, username, onMenuClick }: AdminHeaderProps) {
+export function AdminHeader({ fullName, email, onMenuClick }: AdminHeaderProps) {
     const router = useRouter();
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
@@ -31,7 +31,7 @@ export function AdminHeader({ fullName, username, onMenuClick }: AdminHeaderProp
         router.push('/login');
     };
 
-    const initial = (fullName || username || '?').charAt(0).toUpperCase();
+    const initial = (fullName || email || '?').charAt(0).toUpperCase();
 
     return (
         <AppBar
@@ -62,10 +62,10 @@ export function AdminHeader({ fullName, username, onMenuClick }: AdminHeaderProp
                     </IconButton>
                     <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={() => setAnchorEl(null)}>
                         <Box sx={{ px: 2, py: 1 }}>
-                            <Typography variant="subtitle2">{fullName || username}</Typography>
-                            {username && (
+                            <Typography variant="subtitle2">{fullName || email}</Typography>
+                            {fullName && email && (
                                 <Typography variant="caption" color="text.secondary">
-                                    {username}
+                                    {email}
                                 </Typography>
                             )}
                         </Box>

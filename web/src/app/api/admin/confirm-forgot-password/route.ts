@@ -1,25 +1,20 @@
 import { logger } from '@/logger/logger';
 import { ApiRequestError, apiPostPublic } from '@/lib/api';
-import { completeLogin } from '@/lib/session';
 import { NextRequest, NextResponse } from 'next/server';
 
-interface VerifyRequest {
+interface ConfirmForgotPasswordRequest {
     username: string;
-    session: string;
-    code: string;
-}
-
-interface VerifyResponse {
-    tokens: { idToken: string; accessToken: string; refreshToken: string; expiresIn: number };
+    confirmationCode: string;
+    newPassword: string;
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const body: VerifyRequest = await request.json();
+        const body: ConfirmForgotPasswordRequest = await request.json();
 
-        const { data } = await apiPostPublic<VerifyResponse>('/v1/admin/auth/verify', body);
-
-        await completeLogin(data.tokens);
+        // No tokens come back from this call — it only clears Cognito's
+        // RESET_REQUIRED status. The client signs in again with the new password.
+        await apiPostPublic('/v1/admin/auth/confirm-forgot-password', body);
 
         return NextResponse.json({ ok: true });
     } catch (error) {
@@ -30,9 +25,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        logger.error('Error in admin verify endpoint:', error);
+        logger.error('Error in admin confirm-forgot-password endpoint:', error);
         return NextResponse.json(
-            { error: 'Verification failed. Please try again.' },
+            { error: 'Could not reset password. Please try again.' },
             { status: 500 }
         );
     }

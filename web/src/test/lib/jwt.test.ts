@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decodeIdToken, isValidSessionToken } from '@/lib/jwt';
+import { decodeIdToken, isValidSessionToken, fullNameFromClaims } from '@/lib/jwt';
 
 function makeToken(claims: object): string {
     const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
@@ -45,5 +45,27 @@ describe('isValidSessionToken', () => {
         const token = makeToken({ sub: 'user-1', exp: Math.floor(Date.now() / 1000) + 3600 });
 
         expect(isValidSessionToken(token)).toBe(true);
+    });
+});
+
+describe('fullNameFromClaims', () => {
+    it('returns an empty string for null claims', () => {
+        expect(fullNameFromClaims(null)).toBe('');
+    });
+
+    it('prefers the "name" claim when present', () => {
+        expect(fullNameFromClaims({ name: 'Admin Person', given_name: 'Admin', family_name: 'Person' })).toBe('Admin Person');
+    });
+
+    it('falls back to given_name + family_name when "name" is absent', () => {
+        expect(fullNameFromClaims({ given_name: 'Admin', family_name: 'Person' })).toBe('Admin Person');
+    });
+
+    it('falls back to just given_name when family_name is absent', () => {
+        expect(fullNameFromClaims({ given_name: 'Admin' })).toBe('Admin');
+    });
+
+    it('returns an empty string when no name-related claims are present', () => {
+        expect(fullNameFromClaims({ sub: 'user-1' })).toBe('');
     });
 });

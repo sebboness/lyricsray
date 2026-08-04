@@ -62,6 +62,91 @@ describe('CognitoService', () => {
 
       await expect(service.initiateLogin('admin', 'pw')).rejects.toMatchObject({ statusCode: 500 });
     });
+
+    it('throws internal error when Cognito returns a non-EMAIL_OTP challenge', async () => {
+      mockSend.mockResolvedValue({ ChallengeName: 'MFA_SETUP', Session: 'sess-123' });
+
+      await expect(service.initiateLogin('admin', 'pw')).rejects.toMatchObject({ statusCode: 500 });
+    });
+
+    it('returns passwordResetRequired when Cognito rejects with PasswordResetRequiredException', async () => {
+      const err = new Error('password reset required');
+      err.name = 'PasswordResetRequiredException';
+      mockSend.mockRejectedValue(err);
+
+      const result = await service.initiateLogin('admin', 'correct-password');
+
+      expect(result).toEqual({ type: 'passwordResetRequired' });
+    });
+  });
+
+  describe('confirmForgotPassword', () => {
+    it('resolves on success', async () => {
+      mockSend.mockResolvedValue({});
+
+      await expect(service.confirmForgotPassword('admin', '1234567', 'NewStrongPass1!')).resolves.toBeUndefined();
+    });
+
+    it('throws a bad-request error when the code is rejected', async () => {
+      const err = new Error('bad code');
+      err.name = 'CodeMismatchException';
+      mockSend.mockRejectedValue(err);
+
+      await expect(service.confirmForgotPassword('admin', 'wrong', 'NewStrongPass1!')).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it('maps InvalidPasswordException to a bad-request error naming the requirement', async () => {
+      const err = new Error('password too weak');
+      err.name = 'InvalidPasswordException';
+      mockSend.mockRejectedValue(err);
+
+      await expect(service.confirmForgotPassword('admin', '1234567', 'weak')).rejects.toMatchObject({
+        statusCode: 400,
+        clientMessage: 'Password does not meet the required complexity',
+      });
+    });
+  });
+
+  describe('respondToNewPasswordRequired', () => {
+    it('returns a follow-up EMAIL_OTP challenge on success', async () => {
+      mockSend.mockResolvedValue({ ChallengeName: 'EMAIL_OTP', Session: 'sess-456' });
+
+      const result = await service.respondToNewPasswordRequired('admin', 'sess-123', 'NewStrongPass1!');
+
+      expect(result).toEqual({ type: 'challenge', challenge: { challengeName: 'EMAIL_OTP', session: 'sess-456' } });
+    });
+
+    it('returns tokens directly if no further challenge is required', async () => {
+      mockSend.mockResolvedValue({
+        AuthenticationResult: { IdToken: 'id', AccessToken: 'acc', RefreshToken: 'ref', ExpiresIn: 3600 },
+      });
+
+      const result = await service.respondToNewPasswordRequired('admin', 'sess-123', 'NewStrongPass1!');
+
+      expect(result).toEqual({
+        type: 'tokens',
+        tokens: { idToken: 'id', accessToken: 'acc', refreshToken: 'ref', expiresIn: 3600 },
+      });
+    });
+
+    it('maps InvalidPasswordException to a bad-request error naming the requirement', async () => {
+      const err = new Error('password too weak');
+      err.name = 'InvalidPasswordException';
+      mockSend.mockRejectedValue(err);
+
+      await expect(service.respondToNewPasswordRequired('admin', 'sess-123', 'weak')).rejects.toMatchObject({
+        statusCode: 400,
+        clientMessage: 'Password does not meet the required complexity',
+      });
+    });
+
+    it('throws internal error when Cognito returns an unsupported follow-up challenge', async () => {
+      mockSend.mockResolvedValue({ ChallengeName: 'SMS_MFA', Session: 'sess-456' });
+
+      await expect(service.respondToNewPasswordRequired('admin', 'sess-123', 'NewStrongPass1!')).rejects.toMatchObject({
+        statusCode: 500,
+      });
+    });
   });
 
   describe('respondToEmailOtpChallenge', () => {

@@ -45,7 +45,8 @@ resource "aws_iam_policy" "policy" {
           "Effect" : "Allow",
           "Action" : [
             "cognito-idp:InitiateAuth",
-            "cognito-idp:RespondToAuthChallenge"
+            "cognito-idp:RespondToAuthChallenge",
+            "cognito-idp:ConfirmForgotPassword"
           ],
           "Resource" : "arn:aws:cognito-idp:*:*:userpool/*"
         }

@@ -7,7 +7,13 @@ import { analyzeSongHandler } from './src/handlers/analyzeSong';
 import { getAnalysisHandler } from './src/handlers/getAnalysis';
 import { popularSongsHandler } from './src/handlers/popularSongs';
 import { recentSearchesHandler } from './src/handlers/recentSearches';
-import { loginHandler, verifyHandler, refreshHandler } from './src/handlers/admin/auth';
+import {
+  loginHandler,
+  newPasswordHandler,
+  confirmForgotPasswordHandler,
+  verifyHandler,
+  refreshHandler,
+} from './src/handlers/admin/auth';
 import { logger } from './src/util/logger';
 
 const router = new Router();
@@ -23,11 +29,13 @@ router.get('/v1/popular-songs', popularSongsHandler);
 router.get('/v1/recent-searches', recentSearchesHandler);
 
 // Admin routes ride the same public /v1/{proxy+} API Gateway catch-all as everything
-// above — there's no Cognito authorizer at the edge. Login/verify/refresh are
-// inherently public (they're how a token is obtained/renewed); any future admin
-// route must be wrapped with requireAuth(...), which verifies the bearer id token
-// in-Lambda.
+// above — there's no Cognito authorizer at the edge. Login/new-password/verify/
+// refresh are inherently public (they're how a token is obtained/renewed); any
+// future admin route must be wrapped with requireAuth(...), which verifies the
+// bearer id token in-Lambda.
 router.post('/v1/admin/auth/login', loginHandler);
+router.post('/v1/admin/auth/new-password', newPasswordHandler);
+router.post('/v1/admin/auth/confirm-forgot-password', confirmForgotPasswordHandler);
 router.post('/v1/admin/auth/verify', verifyHandler);
 router.post('/v1/admin/auth/refresh', refreshHandler);
 

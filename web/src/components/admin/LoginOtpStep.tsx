@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Stack, Typography, TextField } from '@mui/material';
+import { BackToSignInLink } from './BackToSignInLink';
 
 interface LoginOtpStepProps {
     username: string;
     session: string;
     onVerified: () => void;
+    onBack: () => void;
 }
 
-export function LoginOtpStep({ username, session, onVerified }: LoginOtpStepProps) {
+export function LoginOtpStep({ username, session, onVerified, onBack }: LoginOtpStepProps) {
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export function LoginOtpStep({ username, session, onVerified }: LoginOtpStepProp
                 </Typography>
                 {error && <Alert severity="error">{error}</Alert>}
                 <TextField
+                    id="otp-code"
                     label="Verification code"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
@@ -58,6 +61,9 @@ export function LoginOtpStep({ username, session, onVerified }: LoginOtpStepProp
                 <Button type="submit" variant="contained" disabled={loading} fullWidth>
                     {loading ? <CircularProgress size={24} /> : 'Verify'}
                 </Button>
+                <Box>
+                    <BackToSignInLink onClick={onBack} />
+                </Box>
             </Stack>
         </Box>
     );

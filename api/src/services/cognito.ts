@@ -3,10 +3,25 @@ import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
   RespondToAuthChallengeCommand,
+  ConfirmForgotPasswordCommand,
   AuthFlowType,
   ChallengeNameType,
+  InitiateAuthCommandOutput,
+  RespondToAuthChallengeCommandOutput,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { ApiError } from '../util/errors';
+
+// The only challenges this login flow knows how to continue. NEW_PASSWORD_REQUIRED
+// happens the first time an admin signs in after being created with a temporary
+// password; EMAIL_OTP is the MFA step every sign-in goes through after that.
+const SUPPORTED_CHALLENGES = new Set<string>([ChallengeNameType.NEW_PASSWORD_REQUIRED, ChallengeNameType.EMAIL_OTP]);
+
+// Synthetic "challenge name" surfaced to the client when Cognito rejects a login
+// with PasswordResetRequiredException (see initiateLogin) rather than returning a
+// real ChallengeName — this isn't part of Cognito's InitiateAuth/RespondToAuthChallenge
+// vocabulary, it's a separate exception thrown when an admin has used
+// AdminResetUserPassword (which puts the account in RESET_REQUIRED status).
+export const PASSWORD_RESET_REQUIRED = 'PASSWORD_RESET_REQUIRED';
 
 export interface AuthChallenge {
   challengeName: string;
@@ -20,7 +35,10 @@ export interface AuthTokens {
   expiresIn: number;
 }
 
-export type LoginResult = { type: 'challenge'; challenge: AuthChallenge } | { type: 'tokens'; tokens: AuthTokens };
+export type LoginResult =
+  | { type: 'challenge'; challenge: AuthChallenge }
+  | { type: 'tokens'; tokens: AuthTokens }
+  | { type: 'passwordResetRequired' };
 
 function computeSecretHash(username: string, clientId: string, clientSecret: string): string {
   return crypto.createHmac('sha256', clientSecret).update(username + clientId).digest('base64');
@@ -41,6 +59,9 @@ function tokensFromAuthResult(auth: { IdToken?: string; AccessToken?: string; Re
  */
 function toApiError(err: unknown, clientMessage: string): ApiError {
   const name = err instanceof Error ? err.name : undefined;
+  if (name === 'InvalidPasswordException') {
+    return ApiError.badRequest('Password does not meet the required complexity');
+  }
   if (
     name === 'NotAuthorizedException' ||
     name === 'UserNotFoundException' ||
@@ -54,6 +75,29 @@ function toApiError(err: unknown, clientMessage: string): ApiError {
   }
   const message = err instanceof Error ? err.message : 'cognito request failed';
   return ApiError.internal(message);
+}
+
+/**
+ * Turns a Cognito auth response (from either InitiateAuth or
+ * RespondToAuthChallenge) into a LoginResult, rejecting any challenge this flow
+ * doesn't implement instead of silently handing the client a dead-end step.
+ */
+function toLoginResult(resp: InitiateAuthCommandOutput | RespondToAuthChallengeCommandOutput): LoginResult {
+  if (resp.AuthenticationResult) {
+    return { type: 'tokens', tokens: tokensFromAuthResult(resp.AuthenticationResult) };
+  }
+
+  if (!resp.ChallengeName || !resp.Session) {
+    throw ApiError.internal('cognito did not return a challenge or tokens');
+  }
+
+  if (!SUPPORTED_CHALLENGES.has(resp.ChallengeName)) {
+    throw ApiError.internal(
+      `Unexpected Cognito challenge "${resp.ChallengeName}" — expected NEW_PASSWORD_REQUIRED or EMAIL_OTP. Verify Email OTP MFA is enabled and set as the preferred MFA method for this user.`,
+    );
+  }
+
+  return { type: 'challenge', challenge: { challengeName: resp.ChallengeName, session: resp.Session } };
 }
 
 export class CognitoService {
@@ -91,18 +135,66 @@ export class CognitoService {
         }),
       );
 
-      if (resp.AuthenticationResult) {
-        return { type: 'tokens', tokens: tokensFromAuthResult(resp.AuthenticationResult) };
-      }
-
-      if (!resp.ChallengeName || !resp.Session) {
-        throw ApiError.internal('cognito did not return a challenge or tokens');
-      }
-
-      return { type: 'challenge', challenge: { challengeName: resp.ChallengeName, session: resp.Session } };
+      return toLoginResult(resp);
     } catch (err) {
       if (err instanceof ApiError) throw err;
+      if (err instanceof Error && err.name === 'PasswordResetRequiredException') {
+        return { type: 'passwordResetRequired' };
+      }
       throw toApiError(err, 'Invalid username or password');
+    }
+  }
+
+  /**
+   * Completes a Cognito-side forced password reset (an admin ran
+   * AdminResetUserPassword, which emails the user a confirmation code and puts
+   * their account in RESET_REQUIRED status). Unlike NEW_PASSWORD_REQUIRED, this
+   * doesn't flow through InitiateAuth/RespondToAuthChallenge at all — it's the
+   * separate ForgotPassword API — and it doesn't return tokens; the caller must
+   * sign in again afterward with the new password.
+   */
+  async confirmForgotPassword(username: string, confirmationCode: string, newPassword: string): Promise<void> {
+    try {
+      await this.client.send(
+        new ConfirmForgotPasswordCommand({
+          ClientId: this.clientId,
+          Username: username,
+          ConfirmationCode: confirmationCode,
+          Password: newPassword,
+          SecretHash: this.secretHash(username),
+        }),
+      );
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      throw toApiError(err, 'Invalid or expired reset code');
+    }
+  }
+
+  /**
+   * Completes the NEW_PASSWORD_REQUIRED challenge — the first sign-in after an
+   * admin user is created with a temporary password. Cognito typically follows
+   * this with the EMAIL_OTP challenge (returned as another `challenge`, not
+   * tokens), since this pool requires MFA on every sign-in.
+   */
+  async respondToNewPasswordRequired(username: string, session: string, newPassword: string): Promise<LoginResult> {
+    try {
+      const resp = await this.client.send(
+        new RespondToAuthChallengeCommand({
+          ClientId: this.clientId,
+          ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
+          Session: session,
+          ChallengeResponses: {
+            USERNAME: username,
+            NEW_PASSWORD: newPassword,
+            SECRET_HASH: this.secretHash(username),
+          },
+        }),
+      );
+
+      return toLoginResult(resp);
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      throw toApiError(err, 'Could not set new password');
     }
   }
 

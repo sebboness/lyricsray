@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (!session) redirect('/login');
 
     return (
-        <AdminShell fullName={session.fullName} username={session.username}>
+        <AdminShell fullName={session.fullName} email={session.email}>
             {children}
         </AdminShell>
     );

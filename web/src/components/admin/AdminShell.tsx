@@ -7,18 +7,18 @@ import { AdminSideNav, ADMIN_NAV_WIDTH } from './AdminSideNav';
 
 interface AdminShellProps {
     fullName: string;
-    username: string;
+    email: string;
     children: React.ReactNode;
 }
 
-export function AdminShell({ fullName, username, children }: AdminShellProps) {
+export function AdminShell({ fullName, email, children }: AdminShellProps) {
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
             <AdminHeader
                 fullName={fullName}
-                username={username}
+                email={email}
                 onMenuClick={() => setMobileNavOpen((open) => !open)}
             />
 

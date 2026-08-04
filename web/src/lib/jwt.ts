@@ -17,7 +17,21 @@ export interface IdTokenClaims {
     email?: string;
     'cognito:username'?: string;
     name?: string;
+    given_name?: string;
+    family_name?: string;
     exp?: number;
+}
+
+/**
+ * Resolves a display name from an id token's claims. Cognito attributes are read-
+ * permission-gated but not required to have a value — an admin user may have
+ * `given_name`/`family_name` set instead of (or without) `name`, so this falls back
+ * accordingly rather than assuming `name` is always populated.
+ */
+export function fullNameFromClaims(claims: IdTokenClaims | null): string {
+    if (!claims) return '';
+    if (claims.name) return claims.name;
+    return [claims.given_name, claims.family_name].filter(Boolean).join(' ');
 }
 
 /**
