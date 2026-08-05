@@ -12,6 +12,17 @@ interface PageProps {
 }
 
 /**
+ * Reconstructs the full song key from the catch-all route's path segments.
+ * Current-format keys are 3 real segments (`artist/song/hash`); legacy
+ * pre-migration keys (see git history around `ca8ffa9`) are a single opaque
+ * segment. Either way, joining on "/" gives back the original key.
+ */
+function reconstructSongKey(songKeys: string[]): string {
+    const songKey = songKeys.join('/');
+    return songKey.replace(/(\%2B)+/g, '+');
+}
+
+/**
  * Fetches the analysis result directly from the Lambda API — not via this app's
  * own `/api/analyze-song` route, which would require a self-referential HTTP
  * call out to this same server (fragile in server environments, and previously
@@ -35,9 +46,7 @@ async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null
 
 export default async function AnalysisDetailsPage({ params }: PageProps) {
     const { songKeys } = await params;
-    const songKey = songKeys.join('/');
-
-    const decodedSongKey = songKey.replace(/(\%2B)+/g, '+');
+    const decodedSongKey = reconstructSongKey(songKeys);
 
     // Fetch the analysis result
     const result = await getAnalysisResult(decodedSongKey);
@@ -53,9 +62,8 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps) {
     const { songKeys } = await params;
-    const songKey = songKeys.length === 1 ? songKeys[0] : "";
-    const decodedSongKey = decodeURIComponent(songKey);
-    const result = await getAnalysisResult(decodedSongKey);
+    const songKey = reconstructSongKey(songKeys);
+    const result = await getAnalysisResult(songKey);
 
     if (!result) {
         return {

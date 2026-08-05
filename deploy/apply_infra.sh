@@ -19,6 +19,11 @@ if [[ "$1" == "dev" || "$1" == "prod" ]]; then
     echo "    role_arn = $role_arn"
 
     echo ""
+    echo "Building lambda..."
+    (cd ../api && make zip)
+    echo "Lambda built."
+    echo ""
+
     echo "Running make apply-$app_env"
     make apply-$app_env
 
