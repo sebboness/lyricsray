@@ -66,6 +66,10 @@ export function notFound(err: unknown, origin?: string): APIGatewayProxyResult {
   return respond(404, errorResult(err), origin);
 }
 
+export function unauthorized(err: unknown, origin?: string): APIGatewayProxyResult {
+  return respond(401, errorResult(err), origin);
+}
+
 export function tooManyRequests(err: unknown, origin?: string, extraHeaders?: Record<string, string>): APIGatewayProxyResult {
   return respond(429, errorResult(err), origin, extraHeaders);
 }

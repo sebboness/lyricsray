@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ok, badRequest, notFound, tooManyRequests, fromError, optionsResponse, corsHeaders } from './response';
+import { ok, badRequest, notFound, unauthorized, tooManyRequests, fromError, optionsResponse, corsHeaders } from './response';
 import { ApiError } from './errors';
 
 describe('response helpers', () => {
@@ -23,6 +23,17 @@ describe('response helpers', () => {
   it('notFound() returns 404', () => {
     const res = notFound(ApiError.notFound('thing'));
     expect(res.statusCode).toBe(404);
+  });
+
+  it('unauthorized() returns 401 with the error message', () => {
+    const res = unauthorized(ApiError.unauthorized('no token'));
+    expect(res.statusCode).toBe(401);
+    expect(JSON.parse(res.body).errors).toEqual(['no token']);
+  });
+
+  it('fromError() maps an ApiError.unauthorized() to 401', () => {
+    const res = fromError(ApiError.unauthorized());
+    expect(res.statusCode).toBe(401);
   });
 
   it('tooManyRequests() returns 429 with extra headers', () => {

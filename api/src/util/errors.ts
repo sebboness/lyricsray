@@ -21,6 +21,10 @@ export class ApiError extends Error {
     return new ApiError(`${resource} not found`, 404, `${resource} not found`);
   }
 
+  static unauthorized(message = 'unauthorized'): ApiError {
+    return new ApiError(message, 401, message);
+  }
+
   static tooManyRequests(message: string): ApiError {
     return new ApiError(message, 429, message);
   }
