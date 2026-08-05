@@ -3,6 +3,7 @@ import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
 import { logger } from '@/logger/logger';
 import { getAnalysisDetailsPath } from '@/util/routeHelper';
+import { apiGetPublic, ApiRequestError } from '@/lib/api';
 
 interface PageProps {
     params: Promise<{
@@ -11,24 +12,22 @@ interface PageProps {
 }
 
 /**
- * Fetches analysis result from API endpoint.
+ * Fetches the analysis result directly from the Lambda API — not via this app's
+ * own `/api/analyze-song` route, which would require a self-referential HTTP
+ * call out to this same server (fragile in server environments, and previously
+ * broken in production because it depended on an env var that was never wired
+ * up, silently falling back to a dev-only localhost URL).
  * @param songKey {string} The key identifying the song analysis.
  * @returns {Promise<AnalysisResult|null>} A promise containing the analysis result for the song.
  */
 async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:2099';
-        const response = await fetch(`${baseUrl}/api/analyze-song/${encodeURIComponent(songKey)}`, {
-            cache: 'no-store', // Ensure fresh data on each request
-        });
-
-        if (!response.ok) {
+        const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(songKey)}`);
+        return data.result ?? null;
+    } catch (error) {
+        if (error instanceof ApiRequestError && error.statusCode === 404) {
             return null;
         }
-
-        const data = await response.json();
-        return data.result || null;
-    } catch (error) {
         logger.error('Error fetching analysis result:', error);
         return null;
     }
@@ -39,10 +38,10 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
     const songKey = songKeys.join('/');
 
     const decodedSongKey = songKey.replace(/(\%2B)+/g, '+');
-    
+
     // Fetch the analysis result
     const result = await getAnalysisResult(decodedSongKey);
-    
+
     // If not found, show 404
     if (!result) {
         notFound();
