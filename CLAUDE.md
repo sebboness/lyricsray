@@ -72,6 +72,20 @@ npm run build    # Build for production
 | `ALTCHA_KEY`      | Altcha CAPTCHA public key                    |
 | `ALTCHA_SECRET`   | Altcha CAPTCHA secret — never commit this   |
 
+### Admin authentication (`api/` Lambda only)
+
+A single admin account is authenticated via Cognito (username/password + email OTP MFA), gating the hidden `/login` → `/admin` area in `web/`. The Cognito User Pool is **not** Terraform-managed — create it manually in the AWS console (name it `${app}_${env}`, e.g. `lyricsray_dev`), enable Email OTP as an MFA method on the pool/app client, and create the one admin user with a `name` attribute set to their full name. There is no API Gateway Cognito authorizer: admin routes ride the same public `/v1/{proxy+}` catch-all as everything else, and the Lambda verifies the bearer id token itself (`api/src/auth/verifyJwt.ts`, via `aws-jwt-verify`).
+
+These env vars are set on the Lambda only (`deploy/terraform/3-lambda-main.tf`, sourced from Secrets Manager) — never on Amplify, since the browser never talks to Cognito directly (BFF pattern):
+
+| Variable                 | Purpose                                            |
+|---------------------------|----------------------------------------------------|
+| `COGNITO_USER_POOL_ID`    | The manually-created pool's ID                     |
+| `COGNITO_CLIENT_ID`       | The pool's app client ID                           |
+| `COGNITO_CLIENT_SECRET`   | The app client's secret — never commit this        |
+
+The admin session survives across browser restarts and multi-day gaps via Cognito's refresh token: `web/` stores it in a second httpOnly cookie (`lyricsray_admin_refresh`, `web/src/lib/jwt.ts`/`session.ts`) alongside the short-lived id token cookie, and `web/src/middleware.ts` silently exchanges it for a fresh id token (`POST /v1/admin/auth/refresh`) whenever the id token has expired but the refresh cookie is still valid — no re-login required unless the refresh token itself has expired or been revoked. The refresh cookie's `maxAge` (`REFRESH_TOKEN_MAX_AGE_SECONDS` in `web/src/lib/jwt.ts`, currently 30 days) should be kept in sync with the Cognito app client's configured "refresh token expiration" setting.
+
 **Never commit `.env` or any file containing real API keys.**
 
 ## Core Feature: Lyrics Analysis

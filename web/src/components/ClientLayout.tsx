@@ -30,7 +30,9 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     const theme = useTheme();
     const { theme: currentTheme, setTheme, systemTheme } = useNextTheme();
     const [mounted, setMounted] = useState(false);
-    const isHomePage = usePathname() === "/";
+    const pathname = usePathname();
+    const isHomePage = pathname === "/";
+    const isAdminArea = pathname === "/login" || pathname.startsWith("/admin");
     const [showNavbarLogo, setShowNavbarLogo] = useState(!isHomePage);
 
     useEffect(() => {
@@ -62,7 +64,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     // Don't render theme-dependent UI until mounted to prevent hydration mismatch
     if (!mounted) {
         return (
-            <Box sx={{ 
+            <Box sx={{
                 minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column'
@@ -70,6 +72,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                 {children}
             </Box>
         );
+    }
+
+    // Admin area has its own chrome (AdminShell) — skip the public nav/footer entirely.
+    if (isAdminArea) {
+        return <>{children}</>;
     }
 
     return (

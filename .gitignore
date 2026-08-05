@@ -50,7 +50,6 @@ next-env.d.ts
 
 # misc
 /deploy/terraform/.terraform
-/deploy/terraform/.terraform.lock.hcl
 
 # vscode
 /.vscode
