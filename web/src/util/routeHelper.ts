@@ -9,23 +9,13 @@ export const getBaseUrl = () => {
 }
 
 /**
- * Percent-encodes a song key for safe use in a URL path, without breaking the
- * `/`-separated segments the `analysis/[...songKeys]` catch-all route relies on.
- *
- * Current song keys are `artist/song/hash`, already URL-safe per segment. But
- * songs analyzed before the key-format migration (see git history around
- * `ca8ffa9`) are still stored with their original `artist|song#hash` key — a
- * single opaque segment containing an un-encoded `#`. Interpolating that raw
- * into an <a href> makes the browser treat everything from the `#` onward as a
- * fragment, so it's silently dropped and never reaches the server (404).
- *
- * Splitting on `/` first means: new keys (multiple already-safe segments) are
- * re-encoded per segment, a harmless no-op; old keys (no `/`, one opaque
- * segment) get their unsafe characters like `#`/`|` properly escaped as a
- * single segment. Either way this round-trips correctly through Next's
- * automatic per-segment decoding of catch-all route params.
+ * Encodes a song key for use in a URL path, if needed. Current-format keys are
+ * already percent-encoded at creation time (see `encodeUri` in
+ * `api/src/util/songKey.ts`), so re-encoding would double-escape them — a raw
+ * `#` is a reliable signal this is instead a legacy, fully-unencoded key
+ * (pre-`ca8ffa9`) that needs a full single-segment encode.
  */
-export const encodeSongKeyForPath = (songKey: string) => songKey.split('/').map(encodeURIComponent).join('/');
+export const encodeSongKeyForPath = (songKey: string) => (songKey.includes('#') ? encodeURIComponent(songKey) : songKey);
 
 /**
  * Gets the route path for a song analysis result.
