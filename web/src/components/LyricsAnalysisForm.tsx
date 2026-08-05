@@ -40,6 +40,7 @@ import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altc
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { clearRateLimitedUntil, formatRemainingTime, getRateLimitedUntil, setRateLimitedUntil } from '@/util/rateLimitClient';
+import { encodeSongKeyForPath } from '@/util/routeHelper';
 import { LyricsThemes } from './LyricsThemes';
 
 const DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3600;
@@ -734,7 +735,7 @@ export function LyricsAnalysisForm() {
                                 <LyricsThemes themes={result.themes} />
 
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
-                                    <Link href={`/analysis/${result.songKey}`}>
+                                    <Link href={`/analysis/${encodeSongKeyForPath(result.songKey)}`}>
                                         <strong>Analysis details &raquo;</strong>
                                     </Link>
                                 </Typography>

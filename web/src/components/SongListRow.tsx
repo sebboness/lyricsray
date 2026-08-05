@@ -6,6 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import moment from 'moment';
 import { LyricsThemes } from './LyricsThemes';
 import { getRecommendedAgeDisplay, getAppropriatenessDisplay } from '@/util/displayHelpers';
+import { encodeSongKeyForPath } from '@/util/routeHelper';
 
 export interface SongListRowItem {
     songKey: string;
@@ -43,7 +44,7 @@ export function SongListRow({ song, index, total, showDate = false }: SongListRo
         >
             <ListItemButton
                 component={NextLink}
-                href={`/analysis/${song.songKey}`}
+                href={`/analysis/${encodeSongKeyForPath(song.songKey)}`}
                 sx={{
                     py: 1.5,
                     px: 1.5,
