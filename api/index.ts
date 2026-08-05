@@ -24,7 +24,7 @@ router.get('/v1/health', healthHandler);
 router.get('/v1/altcha/challenge', altchaChallengeHandler);
 router.post('/v1/search-song', searchSongHandler);
 router.post('/v1/analyze-song', analyzeSongHandler);
-router.get('/v1/analyze-song/:songKey', getAnalysisHandler);
+router.get('/v1/analyze-song', getAnalysisHandler);
 router.get('/v1/popular-songs', popularSongsHandler);
 router.get('/v1/recent-searches', recentSearchesHandler);
 
