@@ -83,4 +83,27 @@ describe('generateMetadata', () => {
 
         expect(metadata).toEqual({ title: 'Analysis Not Found | LyricsRay' });
     });
+
+    // Regression test: generateMetadata used to only use songKeys[0] when there was
+    // exactly one segment, silently reconstructing an EMPTY songKey for every
+    // current-format (multi-segment) key — which the API correctly rejected as
+    // "songKey parameter is required", failing metadata generation for every song.
+    it('fetches by the full reconstructed songKey for a multi-segment (current-format) key', async () => {
+        mockApiGetPublic.mockResolvedValue({
+            data: {
+                result: {
+                    songKey: 'Guster/Terrified/abc123',
+                    song: { songName: 'Terrified', artistName: 'Guster' },
+                    recommendedAge: 13,
+                    analysis: 'Some analysis text',
+                },
+            },
+            headers: new Headers(),
+        });
+
+        const metadata = await generateMetadata({ params: Promise.resolve({ songKeys: ['Guster', 'Terrified', 'abc123'] }) });
+
+        expect(mockApiGetPublic).toHaveBeenCalledWith('/v1/analyze-song?songKey=Guster%2FTerrified%2Fabc123');
+        expect(metadata.title).toContain('Terrified');
+    });
 });
