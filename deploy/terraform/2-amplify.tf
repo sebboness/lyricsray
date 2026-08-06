@@ -154,6 +154,10 @@ resource "aws_amplify_branch" "main" {
       NODE_ENV              = local.env == "prod" ? "production" : "development"
       LOG_LEVEL             = local.env == "prod" ? "info" : "debug"
       NEXT_LOG_LEVEL        = "debug"
+
+      # Client-side thresholds for the support-prompt banner shown on analysis results.
+      NEXT_PUBLIC_SUPPORT_PROMPT_FIRST_THRESHOLD = "5"
+      NEXT_PUBLIC_SUPPORT_PROMPT_COOLDOWN         = "10"
     },
     # Add secret environment variables
     {

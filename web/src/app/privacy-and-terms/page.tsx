@@ -139,6 +139,15 @@ export default function PrivacyTerms() {
                                 secondary="If you confirm you are 18 or older to view lyrics flagged as mature, we remember that confirmation so you are not asked again on future pages. This is normally stored in your browser's localStorage; if that isn't available, we fall back to storing it in a regular browser cookie instead. Either way, this confirmation is not used for tracking, advertising, or analytics."
                             />
                         </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Support prompt status"
+                                secondary="We keep a simple count in your browser's localStorage of how many song analyses you've requested, so we can occasionally show a note inviting you to help cover hosting costs. This count and any dismissal you make stay on your device and are not used for tracking, advertising, or analytics."
+                            />
+                        </ListItem>
                     </List>
 
                     <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
