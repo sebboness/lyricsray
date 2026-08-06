@@ -35,10 +35,12 @@ import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { LyricsModal } from '@/components/LyricsModal';
+import { SupportPromptBanner } from '@/components/SupportPromptBanner';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { clearRateLimitedUntil, formatRemainingTime, getRateLimitedUntil, setRateLimitedUntil } from '@/util/rateLimitClient';
+import { incrementAnalysisCount, shouldShowSupportPrompt, dismissSupportPrompt } from '@/util/analysisCountClient';
 import { encodeSongKeyForPath } from '@/util/routeHelper';
 import { LyricsThemes } from './LyricsThemes';
 
@@ -99,6 +101,8 @@ export function LyricsAnalysisForm() {
     const [showSongModal, setShowSongModal] = useState<boolean>(false);
     const [showLyricsModal, setShowLyricsModal] = useState<boolean>(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
+    const [analysisCount, setAnalysisCount] = useState(0);
+    const [promptEligible, setPromptEligible] = useState(false);
 
     // ALTCHA state
     const [altchaPayload, setAltchaPayload] = useState<string>('');
@@ -345,6 +349,9 @@ export function LyricsAnalysisForm() {
             }
 
             setResult(data);
+            const count = incrementAnalysisCount();
+            setAnalysisCount(count);
+            setPromptEligible(shouldShowSupportPrompt(count));
             scrollToResults();
         } catch (error) {
             console.error('Error analyzing lyrics:', error);
@@ -414,6 +421,11 @@ export function LyricsAnalysisForm() {
         setSelectedSong(null);
         setSearchResults([]);
         // Keep Altcha verification - don't reset unless it has expired
+    };
+
+    const handleDismissPrompt = () => {
+        dismissSupportPrompt(analysisCount);
+        setPromptEligible(false);
     };
 
     const resetAltcha = () => {
@@ -728,6 +740,8 @@ export function LyricsAnalysisForm() {
                                     artistName={selectedSong?.artist || 'Unknown Artist'}
                                 />
 
+                                {promptEligible && <SupportPromptBanner onDismiss={handleDismissPrompt} />}
+
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     {result.analysis}
                                 </Typography>
@@ -757,28 +771,34 @@ export function LyricsAnalysisForm() {
                                     determining what&apos;s right for your children.
                                 </Typography>
 
-                                <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                                    Did this analysis help you?
-                                </Typography>
+                                {!promptEligible && (
+                                    <>
+                                        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                                            Did this analysis help you?
+                                        </Typography>
 
-                                <Typography variant="body2" color="text.secondary">
-                                    If so, consider supporting the project to cover some of the development and
-                                    hosting costs ❤️
-                                </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            If so, consider supporting the project to cover some of the development and
+                                            hosting costs ❤️
+                                        </Typography>
+                                    </>
+                                )}
 
                                 {/* Analyze another song button */}
                                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }} mt={4} className="submit-wrapper">
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        href={KO_FI_LINK}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        size="large"
-                                        sx={{ px: 4, py: 1.5 }}
-                                    >
-                                        ☕ Support on Ko-fi
-                                    </Button>
+                                    {!promptEligible && (
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            href={KO_FI_LINK}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            size="large"
+                                            sx={{ px: 4, py: 1.5 }}
+                                        >
+                                            ☕ Support on Ko-fi
+                                        </Button>
+                                    )}
                                     <Button
                                         type="button"
                                         variant="contained"
