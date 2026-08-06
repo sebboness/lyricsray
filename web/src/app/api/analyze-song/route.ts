@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/logger/logger';
 import { ApiRequestError, apiPostPublic, forwardHeaders } from '@/lib/api';
+import { getDynamoDbClient } from '@/storage/dynamodb';
+import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
+import { getClientIp } from '@/util/request';
+import { hashValue } from '@/util/hash';
+import { parseUserAgent } from '@/util/userAgent';
 
 interface AnalyzeSongRequest {
     altchaPayload: string;
@@ -16,16 +21,32 @@ interface AnalyzeSongResponse {
     recommendedAge: string;
     songKey: string;
     themes: string[];
+    cacheHit?: boolean;
     error?: string;
 }
 
 const RATE_LIMIT_HEADERS = ['X-RateLimit-Remaining-Hourly', 'X-RateLimit-Remaining-Daily'];
+
+const analyticsStorage = new AnalyticsEventStorage(getDynamoDbClient());
 
 export async function POST(request: NextRequest) {
     try {
         const body: AnalyzeSongRequest = await request.json();
 
         const { data, headers } = await apiPostPublic<AnalyzeSongResponse>('/v1/analyze-song', body);
+
+        const now = new Date();
+        const ua = request.headers.get('user-agent') ?? '';
+        void analyticsStorage.writeAnalysisEvent({
+            date: now.toISOString().split('T')[0],
+            timestamp: now.toISOString(),
+            hashedIp: hashValue(getClientIp(request)),
+            ...parseUserAgent(ua),
+            songKey: data.songKey,
+            artistName: body.artistName ?? '',
+            songName: body.songName ?? '',
+            cacheHit: data.cacheHit ?? false,
+        });
 
         return NextResponse.json(data, {
             headers: forwardHeaders(headers, RATE_LIMIT_HEADERS),

@@ -1,9 +1,16 @@
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
 import { logger } from '@/logger/logger';
 import { getAnalysisDetailsPath } from '@/util/routeHelper';
 import { apiGetPublic, ApiRequestError } from '@/lib/api';
+import { getDynamoDbClient } from '@/storage/dynamodb';
+import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
+import { hashValue } from '@/util/hash';
+import { parseUserAgent } from '@/util/userAgent';
+
+const analyticsStorage = new AnalyticsEventStorage(getDynamoDbClient());
 
 interface PageProps {
     params: Promise<{
@@ -18,8 +25,12 @@ interface PageProps {
  * segment. Either way, joining on "/" gives back the original key.
  */
 function reconstructSongKey(songKeys: string[]): string {
-    const songKey = songKeys.join('/');
-    return songKey.replace(/(\%2B)+/g, '+');
+    const raw = songKeys.join('/');
+    try {
+        return decodeURIComponent(raw);
+    } catch {
+        return raw;
+    }
 }
 
 /**
@@ -55,6 +66,23 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
     if (!result) {
         notFound();
     }
+
+    const requestHeaders = await headers();
+    const ua = requestHeaders.get('user-agent') ?? '';
+    const ip = requestHeaders.get('cf-connecting-ip')
+        ?? requestHeaders.get('x-real-ip')
+        ?? requestHeaders.get('x-forwarded-for')?.split(',')[0].trim()
+        ?? '';
+    const now = new Date();
+    void analyticsStorage.writePageViewEvent({
+        date: now.toISOString().split('T')[0],
+        timestamp: now.toISOString(),
+        hashedIp: hashValue(ip),
+        ...parseUserAgent(ua),
+        songKey: decodedSongKey,
+        artistName: result.song?.artistName ?? '',
+        songName: result.song?.songName ?? '',
+    });
 
     return <AnalysisDisplay result={result} />;
 }

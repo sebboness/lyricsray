@@ -148,7 +148,7 @@ describe('analyzeSongHandler', () => {
       const { status, body } = await callHandler(VALID_BODY);
 
       expect(status).toBe(200);
-      expect(body.data).toMatchObject({ appropriate: 3, analysis: 'cached analysis', recommendedAge: '18', themes: ['drugs'] });
+      expect(body.data).toMatchObject({ appropriate: 3, analysis: 'cached analysis', recommendedAge: '18', themes: ['drugs'], cacheHit: true });
       expect(mockCheckAndIncrementRateLimit).not.toHaveBeenCalled();
       expect(mockAnalyzeLyrics).not.toHaveBeenCalled();
     });
@@ -200,7 +200,7 @@ describe('analyzeSongHandler', () => {
       const { status, headers, body } = await callHandler(VALID_BODY);
 
       expect(status).toBe(200);
-      expect(body.data).toMatchObject({ appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: ['violence'] });
+      expect(body.data).toMatchObject({ appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: ['violence'], cacheHit: false });
       expect(headers['X-RateLimit-Remaining-Hourly']).toBe('9');
       expect(headers['X-RateLimit-Remaining-Daily']).toBe('99');
       expect(mockSaveAnalysisResult).toHaveBeenCalledTimes(1);
