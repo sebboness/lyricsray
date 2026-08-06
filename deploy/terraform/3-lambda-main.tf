@@ -38,6 +38,9 @@ resource "aws_iam_policy" "policy" {
             "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analysis-rate-limits",
             "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analysis-results",
             "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analysis-results/index/*",
+            "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analytics-events",
+            "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analytics-events/index/*",
+            "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-daily-stats",
           ]
         },
         {

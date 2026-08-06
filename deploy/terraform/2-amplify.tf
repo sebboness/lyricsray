@@ -44,6 +44,20 @@ resource "aws_iam_role_policy" "amplify_policy" {
           "sts:AssumeRole"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:PutItem"]
+        Resource = [
+          "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analytics-events"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:Query", "dynamodb:Scan"]
+        Resource = [
+          "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-daily-stats"
+        ]
       }
     ]
   })

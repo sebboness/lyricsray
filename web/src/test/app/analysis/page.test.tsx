@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-const { mockApiGetPublic, mockNotFound } = vi.hoisted(() => ({
+const { mockApiGetPublic, mockNotFound, mockWritePageViewEvent } = vi.hoisted(() => ({
     mockApiGetPublic: vi.fn(),
     mockNotFound: vi.fn(() => {
         // Mirrors Next.js's real notFound(), which halts rendering by throwing.
         throw new Error('NEXT_NOT_FOUND');
     }),
+    mockWritePageViewEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/logger/logger', () => ({
@@ -19,6 +20,23 @@ vi.mock('@/lib/api', async () => {
     const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
     return { ...actual, apiGetPublic: mockApiGetPublic };
 });
+
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => new Map([['user-agent', 'Mozilla/5.0 Chrome'], ['x-forwarded-for', '10.0.0.1']])),
+}));
+
+vi.mock('@/storage/dynamodb', () => ({ getDynamoDbClient: vi.fn(() => ({})) }));
+
+vi.mock('@/storage/AnalyticsEventStorage', () => ({
+    AnalyticsEventStorage: vi.fn().mockImplementation(() => ({
+        writePageViewEvent: mockWritePageViewEvent,
+    })),
+}));
+
+vi.mock('@/util/hash', () => ({ hashValue: vi.fn(() => 'hashedip123456789012345') }));
+vi.mock('@/util/userAgent', () => ({
+    parseUserAgent: vi.fn(() => ({ uaType: 'person', browser: 'Chrome', os: 'Windows' })),
+}));
 
 vi.mock('@/app/analysis/[...songKeys]/AnalysisDisplay', () => ({
     AnalysisDisplay: ({ result }: { result: { song?: { songName?: string } } }) => (

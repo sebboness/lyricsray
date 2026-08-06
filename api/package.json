@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "ts-node --project tsconfig.json dev-server.ts",
     "build": "esbuild index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@aws-sdk/*",
+    "build:rollup": "esbuild indexRollup.ts --bundle --platform=node --target=node20 --outfile=dist/indexRollup.js --external:@aws-sdk/*",
     "build:zip": "npm run build && cd dist && zip -j ../lambda.zip index.js",
-    "clean": "rm -rf dist lambda.zip",
+    "build:zip:rollup": "npm run build:rollup && cd dist && zip -j ../lambda-rollup.zip indexRollup.js",
+    "clean": "rm -rf dist lambda.zip lambda-rollup.zip",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
