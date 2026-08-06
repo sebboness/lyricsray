@@ -18,51 +18,57 @@ interface PageProps {
     }>;
 }
 
-/**
- * Reconstructs the full song key from the catch-all route's path segments.
- * Current-format keys are 3 real segments (`artist/song/hash`); legacy
- * pre-migration keys (see git history around `ca8ffa9`) are a single opaque
- * segment. Either way, joining on "/" gives back the original key.
- */
-function reconstructSongKey(songKeys: string[]): string {
-    const raw = songKeys.join('/');
-    try {
-        return decodeURIComponent(raw);
-    } catch {
-        return raw;
+function reEncodeSegment(segment: string): string {
+    if (/%[0-9a-fA-F]{2}/.test(segment)) {
+        try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
     }
+    return encodeURIComponent(segment);
 }
 
 /**
- * Fetches the analysis result directly from the Lambda API — not via this app's
- * own `/api/analyze-song` route, which would require a self-referential HTTP
- * call out to this same server (fragile in server environments, and previously
- * broken in production because it depended on an env var that was never wired
- * up, silently falling back to a dev-only localhost URL).
- * @param songKey {string} The key identifying the song analysis.
- * @returns {Promise<AnalysisResult|null>} A promise containing the analysis result for the song.
+ * Reconstructs the full song key from the catch-all route's path segments.
+ * Current-format keys are 3 segments (artist/song/hash); legacy single-segment
+ * keys (Artist|Song#hash) are decoded verbatim.
  */
-async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
+function reconstructSongKey(songKeys: string[]): string {
+    if (songKeys.length === 1) {
+        try { return decodeURIComponent(songKeys[0]); } catch { return songKeys[0]; }
+    }
+    return songKeys.map(reEncodeSegment).join('/');
+}
+
+async function fetchResult(songKey: string): Promise<AnalysisResult | null> {
     try {
         const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(songKey)}`);
         return data.result ?? null;
     } catch (error) {
-        if (error instanceof ApiRequestError && error.statusCode === 404) {
-            return null;
-        }
+        if (error instanceof ApiRequestError && error.statusCode === 404) return null;
         logger.error('Error fetching analysis result:', error);
         return null;
     }
 }
 
+/**
+ * Fetches the analysis result, with a single retry that substitutes '-' for any
+ * '%2B' in the key. Old-format keys used '+' as the space proxy; after migration
+ * those keys became '-'. A URL with '+' in a path segment arrives here as '%2B',
+ * so swapping to '-' recovers the migrated key.
+ */
+async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
+    const result = await fetchResult(songKey);
+    if (result !== null) return result;
+
+    if (songKey.includes('%2B')) {
+        return fetchResult(songKey.replaceAll('%2B', '-'));
+    }
+    return null;
+}
+
 export default async function AnalysisDetailsPage({ params }: PageProps) {
     const { songKeys } = await params;
-    const decodedSongKey = reconstructSongKey(songKeys);
+    const songKey = reconstructSongKey(songKeys);
+    const result = await getAnalysisResult(songKey);
 
-    // Fetch the analysis result
-    const result = await getAnalysisResult(decodedSongKey);
-
-    // If not found, show 404
     if (!result) {
         notFound();
     }
@@ -79,7 +85,7 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
         timestamp: now.toISOString(),
         hashedIp: hashValue(ip),
         ...parseUserAgent(ua),
-        songKey: decodedSongKey,
+        songKey,
         artistName: result.song?.artistName ?? '',
         songName: result.song?.songName ?? '',
     });
@@ -94,17 +100,15 @@ export async function generateMetadata({ params }: PageProps) {
     const result = await getAnalysisResult(songKey);
 
     if (!result) {
-        return {
-            title: 'Analysis Not Found | LyricsRay',
-        };
+        return { title: 'Analysis Not Found | LyricsRay' };
     }
 
     const songTitle = result.song?.songName || 'Unknown Song';
     const artist = result.song?.artistName || 'Unknown Artist';
-    const title =  `LyricsRay Analysis for ${songTitle} by ${artist}`;
+    const title = `LyricsRay Analysis for ${songTitle} by ${artist}`;
     const description = `Age-appropriate lyrics analysis for "${songTitle}" by ${artist}. `
-            + `Minimum age: ${result.recommendedAge}. `
-            + `Analysis: ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`;
+        + `Minimum age: ${result.recommendedAge}. `
+        + `Analysis: ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`;
 
     return {
         title,
@@ -113,8 +117,8 @@ export async function generateMetadata({ params }: PageProps) {
             title,
             description,
             url: getAnalysisDetailsPath(songKey),
-            siteName: "LyricsRay - Is this song safe for my child?",
+            siteName: 'LyricsRay - Is this song safe for my child?',
             type: 'website',
-        }
+        },
     };
 }
