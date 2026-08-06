@@ -154,9 +154,9 @@ describe('AnalysisDetailsPage', () => {
         expect(mockApiGetPublic).toHaveBeenCalledWith(`/v1/analyze-song?songKey=${encodeURIComponent(expectedSongKey)}`);
     });
 
-    it('falls back to legacy key format (+ as space proxy) when new-format key returns 404', async () => {
-        // Songs analyzed before the - space proxy migration have + in stored keys for spaces.
-        // The page must try the new encoding first, then fall back to the old + encoding.
+    it('retries with "-" instead of "%2B" when the first lookup returns 404 (old space-proxy keys)', async () => {
+        // After key migration, old '+'-for-spaces URLs still arrive with %2B in path segments.
+        // On 404, swapping %2B→- recovers the migrated key (spaces became '-').
         const { ApiRequestError } = await import('@/lib/api');
         const result = { song: { songName: 'Sing About Me', artistName: 'Kendrick Lamar' } };
 
@@ -167,19 +167,18 @@ describe('AnalysisDetailsPage', () => {
             params: Promise.resolve({ songKeys: ['Kendrick+Lamar', 'Sing+About+Me', 'abc123'] }),
         });
 
-        // First call: new format — '+' treated as literal '%2B', double-encoded in query
-        const newFormatKey = 'Kendrick%2BLamar/Sing%2BAbout%2BMe/abc123';
-        expect(mockApiGetPublic).toHaveBeenNthCalledWith(1, `/v1/analyze-song?songKey=${encodeURIComponent(newFormatKey)}`);
+        // First call: '+' in segment encoded as '%2B'
+        const firstKey = 'Kendrick%2BLamar/Sing%2BAbout%2BMe/abc123';
+        expect(mockApiGetPublic).toHaveBeenNthCalledWith(1, `/v1/analyze-song?songKey=${encodeURIComponent(firstKey)}`);
 
-        // Second call: legacy format — '+' kept as space proxy, encoded to %2B in query
-        const legacyKey = 'Kendrick+Lamar/Sing+About+Me/abc123';
-        expect(mockApiGetPublic).toHaveBeenNthCalledWith(2, `/v1/analyze-song?songKey=${encodeURIComponent(legacyKey)}`);
+        // Retry: '%2B' replaced with '-' to match the migrated key format
+        const retryKey = 'Kendrick-Lamar/Sing-About-Me/abc123';
+        expect(mockApiGetPublic).toHaveBeenNthCalledWith(2, `/v1/analyze-song?songKey=${encodeURIComponent(retryKey)}`);
 
         expect(mockApiGetPublic).toHaveBeenCalledTimes(2);
     });
 
-    it('does not attempt a second API call when new-format and legacy keys are identical', async () => {
-        // For names without '+', both encodings produce the same key — no extra call needed.
+    it('does not retry when the key has no %2B and the lookup returns 404', async () => {
         const { ApiRequestError } = await import('@/lib/api');
         mockApiGetPublic.mockRejectedValue(new ApiRequestError(404, ['not found'], new Headers()));
 

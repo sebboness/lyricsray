@@ -22,16 +22,7 @@ function reEncodeSegment(segment: string): string {
     if (/%[0-9a-fA-F]{2}/.test(segment)) {
         try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
     }
-    // New-format keys use '-' as the space proxy; '+' is always a literal '+' (%2B).
     return encodeURIComponent(segment);
-}
-
-function reEncodeSegmentLegacy(segment: string): string {
-    // Pre-migration keys used '+' as the space proxy (split on +, re-encode each word).
-    if (/%[0-9a-fA-F]{2}/.test(segment)) {
-        try { segment = decodeURIComponent(segment); } catch { }
-    }
-    return segment.split('+').map(encodeURIComponent).join('+');
 }
 
 /**
@@ -39,46 +30,44 @@ function reEncodeSegmentLegacy(segment: string): string {
  * Current-format keys are 3 segments (artist/song/hash); legacy single-segment
  * keys (Artist|Song#hash) are decoded verbatim.
  */
-function reconstructSongKey(songKeys: string[], legacy = false): string {
+function reconstructSongKey(songKeys: string[]): string {
     if (songKeys.length === 1) {
-        // Legacy single-segment key — decode any %7C/%23 Next.js may not have decoded.
         try { return decodeURIComponent(songKeys[0]); } catch { return songKeys[0]; }
     }
-    return songKeys.map(legacy ? reEncodeSegmentLegacy : reEncodeSegment).join('/');
+    return songKeys.map(reEncodeSegment).join('/');
 }
 
-/**
- * Fetches the analysis result from the Lambda API, with an optional fallback to a
- * legacy key format (where + was used as the space proxy instead of -).
- */
-async function getAnalysisResult(songKey: string, legacyKey?: string): Promise<AnalysisResult | null> {
+async function fetchResult(songKey: string): Promise<AnalysisResult | null> {
     try {
         const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(songKey)}`);
         return data.result ?? null;
     } catch (error) {
-        if (error instanceof ApiRequestError && error.statusCode === 404) {
-            if (legacyKey && legacyKey !== songKey) {
-                try {
-                    const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(legacyKey)}`);
-                    return data.result ?? null;
-                } catch (err2) {
-                    if (err2 instanceof ApiRequestError && err2.statusCode === 404) return null;
-                    logger.error('Error fetching analysis result (legacy key):', err2);
-                }
-            }
-            return null;
-        }
+        if (error instanceof ApiRequestError && error.statusCode === 404) return null;
         logger.error('Error fetching analysis result:', error);
         return null;
     }
 }
 
+/**
+ * Fetches the analysis result, with a single retry that substitutes '-' for any
+ * '%2B' in the key. Old-format keys used '+' as the space proxy; after migration
+ * those keys became '-'. A URL with '+' in a path segment arrives here as '%2B',
+ * so swapping to '-' recovers the migrated key.
+ */
+async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
+    const result = await fetchResult(songKey);
+    if (result !== null) return result;
+
+    if (songKey.includes('%2B')) {
+        return fetchResult(songKey.replaceAll('%2B', '-'));
+    }
+    return null;
+}
+
 export default async function AnalysisDetailsPage({ params }: PageProps) {
     const { songKeys } = await params;
     const songKey = reconstructSongKey(songKeys);
-    const legacyKey = reconstructSongKey(songKeys, true);
-
-    const result = await getAnalysisResult(songKey, legacyKey);
+    const result = await getAnalysisResult(songKey);
 
     if (!result) {
         notFound();
@@ -108,21 +97,18 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
 export async function generateMetadata({ params }: PageProps) {
     const { songKeys } = await params;
     const songKey = reconstructSongKey(songKeys);
-    const legacyKey = reconstructSongKey(songKeys, true);
-    const result = await getAnalysisResult(songKey, legacyKey);
+    const result = await getAnalysisResult(songKey);
 
     if (!result) {
-        return {
-            title: 'Analysis Not Found | LyricsRay',
-        };
+        return { title: 'Analysis Not Found | LyricsRay' };
     }
 
     const songTitle = result.song?.songName || 'Unknown Song';
     const artist = result.song?.artistName || 'Unknown Artist';
-    const title =  `LyricsRay Analysis for ${songTitle} by ${artist}`;
+    const title = `LyricsRay Analysis for ${songTitle} by ${artist}`;
     const description = `Age-appropriate lyrics analysis for "${songTitle}" by ${artist}. `
-            + `Minimum age: ${result.recommendedAge}. `
-            + `Analysis: ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`;
+        + `Minimum age: ${result.recommendedAge}. `
+        + `Analysis: ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`;
 
     return {
         title,
@@ -131,8 +117,8 @@ export async function generateMetadata({ params }: PageProps) {
             title,
             description,
             url: getAnalysisDetailsPath(songKey),
-            siteName: "LyricsRay - Is this song safe for my child?",
+            siteName: 'LyricsRay - Is this song safe for my child?',
             type: 'website',
-        }
+        },
     };
 }
