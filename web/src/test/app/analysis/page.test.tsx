@@ -105,6 +105,90 @@ describe('AnalysisDetailsPage', () => {
             AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Guster', 'Terrified', 'abc123'] }) }),
         ).rejects.toThrow('NEXT_NOT_FOUND');
     });
+
+    it('encodes literal + in song name as %2B ("34+35" by Ariana Grande)', async () => {
+        // Next.js decodes %2B in the path segment to '+', yielding '34+35'.
+        // The page must re-encode it as %2B (literal plus), not treat it as a space proxy.
+        const result = { songKey: 'Ariana-Grande/34%2B35/abc123', song: { songName: '34+35', artistName: 'Ariana Grande' } };
+        mockApiGetPublic.mockResolvedValue({ data: { result }, headers: new Headers() });
+
+        await AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Ariana-Grande', '34+35', 'abc123'] }) });
+
+        const expectedSongKey = 'Ariana-Grande/34%2B35/abc123';
+        expect(mockApiGetPublic).toHaveBeenCalledWith(`/v1/analyze-song?songKey=${encodeURIComponent(expectedSongKey)}`);
+    });
+
+    it('percent-encodes Korean artist name and special chars in song title (이승기 / long title)', async () => {
+        // makeSongKey truncates song name to 50 chars; encodeURIComponent leaves ( ) as-is
+        // (they are unreserved) but encodes spaces→%20 (replaced with -) and commas→%2C.
+        // Next.js decodes %2C→, from path segments; ( stays as-is since it was never encoded.
+        const fullTitle = 'A Song To Make You Smile (featuring RM, j-hope, and Hareem)';
+        const truncatedTitle = fullTitle.slice(0, 50).trim();
+        const result = { song: { songName: fullTitle, artistName: '이승기' } };
+        mockApiGetPublic.mockResolvedValue({ data: { result }, headers: new Headers() });
+
+        // Compute what makeSongKey stores and what Next.js delivers as params
+        const encodeUri = (s: string) => encodeURIComponent(s).replace(/(%20)+/g, '-');
+        const storedArtistPart = encodeUri('이승기');   // percent-encoded Korean bytes
+        const storedSongPart = encodeUri(truncatedTitle);
+        // Next.js decodes %XX sequences in path params (encodeUri left %2C encoded)
+        const artistParam = decodeURIComponent(storedArtistPart);   // '이승기'
+        const songParam = decodeURIComponent(storedSongPart);       // '...RM,-j-hope,-an'
+
+        await AnalysisDetailsPage({
+            params: Promise.resolve({ songKeys: [artistParam, songParam, 'abc123'] }),
+        });
+
+        const expectedSongKey = `${storedArtistPart}/${storedSongPart}/abc123`;
+        expect(mockApiGetPublic).toHaveBeenCalledWith(`/v1/analyze-song?songKey=${encodeURIComponent(expectedSongKey)}`);
+    });
+
+    it('encodes + = < in song name ("u + me = <3" by Aliah)', async () => {
+        // Next.js decodes %2B→+, %3D→=, %3C→< in path segments.
+        const result = { song: { songName: 'u + me = <3', artistName: 'Aliah' } };
+        mockApiGetPublic.mockResolvedValue({ data: { result }, headers: new Headers() });
+
+        await AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Aliah', 'u-+-me-=-<3', 'abc123'] }) });
+
+        const expectedSongKey = 'Aliah/u-%2B-me-%3D-%3C3/abc123';
+        expect(mockApiGetPublic).toHaveBeenCalledWith(`/v1/analyze-song?songKey=${encodeURIComponent(expectedSongKey)}`);
+    });
+
+    it('falls back to legacy key format (+ as space proxy) when new-format key returns 404', async () => {
+        // Songs analyzed before the - space proxy migration have + in stored keys for spaces.
+        // The page must try the new encoding first, then fall back to the old + encoding.
+        const { ApiRequestError } = await import('@/lib/api');
+        const result = { song: { songName: 'Sing About Me', artistName: 'Kendrick Lamar' } };
+
+        mockApiGetPublic.mockRejectedValueOnce(new ApiRequestError(404, ['not found'], new Headers()));
+        mockApiGetPublic.mockResolvedValueOnce({ data: { result }, headers: new Headers() });
+
+        await AnalysisDetailsPage({
+            params: Promise.resolve({ songKeys: ['Kendrick+Lamar', 'Sing+About+Me', 'abc123'] }),
+        });
+
+        // First call: new format — '+' treated as literal '%2B', double-encoded in query
+        const newFormatKey = 'Kendrick%2BLamar/Sing%2BAbout%2BMe/abc123';
+        expect(mockApiGetPublic).toHaveBeenNthCalledWith(1, `/v1/analyze-song?songKey=${encodeURIComponent(newFormatKey)}`);
+
+        // Second call: legacy format — '+' kept as space proxy, encoded to %2B in query
+        const legacyKey = 'Kendrick+Lamar/Sing+About+Me/abc123';
+        expect(mockApiGetPublic).toHaveBeenNthCalledWith(2, `/v1/analyze-song?songKey=${encodeURIComponent(legacyKey)}`);
+
+        expect(mockApiGetPublic).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not attempt a second API call when new-format and legacy keys are identical', async () => {
+        // For names without '+', both encodings produce the same key — no extra call needed.
+        const { ApiRequestError } = await import('@/lib/api');
+        mockApiGetPublic.mockRejectedValue(new ApiRequestError(404, ['not found'], new Headers()));
+
+        await expect(
+            AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Guster', 'Terrified', 'abc123'] }) }),
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+
+        expect(mockApiGetPublic).toHaveBeenCalledTimes(1);
+    });
 });
 
 describe('generateMetadata', () => {

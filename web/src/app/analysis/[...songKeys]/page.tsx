@@ -18,36 +18,54 @@ interface PageProps {
     }>;
 }
 
-/**
- * Reconstructs the full song key from the catch-all route's path segments.
- * Current-format keys are 3 real segments (`artist/song/hash`); legacy
- * pre-migration keys (see git history around `ca8ffa9`) are a single opaque
- * segment. Either way, joining on "/" gives back the original key.
- */
-function reconstructSongKey(songKeys: string[]): string {
-    const raw = songKeys.join('/');
-    try {
-        return decodeURIComponent(raw);
-    } catch {
-        return raw;
+function reEncodeSegment(segment: string): string {
+    if (/%[0-9a-fA-F]{2}/.test(segment)) {
+        try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
     }
+    // New-format keys use '-' as the space proxy; '+' is always a literal '+' (%2B).
+    return encodeURIComponent(segment);
+}
+
+function reEncodeSegmentLegacy(segment: string): string {
+    // Pre-migration keys used '+' as the space proxy (split on +, re-encode each word).
+    if (/%[0-9a-fA-F]{2}/.test(segment)) {
+        try { segment = decodeURIComponent(segment); } catch { }
+    }
+    return segment.split('+').map(encodeURIComponent).join('+');
 }
 
 /**
- * Fetches the analysis result directly from the Lambda API — not via this app's
- * own `/api/analyze-song` route, which would require a self-referential HTTP
- * call out to this same server (fragile in server environments, and previously
- * broken in production because it depended on an env var that was never wired
- * up, silently falling back to a dev-only localhost URL).
- * @param songKey {string} The key identifying the song analysis.
- * @returns {Promise<AnalysisResult|null>} A promise containing the analysis result for the song.
+ * Reconstructs the full song key from the catch-all route's path segments.
+ * Current-format keys are 3 segments (artist/song/hash); legacy single-segment
+ * keys (Artist|Song#hash) are decoded verbatim.
  */
-async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
+function reconstructSongKey(songKeys: string[], legacy = false): string {
+    if (songKeys.length === 1) {
+        // Legacy single-segment key — decode any %7C/%23 Next.js may not have decoded.
+        try { return decodeURIComponent(songKeys[0]); } catch { return songKeys[0]; }
+    }
+    return songKeys.map(legacy ? reEncodeSegmentLegacy : reEncodeSegment).join('/');
+}
+
+/**
+ * Fetches the analysis result from the Lambda API, with an optional fallback to a
+ * legacy key format (where + was used as the space proxy instead of -).
+ */
+async function getAnalysisResult(songKey: string, legacyKey?: string): Promise<AnalysisResult | null> {
     try {
         const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(songKey)}`);
         return data.result ?? null;
     } catch (error) {
         if (error instanceof ApiRequestError && error.statusCode === 404) {
+            if (legacyKey && legacyKey !== songKey) {
+                try {
+                    const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(legacyKey)}`);
+                    return data.result ?? null;
+                } catch (err2) {
+                    if (err2 instanceof ApiRequestError && err2.statusCode === 404) return null;
+                    logger.error('Error fetching analysis result (legacy key):', err2);
+                }
+            }
             return null;
         }
         logger.error('Error fetching analysis result:', error);
@@ -57,12 +75,11 @@ async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null
 
 export default async function AnalysisDetailsPage({ params }: PageProps) {
     const { songKeys } = await params;
-    const decodedSongKey = reconstructSongKey(songKeys);
+    const songKey = reconstructSongKey(songKeys);
+    const legacyKey = reconstructSongKey(songKeys, true);
 
-    // Fetch the analysis result
-    const result = await getAnalysisResult(decodedSongKey);
+    const result = await getAnalysisResult(songKey, legacyKey);
 
-    // If not found, show 404
     if (!result) {
         notFound();
     }
@@ -79,7 +96,7 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
         timestamp: now.toISOString(),
         hashedIp: hashValue(ip),
         ...parseUserAgent(ua),
-        songKey: decodedSongKey,
+        songKey,
         artistName: result.song?.artistName ?? '',
         songName: result.song?.songName ?? '',
     });
@@ -91,7 +108,8 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
 export async function generateMetadata({ params }: PageProps) {
     const { songKeys } = await params;
     const songKey = reconstructSongKey(songKeys);
-    const result = await getAnalysisResult(songKey);
+    const legacyKey = reconstructSongKey(songKeys, true);
+    const result = await getAnalysisResult(songKey, legacyKey);
 
     if (!result) {
         return {
