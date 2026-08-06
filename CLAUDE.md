@@ -124,6 +124,8 @@ When adding new code to the project, ensure it follows the below standards:
 - After each major code update, check if this CLAUDE.md file should be updated to reflect updated schemas, architecture, or other relevant information to maintain this project
 - All code updates related to UI changes or changes to pages should ensure a mobile-friendly experience
 - When writing any text for UI, refrain from using "m-dashes" please. Use comma, colons, or new sentences instead.
+- Code comments/jsdocs: Keep comments brief but concise; Try not to have more than 2-3 lines of comments for methods/classes
+  and never pollute code with comments that explain why a decision was made.
 
 ## Testing
 

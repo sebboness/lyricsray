@@ -32,14 +32,22 @@ resource "aws_iam_policy" "policy" {
             "dynamodb:PutItem",
             "dynamodb:Query",
             "dynamodb:TransactWriteItems",
-            "dynamodb:UpdateItem",
-            "logs:*"
+            "dynamodb:UpdateItem"
           ],
           "Resource" : [
             "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analysis-rate-limits",
             "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analysis-results",
             "arn:aws:dynamodb:*:*:table/${local.app}-${local.env}-analysis-results/index/*",
           ]
+        },
+        {
+          "Effect" : "Allow",
+          "Action" : [
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+          ],
+          "Resource" : "arn:aws:logs:*:*:*"
         },
         {
           "Effect" : "Allow",

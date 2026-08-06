@@ -14,7 +14,8 @@ import {
     ListItemText,
     Link,
 } from '@mui/material';
-import { Shield, CheckCircle } from '@mui/icons-material';
+import Shield from '@mui/icons-material/Shield';
+import CheckCircle from '@mui/icons-material/CheckCircle';
 import { useTheme } from '@mui/material/styles';
 
 export default function PrivacyTerms() {
@@ -59,7 +60,7 @@ export default function PrivacyTerms() {
                         Privacy Policy & Terms of Service
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                        Last updated: May 5, 2026
+                        Last updated: August 5, 2026
                     </Typography>
                 </Paper>
 
@@ -127,6 +128,15 @@ export default function PrivacyTerms() {
                             <ListItemText
                                 primary="Rate-limit status"
                                 secondary="If you reach our usage limit for new analyses, we remember when you'll be able to try again using your browser's sessionStorage, so refreshing the page still shows an accurate wait time instead of an empty form. This is cleared automatically once the wait period ends, and is cleared entirely when you close your browser tab. This data never leaves your device."
+                            />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Mature content confirmation"
+                                secondary="If you confirm you are 18 or older to view lyrics flagged as mature, we remember that confirmation so you are not asked again on future pages. This is normally stored in your browser's localStorage; if that isn't available, we fall back to storing it in a regular browser cookie instead. Either way, this confirmation is not used for tracking, advertising, or analytics."
                             />
                         </ListItem>
                     </List>
