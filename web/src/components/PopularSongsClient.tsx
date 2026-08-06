@@ -8,7 +8,7 @@ import {
     Box,
     Button,
 } from '@mui/material';
-import { ArrowForward } from '@mui/icons-material';
+import ArrowForward from '@mui/icons-material/ArrowForward';
 import { PopularSongItem } from '@/lib/getPopularSongs';
 import { SongListRow } from './SongListRow';
 

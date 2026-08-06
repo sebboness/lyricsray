@@ -8,18 +8,22 @@ import {
     Divider,
     Button,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { LyricsThemes } from '@/components/LyricsThemes';
+import { ExplicitContentGate } from '@/components/ExplicitContentGate';
+import { LyricsPaper } from '@/components/LyricsPaper';
 
 interface AnalysisDisplayProps {
     result: AnalysisResult;
 }
 
 export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
+    const lyrics = result.song?.lyrics;
+
     return (
         <Box sx={{ minHeight: '100vh', py: 8 }}>
             <Container maxWidth="md">
@@ -98,27 +102,18 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     </Box>
 
                     {/* Lyrics (if available) */}
-                    {result.song?.lyrics && (
+                    {lyrics && (
                         <Box mb={4}>
                             <Typography variant="h6" fontWeight="600" mb={2}>
                                 Lyrics
                             </Typography>
-                            <Paper 
-                                sx={{ 
-                                    p: 3, 
-                                    maxHeight: 400, 
-                                    overflow: 'auto',
-                                    bgcolor: 'rgba(0, 0, 0, 0.02)',
-                                }}
-                            >
-                                <Typography 
-                                    variant="body2" 
-                                    color="text.secondary" 
-                                    sx={{ whiteSpace: 'pre-line', fontFamily: 'monospace' }}
-                                >
-                                    {result.song.lyrics}
-                                </Typography>
-                            </Paper>
+                            {result.appropriate === 3 ? (
+                                <ExplicitContentGate>
+                                    {() => <LyricsPaper lyrics={lyrics} />}
+                                </ExplicitContentGate>
+                            ) : (
+                                <LyricsPaper lyrics={lyrics} />
+                            )}
                         </Box>
                     )}
 
