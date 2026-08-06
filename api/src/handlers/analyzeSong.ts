@@ -83,6 +83,7 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
         recommendedAge: song.recommendedAge.toString(),
         themes: song.themes || [],
         songKey,
+        cacheHit: true,
       }, origin);
     }
 
@@ -147,6 +148,7 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
       recommendedAge: analysis.recommendedAge.toString(),
       themes: analysis.themes || [],
       songKey,
+      cacheHit: false,
     }, origin, {
       'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
       'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),

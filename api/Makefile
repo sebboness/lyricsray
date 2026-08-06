@@ -7,7 +7,7 @@ build:
 	npm run build
 
 zip:
-	npm run build:zip
+	npm run build:zip && npm run build:zip:rollup
 
 clean:
 	npm run clean
