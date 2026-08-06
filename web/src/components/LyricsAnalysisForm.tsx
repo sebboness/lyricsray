@@ -22,20 +22,19 @@ import {
     Avatar,
     Link,
 } from '@mui/material';
-import {
-    MusicNote,
-    Search,
-    Note,
-    CheckCircle,
-    RecordVoiceOver,
-    Close,
-    Security,
-    HourglassTop,
-} from '@mui/icons-material';
+import MusicNote from '@mui/icons-material/MusicNote';
+import Search from '@mui/icons-material/Search';
+import Note from '@mui/icons-material/Note';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import RecordVoiceOver from '@mui/icons-material/RecordVoiceOver';
+import Close from '@mui/icons-material/Close';
+import Security from '@mui/icons-material/Security';
+import HourglassTop from '@mui/icons-material/HourglassTop';
 import { useTheme } from '@mui/material/styles';
 import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
+import { LyricsModal } from '@/components/LyricsModal';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
@@ -710,7 +709,11 @@ export function LyricsAnalysisForm() {
                                                 <br />
                                             </>
                                         ) : <></>}
-                                        Lyrics: <i>{selectedSong.lyrics.substring(0, 60)}&hellip;</i>&nbsp;
+                                        {result?.appropriate === 3 ? (
+                                            <>This song&apos;s lyrics contain mature content.&nbsp;</>
+                                        ) : (
+                                            <>Lyrics: <i>{selectedSong.lyrics.substring(0, 60)}&hellip;</i>&nbsp;</>
+                                        )}
                                         <Link href="#" onClick={(e) => handleShowLyricsModal(e)}>Show full lyrics</Link>
                                     </Typography>
                                 )}
@@ -858,46 +861,15 @@ export function LyricsAnalysisForm() {
 
             {/* Lyrics Modal */}
             {selectedSong && (
-                <Modal open={showLyricsModal} onClose={() => setShowLyricsModal(false)}>
-                    <Box sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: { xs: '90%', sm: 500, md: 800 },
-                        maxHeight: '80vh',
-                        bgcolor: 'background.paper',
-                        borderRadius: 2,
-                        boxShadow: '0 0 50px rgba(255, 0, 255, 0.3)',
-                        overflow: 'hidden'
-                    }}>
-                        <Box sx={{
-                            p: 2,
-                            borderBottom: 1,
-                            borderColor: 'rgba(255, 0, 255, 0.2)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 204, 255, 0.1))',
-                        }}>
-                            <Typography variant="h6" component="h2">
-                                {selectedSong.title || "Unknown song"} by {selectedSong.artist || "Unknown artist"}
-                            </Typography>
-                            <Button variant="contained" onClick={() => setShowLyricsModal(false)} size="small" sx={{ minWidth: 'auto', p: 1 }}>
-                                <Close />
-                            </Button>
-                        </Box>
-                        <Box sx={{ maxHeight: 500, maxWidth: 800, overflow: 'auto', p: 2 }}>
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ whiteSpace: 'pre-line', fontFamily: 'monospace', mb: 2 }}
-                            >
-                                {selectedSong.lyrics || "No lyrics to show :("}
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Modal>)}
+                <LyricsModal
+                    open={showLyricsModal}
+                    onClose={() => setShowLyricsModal(false)}
+                    title={selectedSong.title}
+                    artist={selectedSong.artist}
+                    lyrics={selectedSong.lyrics}
+                    isMature={result?.appropriate === 3}
+                />
+            )}
         </>
     );
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowDownward, InfoOutlined } from '@mui/icons-material';
+import ArrowDownward from '@mui/icons-material/ArrowDownward';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { Box, Button, Container, Link, Typography } from '@mui/material';
 import { useTheme as useNextTheme } from 'next-themes';
 import { useEffect, useState } from 'react';

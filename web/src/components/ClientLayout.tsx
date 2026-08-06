@@ -12,10 +12,8 @@ import {
     FormControlLabel,
     Typography,
 } from '@mui/material';
-import {
-    DarkMode,
-    LightMode
-} from '@mui/icons-material';
+import DarkMode from '@mui/icons-material/DarkMode';
+import LightMode from '@mui/icons-material/LightMode';
 import { useTheme } from '@mui/material/styles';
 import { useTheme as useNextTheme } from 'next-themes';
 import { KO_FI_LINK } from '@/util/supportDev';

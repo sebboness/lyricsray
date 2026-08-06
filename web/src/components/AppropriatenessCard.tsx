@@ -1,5 +1,7 @@
 import { Box, Card, CardContent, Typography } from '@mui/material';
-import { CheckCircle, Error, WarningRounded } from '@mui/icons-material';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import Error from '@mui/icons-material/Error';
+import WarningRounded from '@mui/icons-material/WarningRounded';
 import { ShareButtonWithModal } from './ShareButtonWithModal';
 import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
 

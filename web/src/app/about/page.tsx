@@ -20,16 +20,14 @@ import {
     ListItemText,
     Button,
 } from '@mui/material';
-import {
-    ExpandMore,
-    Security,
-    Psychology,
-    CheckCircle,
-    AutoAwesome,
-    FamilyRestroom,
-    School,
-    Visibility,
-} from '@mui/icons-material';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import Security from '@mui/icons-material/Security';
+import Psychology from '@mui/icons-material/Psychology';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
+import School from '@mui/icons-material/School';
+import Visibility from '@mui/icons-material/Visibility';
 import { useTheme } from '@mui/material/styles';
 import { KO_FI_LINK } from '@/util/supportDev';
 

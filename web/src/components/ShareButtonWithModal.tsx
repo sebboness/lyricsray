@@ -9,16 +9,14 @@ import {
     TextField,
     InputAdornment,
 } from '@mui/material';
-import {
-    Close,
-    ContentCopy,
-    Check,
-    Facebook,
-    X,
-    Email,
-    WhatsApp,
-    Share,
-} from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
+import ContentCopy from '@mui/icons-material/ContentCopy';
+import Check from '@mui/icons-material/Check';
+import Facebook from '@mui/icons-material/Facebook';
+import X from '@mui/icons-material/X';
+import Email from '@mui/icons-material/Email';
+import WhatsApp from '@mui/icons-material/WhatsApp';
+import Share from '@mui/icons-material/Share';
 import { getAnalysisDetailsPath } from '@/util/routeHelper';
 
 interface ShareButtonWithModalProps  {
