@@ -25,8 +25,12 @@ interface PageProps {
  * segment. Either way, joining on "/" gives back the original key.
  */
 function reconstructSongKey(songKeys: string[]): string {
-    const songKey = songKeys.join('/');
-    return songKey.replace(/(\%2B)+/g, '+');
+    const raw = songKeys.join('/');
+    try {
+        return decodeURIComponent(raw);
+    } catch {
+        return raw;
+    }
 }
 
 /**

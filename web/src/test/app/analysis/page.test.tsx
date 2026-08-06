@@ -62,13 +62,27 @@ describe('AnalysisDetailsPage', () => {
         expect(screen.getByTestId('analysis-display')).toHaveTextContent('Terrified');
     });
 
-    it('reconstructs a legacy pipe/hash songKey from a single route segment', async () => {
+    it('reconstructs a legacy pipe/hash songKey from a single already-decoded route segment', async () => {
         mockApiGetPublic.mockResolvedValue({
             data: { result: { songKey: 'Guster|Terrified#abc123', song: { songName: 'Terrified' } } },
             headers: new Headers(),
         });
 
         await AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Guster|Terrified#abc123'] }) });
+
+        expect(mockApiGetPublic).toHaveBeenCalledWith('/v1/analyze-song?songKey=Guster%7CTerrified%23abc123');
+    });
+
+    it('reconstructs a legacy pipe/hash songKey from a single still-encoded route segment', async () => {
+        // Next.js may deliver route params without decoding %7C / %23; the page
+        // must decode them before re-encoding for the query string, or the key
+        // arrives at the Lambda double-encoded and never matches the DynamoDB PK.
+        mockApiGetPublic.mockResolvedValue({
+            data: { result: { songKey: 'Guster|Terrified#abc123', song: { songName: 'Terrified' } } },
+            headers: new Headers(),
+        });
+
+        await AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Guster%7CTerrified%23abc123'] }) });
 
         expect(mockApiGetPublic).toHaveBeenCalledWith('/v1/analyze-song?songKey=Guster%7CTerrified%23abc123');
     });
