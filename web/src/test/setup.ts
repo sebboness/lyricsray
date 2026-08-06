@@ -16,6 +16,10 @@ process.env.ALTCHA_SECRET = 'test1234!';
 // Mock fetch globally
 global.fetch = vi.fn()
 
+// jsdom doesn't implement scrollIntoView; stub it so code that calls it (e.g. scrolling
+// to results after an analysis) doesn't throw during tests
+window.HTMLElement.prototype.scrollIntoView = vi.fn()
+
 // Setup console mocks to reduce noise in tests
 global.console = {
     ...console,

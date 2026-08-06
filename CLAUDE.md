@@ -71,6 +71,8 @@ npm run build    # Build for production
 | `ANTHROPIC_API_KEY` | Anthropic API key — never commit this      |
 | `ALTCHA_KEY`      | Altcha CAPTCHA public key                    |
 | `ALTCHA_SECRET`   | Altcha CAPTCHA secret — never commit this   |
+| `NEXT_PUBLIC_SUPPORT_PROMPT_FIRST_THRESHOLD` | Analysis count at which the support-prompt banner first appears (default 5) |
+| `NEXT_PUBLIC_SUPPORT_PROMPT_COOLDOWN` | Additional analyses required before the support-prompt banner reappears after dismissal (default 10) |
 
 ### Admin authentication (`api/` Lambda only)
 
