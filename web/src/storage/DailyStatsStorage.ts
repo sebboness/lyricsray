@@ -3,6 +3,11 @@ import { logger } from '@/logger/logger';
 
 const tableName = `${process.env.APP_NAME?.toLowerCase()}-${process.env.ENV?.toLowerCase()}-daily-stats`;
 
+export interface HourlyBucket {
+    pageViews: number;
+    analyses: number;
+}
+
 export interface TopSong {
     songKey: string;
     artistName: string;
@@ -42,7 +47,9 @@ export interface DailyStat {
     totalCtaClicks?: number;
     totalCtaDismissals?: number;
     totalExternalLinkClicks?: number;
+    externalLinkBreakdown?: { 'kofi-profile': number; hexonite: number };
     notFoundSongKeys?: { songKey: string; count: number }[];
+    hourlyBreakdown?: HourlyBucket[];
 }
 
 export class DailyStatsStorage {
