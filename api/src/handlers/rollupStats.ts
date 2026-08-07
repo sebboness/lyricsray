@@ -68,20 +68,25 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
     let totalCtaDismissals = 0;
     let totalExternalLinkClicks = 0;
     const shareBreakdown = { whatsapp: 0, facebook: 0, twitter: 0, email: 0, copy: 0 };
+    const externalLinkBreakdown = { 'kofi-profile': 0, hexonite: 0 };
     const uaBreakdown = { bot: 0, searchEngine: 0, aiCrawler: 0, person: 0 };
     const uniqueIps = new Set<string>();
     const songMap = new Map<string, SongCounts>();
     const notFoundMap = new Map<string, number>();
+    const hourlyBreakdown = Array.from({ length: 24 }, () => ({ pageViews: 0, analyses: 0 }));
 
     for (const event of events) {
         if (event.hashedIp) uniqueIps.add(event.hashedIp);
 
+        const hour = parseInt(event.timestamp.slice(11, 13), 10);
         if (event.eventType === 'analysis') {
             totalAnalyses++;
             if (event.cacheHit) cacheHits++; else cacheMisses++;
+            if (hour >= 0 && hour < 24) hourlyBreakdown[hour].analyses++;
         } else if (event.eventType === 'pageView') {
             totalPageViews++;
             if (event.uaType && event.uaType in uaBreakdown) uaBreakdown[event.uaType]++;
+            if (hour >= 0 && hour < 24) hourlyBreakdown[hour].pageViews++;
         } else if (event.eventType === 'share') {
             totalShares++;
             if (event.shareMethod && event.shareMethod in shareBreakdown) shareBreakdown[event.shareMethod]++;
@@ -90,6 +95,9 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
             else if (event.ctaAction === 'dismissed') totalCtaDismissals++;
         } else if (event.eventType === 'externalLink') {
             totalExternalLinkClicks++;
+            if (event.linkTarget && event.linkTarget in externalLinkBreakdown) {
+                externalLinkBreakdown[event.linkTarget as keyof typeof externalLinkBreakdown]++;
+            }
         } else if (event.eventType === 'songNotFound' && event.songKey) {
             notFoundMap.set(event.songKey, (notFoundMap.get(event.songKey) ?? 0) + 1);
         }
@@ -132,9 +140,11 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
             totalCtaClicks,
             totalCtaDismissals,
             totalExternalLinkClicks,
+            externalLinkBreakdown,
             uniqueHashedIps: uniqueIps.size,
             topSongs,
             notFoundSongKeys,
+            hourlyBreakdown,
             uaBreakdown,
             lastComputedAt: new Date().toISOString(),
         },

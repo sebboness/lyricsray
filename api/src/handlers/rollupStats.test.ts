@@ -291,6 +291,32 @@ describe('rollupStatsHandler', () => {
         expect(todayPut.totalExternalLinkClicks).toBe(2);
     });
 
+    it('builds a 24-slot hourlyBreakdown bucketing pageView and analysis events by UTC hour', async () => {
+        const events = [
+            makeEvent({ eventType: 'pageView', timestamp: '2026-08-06T09:15:00.000Z' }),
+            makeEvent({ eventType: 'pageView', timestamp: '2026-08-06T09:45:00.000Z' }),
+            makeEvent({ eventType: 'analysis', cacheHit: false, timestamp: '2026-08-06T09:30:00.000Z' }),
+            makeEvent({ eventType: 'pageView', timestamp: '2026-08-06T14:00:00.000Z' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.hourlyBreakdown).toHaveLength(24);
+        expect(todayPut.hourlyBreakdown[9]).toEqual({ pageViews: 2, analyses: 1 });
+        expect(todayPut.hourlyBreakdown[14]).toEqual({ pageViews: 1, analyses: 0 });
+        expect(todayPut.hourlyBreakdown[0]).toEqual({ pageViews: 0, analyses: 0 });
+    });
+
     it('aggregates songNotFound events by songKey into notFoundSongKeys sorted by count', async () => {
         const events = [
             makeEvent({ eventType: 'songNotFound', songKey: 'A/S1/h' }),

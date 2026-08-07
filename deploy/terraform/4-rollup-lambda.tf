@@ -123,7 +123,7 @@ resource "aws_iam_role_policy" "scheduler_invoke" {
   })
 }
 
-# EventBridge schedule — runs every 6 hours (4x/day)
+# EventBridge schedule — runs once daily at midnight UTC
 resource "aws_scheduler_schedule" "rollup" {
   name       = "${local.app}-${local.env}-rollup"
   group_name = "default"
@@ -133,7 +133,7 @@ resource "aws_scheduler_schedule" "rollup" {
     maximum_window_in_minutes = 15
   }
 
-  schedule_expression          = "cron(0 */6 * * ? *)"
+  schedule_expression          = local.env == "prod" ? "cron(0 */3 * * ? *)" : "cron(0 0 * * ? *)"
   schedule_expression_timezone = "UTC"
 
   target {
