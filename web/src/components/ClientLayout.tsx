@@ -17,6 +17,7 @@ import LightMode from '@mui/icons-material/LightMode';
 import { useTheme } from '@mui/material/styles';
 import { useTheme as useNextTheme } from 'next-themes';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { TrackedExternalLink } from '@/components/TrackedExternalLink';
 
 interface ClientLayoutProps {
     children: React.ReactNode;
@@ -49,7 +50,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         return () => {
             window.removeEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
         };
-    }, []);
+    }, [isHomePage]);
 
     // Determine the effective theme (accounting for system preference)
     const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
@@ -299,11 +300,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             Privacy &amp; Terms
                         </Link>
                         {bulletPoint()}
-                        <Link 
+                        <TrackedExternalLink
                             href="https://www.hexonite.net/sebastian"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            sx={{ 
+                            linkTarget="hexonite"
+                            linkContext="footer"
+                            sx={{
                                 color: theme.palette.text.secondary,
                                 textDecoration: 'none',
                                 fontSize: '0.9rem',
@@ -314,13 +315,13 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             }}
                         >
                             Created by Sebastian Stefaniuk
-                        </Link>
+                        </TrackedExternalLink>
                         {bulletPoint()}
-                        <Link 
+                        <TrackedExternalLink
                             href={KO_FI_LINK}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            sx={{ 
+                            linkTarget="kofi-profile"
+                            linkContext="footer"
+                            sx={{
                                 color: theme.palette.text.secondary,
                                 textDecoration: 'none',
                                 fontSize: '0.9rem',
@@ -331,7 +332,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             }}
                         >
                             ☕ Help keep this free
-                        </Link>
+                        </TrackedExternalLink>
                     </Box>
                     <Typography 
                         variant="caption" 

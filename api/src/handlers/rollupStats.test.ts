@@ -30,9 +30,11 @@ vi.mock('moment', () => {
 import { rollupStatsHandler } from './rollupStats';
 
 const makeEvent = (overrides: Partial<{
-    eventId: string; eventType: 'analysis' | 'pageView'; date: string;
-    timestamp: string; hashedIp: string; uaType: string; cacheHit: boolean;
-    songKey: string; artistName: string; songName: string;
+    eventId: string;
+    eventType: 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink';
+    date: string; timestamp: string; hashedIp: string; uaType: string;
+    cacheHit: boolean; songKey: string; artistName: string; songName: string;
+    shareMethod: string; ctaAction: string; linkTarget: string;
 }>) => ({
     eventId: 'id-1',
     eventType: 'analysis' as const,
@@ -141,12 +143,12 @@ describe('rollupStatsHandler', () => {
         expect(todayPut.uniqueHashedIps).toBe(2);
     });
 
-    it('aggregates UA breakdown counts', async () => {
+    it('aggregates UA breakdown counts from pageView events only', async () => {
         const events = [
-            makeEvent({ uaType: 'person' }),
-            makeEvent({ uaType: 'person' }),
-            makeEvent({ uaType: 'aiCrawler' }),
-            makeEvent({ uaType: 'bot' }),
+            makeEvent({ eventType: 'pageView', uaType: 'person' }),
+            makeEvent({ eventType: 'pageView', uaType: 'person' }),
+            makeEvent({ eventType: 'pageView', uaType: 'aiCrawler' }),
+            makeEvent({ eventType: 'analysis', uaType: 'bot' }), // analysis events do NOT count toward uaBreakdown
         ];
 
         mockSend
@@ -163,7 +165,7 @@ describe('rollupStatsHandler', () => {
 
         expect(todayPut.uaBreakdown.person).toBe(2);
         expect(todayPut.uaBreakdown.aiCrawler).toBe(1);
-        expect(todayPut.uaBreakdown.bot).toBe(1);
+        expect(todayPut.uaBreakdown.bot).toBe(0); // analysis event — not counted
         expect(todayPut.uaBreakdown.searchEngine).toBe(0);
     });
 
@@ -190,6 +192,128 @@ describe('rollupStatsHandler', () => {
         const s1 = todayPut.topSongs.find((s: { songKey: string }) => s.songKey === 'A/S1/h');
         expect(s1?.analysisCount).toBe(1);
         expect(s1?.pageViewCount).toBe(1);
+        expect(s1?.shareCount).toBe(0);
+    });
+
+    it('tracks per-song share counts in topSongs', async () => {
+        const events = [
+            makeEvent({ songKey: 'A/S1/h', artistName: 'A', songName: 'S1', eventType: 'analysis', cacheHit: false }),
+            makeEvent({ songKey: 'A/S1/h', artistName: 'A', songName: 'S1', eventType: 'share', shareMethod: 'whatsapp' }),
+            makeEvent({ songKey: 'A/S1/h', artistName: 'A', songName: 'S1', eventType: 'share', shareMethod: 'copy' }),
+            makeEvent({ songKey: 'A/S2/h', artistName: 'A', songName: 'S2', eventType: 'analysis', cacheHit: false }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        const s1 = todayPut.topSongs.find((s: { songKey: string }) => s.songKey === 'A/S1/h');
+        expect(s1?.shareCount).toBe(2);
+        const s2 = todayPut.topSongs.find((s: { songKey: string }) => s.songKey === 'A/S2/h');
+        expect(s2?.shareCount).toBe(0);
+    });
+
+    it('counts share events and tallies shareBreakdown by method', async () => {
+        const events = [
+            makeEvent({ eventType: 'share', shareMethod: 'whatsapp' }),
+            makeEvent({ eventType: 'share', shareMethod: 'whatsapp' }),
+            makeEvent({ eventType: 'share', shareMethod: 'copy' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.totalShares).toBe(3);
+        expect(todayPut.shareBreakdown.whatsapp).toBe(2);
+        expect(todayPut.shareBreakdown.copy).toBe(1);
+        expect(todayPut.shareBreakdown.facebook).toBe(0);
+        expect(todayPut.totalAnalyses).toBe(0);
+    });
+
+    it('counts CTA clicks and dismissals separately', async () => {
+        const events = [
+            makeEvent({ eventType: 'cta', ctaAction: 'clicked' }),
+            makeEvent({ eventType: 'cta', ctaAction: 'clicked' }),
+            makeEvent({ eventType: 'cta', ctaAction: 'dismissed' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.totalCtaClicks).toBe(2);
+        expect(todayPut.totalCtaDismissals).toBe(1);
+    });
+
+    it('counts external link clicks', async () => {
+        const events = [
+            makeEvent({ eventType: 'externalLink', linkTarget: 'kofi-profile' }),
+            makeEvent({ eventType: 'externalLink', linkTarget: 'hexonite' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.totalExternalLinkClicks).toBe(2);
+    });
+
+    it('aggregates songNotFound events by songKey into notFoundSongKeys sorted by count', async () => {
+        const events = [
+            makeEvent({ eventType: 'songNotFound', songKey: 'A/S1/h' }),
+            makeEvent({ eventType: 'songNotFound', songKey: 'A/S1/h' }),
+            makeEvent({ eventType: 'songNotFound', songKey: 'A/S2/h' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.notFoundSongKeys).toHaveLength(2);
+        expect(todayPut.notFoundSongKeys[0]).toEqual({ songKey: 'A/S1/h', count: 2 });
+        expect(todayPut.notFoundSongKeys[1]).toEqual({ songKey: 'A/S2/h', count: 1 });
+        expect(todayPut.totalAnalyses).toBe(0);
     });
 
     it('continues to process today if yesterday fails', async () => {

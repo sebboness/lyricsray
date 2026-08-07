@@ -3,23 +3,23 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SupportPromptBanner } from '@/components/SupportPromptBanner';
 
+vi.mock('@/util/trackEvent', () => ({ trackEvent: vi.fn() }));
+
 // The banner reveals itself 3s after mounting (via MUI Collapse), and elements inside a
 // collapsed/hidden Collapse are treated as inaccessible by role queries, so tests need to
 // wait past that delay before querying by role.
 const REVEAL_WAIT_OPTIONS = { timeout: 4000 };
 
 describe('SupportPromptBanner', () => {
-    it('renders the message and a Ko-fi link', async () => {
+    it('renders the message and a Ko-fi button', async () => {
         render(<SupportPromptBanner onDismiss={() => {}} />);
 
         expect(screen.getByText(/We hope this analysis helped you/i)).toBeInTheDocument();
 
-        const kofiLink = await waitFor(
-            () => screen.getByRole('link', { name: /Support on Ko-fi/i }),
+        await waitFor(
+            () => screen.getByRole('button', { name: /Support on Ko-fi/i }),
             REVEAL_WAIT_OPTIONS
         );
-        expect(kofiLink).toHaveAttribute('href', expect.stringContaining('ko-fi.com'));
-        expect(kofiLink).toHaveAttribute('target', '_blank');
     }, 6000);
 
     it('calls onDismiss when the dismiss button is clicked', async () => {

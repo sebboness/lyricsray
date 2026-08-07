@@ -67,24 +67,28 @@ async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null
 export default async function AnalysisDetailsPage({ params }: PageProps) {
     const { songKeys } = await params;
     const songKey = reconstructSongKey(songKeys);
-    const result = await getAnalysisResult(songKey);
+    const [result, requestHeaders] = await Promise.all([getAnalysisResult(songKey), headers()]);
 
-    if (!result) {
-        notFound();
-    }
-
-    const requestHeaders = await headers();
     const ua = requestHeaders.get('user-agent') ?? '';
     const ip = requestHeaders.get('cf-connecting-ip')
         ?? requestHeaders.get('x-real-ip')
         ?? requestHeaders.get('x-forwarded-for')?.split(',')[0].trim()
         ?? '';
     const now = new Date();
-    void analyticsStorage.writePageViewEvent({
+    const baseEvent = {
         date: now.toISOString().split('T')[0],
         timestamp: now.toISOString(),
         hashedIp: hashValue(ip),
         ...parseUserAgent(ua),
+    };
+
+    if (!result) {
+        void analyticsStorage.writeSongNotFoundEvent({ ...baseEvent, songKey });
+        notFound();
+    }
+
+    void analyticsStorage.writePageViewEvent({
+        ...baseEvent,
         songKey,
         artistName: result.song?.artistName ?? '',
         songName: result.song?.songName ?? '',
