@@ -18,6 +18,7 @@ import Email from '@mui/icons-material/Email';
 import WhatsApp from '@mui/icons-material/WhatsApp';
 import Share from '@mui/icons-material/Share';
 import { getAnalysisDetailsPath } from '@/util/routeHelper';
+import { trackEvent } from '@/util/trackEvent';
 
 interface ShareButtonWithModalProps  {
     songKey: string;
@@ -43,6 +44,7 @@ export function ShareButtonWithModal({
             await navigator.clipboard.writeText(shareUrl);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
+            trackEvent('share', { shareMethod: 'copy', songKey, songName: songTitle, artistName });
         } catch (error) {
             console.error('Failed to copy link:', error);
         }
@@ -50,7 +52,7 @@ export function ShareButtonWithModal({
 
     const handleShare = (platform: string) => {
         let url = '';
-        
+
         switch (platform) {
             case 'facebook':
                 url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
@@ -65,9 +67,10 @@ export function ShareButtonWithModal({
                 url = `mailto:?subject=${encodeURIComponent('LyricsRay Analysis - ' + songTitle)}&body=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`;
                 break;
         }
-        
+
         if (url) {
             window.open(url, '_blank', 'noopener,noreferrer');
+            trackEvent('share', { shareMethod: platform, songKey, songName: songTitle, artistName });
         }
     };
 

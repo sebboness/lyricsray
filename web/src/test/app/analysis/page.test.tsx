@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-const { mockApiGetPublic, mockNotFound, mockWritePageViewEvent } = vi.hoisted(() => ({
+const { mockApiGetPublic, mockNotFound, mockWritePageViewEvent, mockWriteSongNotFoundEvent } = vi.hoisted(() => ({
     mockApiGetPublic: vi.fn(),
     mockNotFound: vi.fn(() => {
         // Mirrors Next.js's real notFound(), which halts rendering by throwing.
         throw new Error('NEXT_NOT_FOUND');
     }),
     mockWritePageViewEvent: vi.fn().mockResolvedValue(undefined),
+    mockWriteSongNotFoundEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/logger/logger', () => ({
@@ -30,6 +31,7 @@ vi.mock('@/storage/dynamodb', () => ({ getDynamoDbClient: vi.fn(() => ({})) }));
 vi.mock('@/storage/AnalyticsEventStorage', () => ({
     AnalyticsEventStorage: vi.fn().mockImplementation(() => ({
         writePageViewEvent: mockWritePageViewEvent,
+        writeSongNotFoundEvent: mockWriteSongNotFoundEvent,
     })),
 }));
 
@@ -96,6 +98,31 @@ describe('AnalysisDetailsPage', () => {
         ).rejects.toThrow('NEXT_NOT_FOUND');
 
         expect(mockNotFound).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires a songNotFound analytics event with the songKey before calling notFound()', async () => {
+        const { ApiRequestError } = await import('@/lib/api');
+        mockApiGetPublic.mockRejectedValue(new ApiRequestError(404, ['Analysis result not found'], new Headers()));
+
+        await expect(
+            AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Guster', 'Terrified', 'abc123'] }) }),
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+
+        expect(mockWriteSongNotFoundEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ songKey: 'Guster/Terrified/abc123' }),
+        );
+        expect(mockWritePageViewEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not fire a songNotFound event when the result is found', async () => {
+        const result = { songKey: 'Guster/Terrified/abc123', song: { songName: 'Terrified', artistName: 'Guster' } };
+        mockApiGetPublic.mockResolvedValue({ data: { result }, headers: new Headers() });
+
+        const element = await AnalysisDetailsPage({ params: Promise.resolve({ songKeys: ['Guster', 'Terrified', 'abc123'] }) });
+        render(element);
+
+        expect(mockWriteSongNotFoundEvent).not.toHaveBeenCalled();
+        expect(mockWritePageViewEvent).toHaveBeenCalledTimes(1);
     });
 
     it('calls notFound() (rather than throwing) when the API call fails unexpectedly', async () => {

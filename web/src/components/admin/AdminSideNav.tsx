@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar } from '@mui/material';
+import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 
 export const ADMIN_NAV_WIDTH = 240;
@@ -57,7 +57,25 @@ export function AdminSideNav({ variant, open, onClose }: AdminSideNavProps) {
                 '& .MuiDrawer-paper': { width: ADMIN_NAV_WIDTH, boxSizing: 'border-box' },
             }}
         >
-            <Toolbar />
+            <Box
+                component={Link}
+                href="/"
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 64,
+                    px: 2,
+                    textDecoration: 'none',
+                }}
+            >
+                <Box
+                    component="img"
+                    src="/images/logo-textonly-64.png"
+                    alt="LyricsRay"
+                    sx={{ maxHeight: 32, width: 'auto' }}
+                />
+            </Box>
             {content}
         </Drawer>
     );

@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { trackEvent } from '@/util/trackEvent';
 import { LyricsThemes } from '@/components/LyricsThemes';
 import { ExplicitContentGate } from '@/components/ExplicitContentGate';
 import { LyricsPaper } from '@/components/LyricsPaper';
@@ -145,11 +146,12 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }} mt={4}>
                         <Button
                             variant="contained"
-                            href={KO_FI_LINK}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             size="large"
                             sx={{ px: 4, py: 1.5 }}
+                            onClick={() => {
+                                trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'analysisDisplay' });
+                                window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                            }}
                         >
                             ☕ Support on Ko-fi
                         </Button>

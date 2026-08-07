@@ -7,18 +7,19 @@ import { Typography, Box, useTheme } from '@mui/material';
 import { DailyStat } from '@/storage/DailyStatsStorage';
 import { utcDateToLocalMonthDay } from '@/util/dateFormat';
 
-interface AnalysisChartProps {
+interface VisitorsChartProps {
     stats: DailyStat[];
 }
 
-export function AnalysisChart({ stats }: AnalysisChartProps) {
+export function VisitorsChart({ stats }: VisitorsChartProps) {
     const theme = useTheme();
 
-    // Show last 30 days oldest-first for left-to-right timeline
     const data = [...stats].reverse().map((s) => ({
         date: utcDateToLocalMonthDay(s.date),
-        'From cache': s.cacheHits,
-        'New analysis': s.cacheMisses,
+        Person: s.uaBreakdown?.person ?? 0,
+        'Search engine': s.uaBreakdown?.searchEngine ?? 0,
+        'AI crawler': s.uaBreakdown?.aiCrawler ?? 0,
+        Bot: s.uaBreakdown?.bot ?? 0,
     }));
 
     if (data.length === 0) {
@@ -32,7 +33,7 @@ export function AnalysisChart({ stats }: AnalysisChartProps) {
     return (
         <Box>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                Analyses per day (last 30 days)
+                Page views per day (last 30 days)
             </Typography>
             <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="30%">
@@ -63,12 +64,11 @@ export function AnalysisChart({ stats }: AnalysisChartProps) {
                         }}
                         cursor={{ fill: theme.palette.action.hover }}
                     />
-                    <Legend
-                        wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                        iconType="square"
-                    />
-                    <Bar dataKey="From cache" stackId="a" fill="#10B981" radius={[0, 0, 3, 3]} />
-                    <Bar dataKey="New analysis" stackId="a" fill="#3B82F6" radius={[3, 3, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="square" />
+                    <Bar dataKey="Person" stackId="a" fill="#3B82F6" radius={[0, 0, 3, 3]} />
+                    <Bar dataKey="Search engine" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="AI crawler" stackId="a" fill="#F59E0B" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Bot" stackId="a" fill="#6B7280" radius={[3, 3, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </Box>

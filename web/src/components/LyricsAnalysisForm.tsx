@@ -39,6 +39,7 @@ import { SupportPromptBanner } from '@/components/SupportPromptBanner';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { trackEvent } from '@/util/trackEvent';
 import { clearRateLimitedUntil, formatRemainingTime, getRateLimitedUntil, setRateLimitedUntil } from '@/util/rateLimitClient';
 import { incrementAnalysisCount, shouldShowSupportPrompt, dismissSupportPrompt } from '@/util/analysisCountClient';
 import { encodeSongKeyForPath } from '@/util/routeHelper';
@@ -790,11 +791,12 @@ export function LyricsAnalysisForm() {
                                         <Button
                                             variant="contained"
                                             color="primary"
-                                            href={KO_FI_LINK}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
                                             size="large"
                                             sx={{ px: 4, py: 1.5 }}
+                                            onClick={() => {
+                                                trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'analysisForm' });
+                                                window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                                            }}
                                         >
                                             ☕ Support on Ko-fi
                                         </Button>
