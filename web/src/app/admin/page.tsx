@@ -6,6 +6,8 @@ import { StatTile } from '@/components/admin/StatTile';
 import { AnalysisChart } from '@/components/admin/AnalysisChart';
 import { UaBreakdownChart } from '@/components/admin/UaBreakdownChart';
 import { TopSongsTable } from '@/components/admin/TopSongsTable';
+import { NotFoundSongKeysTable } from '@/components/admin/NotFoundSongKeysTable';
+import { VisitorsChart } from '@/components/admin/VisitorsChart';
 
 const statsStorage = new DailyStatsStorage(getDynamoDbClient());
 
@@ -22,6 +24,10 @@ export default async function AdminDashboardPage() {
         : 0;
     const pageViewsToday = today?.totalPageViews ?? 0;
     const uniqueIpsToday = today?.uniqueHashedIps ?? 0;
+    const sharesToday = today?.totalShares ?? 0;
+    const ctaClicksToday = today?.totalCtaClicks ?? 0;
+    const ctaDismissalsToday = today?.totalCtaDismissals ?? 0;
+    const externalLinkClicksToday = today?.totalExternalLinkClicks ?? 0;
 
     return (
         <>
@@ -29,8 +35,8 @@ export default async function AdminDashboardPage() {
                 Welcome, {firstName}
             </Typography>
 
-            {/* Stat tiles */}
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 4 }}>
+            {/* Core stat tiles */}
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                 <StatTile
                     label="Analyses today"
                     value={totalAnalysesToday}
@@ -52,6 +58,23 @@ export default async function AdminDashboardPage() {
                 />
             </Box>
 
+            {/* Engagement stat tiles */}
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 4 }}>
+                <StatTile
+                    label="Shares today"
+                    value={sharesToday}
+                />
+                <StatTile
+                    label="Ko-fi CTA clicks today"
+                    value={ctaClicksToday}
+                    sub={ctaDismissalsToday > 0 ? `${ctaDismissalsToday} dismissed` : undefined}
+                />
+                <StatTile
+                    label="External link clicks today"
+                    value={externalLinkClicksToday}
+                />
+            </Box>
+
             <Divider sx={{ mb: 3 }} />
 
             {/* Charts */}
@@ -63,7 +86,13 @@ export default async function AdminDashboardPage() {
                     <UaBreakdownChart stats={stats} />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
+                    <VisitorsChart stats={stats} />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
                     <TopSongsTable stats={stats} />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                    <NotFoundSongKeysTable stats={stats} />
                 </Grid>
             </Grid>
         </>

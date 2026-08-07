@@ -23,6 +23,7 @@ export async function getAnalysisHandler(event: APIGatewayProxyEvent): Promise<A
     const result = await analysisResultDb.getAnalysisResult(songKey);
 
     if (!result) {
+      logger.warn('analysis result not found', { songKey });
       throw ApiError.notFound('Analysis result');
     }
 

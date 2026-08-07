@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Button, Collapse, IconButton, Paper, Typography } from '@mui/material';
 import Close from '@mui/icons-material/Close';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { trackEvent } from '@/util/trackEvent';
 
 interface SupportPromptBannerProps {
     onDismiss: () => void;
@@ -35,7 +36,7 @@ export function SupportPromptBanner({ onDismiss }: SupportPromptBannerProps) {
                 }}
             >
                 <IconButton
-                    onClick={onDismiss}
+                    onClick={() => { trackEvent('cta', { ctaAction: 'dismissed', ctaType: 'kofi' }); onDismiss(); }}
                     aria-label="Dismiss"
                     size="small"
                     sx={{ position: 'absolute', top: 8, right: 8 }}
@@ -55,9 +56,10 @@ export function SupportPromptBanner({ onDismiss }: SupportPromptBannerProps) {
 
                 <Button
                     variant="contained"
-                    href={KO_FI_LINK}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={() => {
+                        trackEvent('cta', { ctaAction: 'clicked', ctaType: 'kofi' });
+                        window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                    }}
                 >
                     ☕ Support on Ko-fi
                 </Button>

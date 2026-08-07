@@ -30,6 +30,7 @@ import School from '@mui/icons-material/School';
 import Visibility from '@mui/icons-material/Visibility';
 import { useTheme } from '@mui/material/styles';
 import { KO_FI_LINK } from '@/util/supportDev';
+import { trackEvent } from '@/util/trackEvent';
 
 const researchItems = [
     {
@@ -484,12 +485,13 @@ export default function About() {
                         <Button
                             variant="contained"
                             color="primary"
-                            href={KO_FI_LINK}
-                            target="_blank"
-                            rel="noopener noreferrer"
                             sx={{
                                 textTransform: "none",
                                 borderRadius: 2,
+                            }}
+                            onClick={() => {
+                                trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'aboutPage' });
+                                window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
                             }}
                         >
                             Support on Ko-fi ☕

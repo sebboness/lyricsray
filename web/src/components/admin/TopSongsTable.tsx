@@ -2,9 +2,10 @@
 
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Typography, Box, Paper,
+    Typography, Box, Paper, Link,
 } from '@mui/material';
 import { DailyStat, TopSong } from '@/storage/DailyStatsStorage';
+import { getAnalysisDetailsPath } from '@/util/routeHelper';
 
 interface TopSongsTableProps {
     stats: DailyStat[];
@@ -19,6 +20,7 @@ export function TopSongsTable({ stats }: TopSongsTableProps) {
             if (existing) {
                 existing.analysisCount += song.analysisCount;
                 existing.pageViewCount += song.pageViewCount;
+                existing.shareCount = (existing.shareCount ?? 0) + (song.shareCount ?? 0);
             } else {
                 songMap.set(song.songKey, { ...song });
             }
@@ -50,6 +52,7 @@ export function TopSongsTable({ stats }: TopSongsTableProps) {
                             <TableCell>Song</TableCell>
                             <TableCell align="right">Analyses</TableCell>
                             <TableCell align="right">Page views</TableCell>
+                            <TableCell align="right">Shares</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -59,10 +62,13 @@ export function TopSongsTable({ stats }: TopSongsTableProps) {
                                     {song.artistName || '—'}
                                 </TableCell>
                                 <TableCell sx={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {song.songName || '—'}
+                                    <Link href={getAnalysisDetailsPath(song.songKey)} target="_blank" rel="noopener noreferrer" underline="hover">
+                                        {song.songName || '—'}
+                                    </Link>
                                 </TableCell>
                                 <TableCell align="right">{song.analysisCount}</TableCell>
                                 <TableCell align="right">{song.pageViewCount}</TableCell>
+                                <TableCell align="right">{song.shareCount ?? 0}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

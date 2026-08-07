@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 
-const { mockGetAnalysisResult } = vi.hoisted(() => ({
+const { mockGetAnalysisResult, mockLoggerWarn } = vi.hoisted(() => ({
   mockGetAnalysisResult: vi.fn(),
+  mockLoggerWarn: vi.fn(),
 }));
 
 vi.mock('../storage/dynamodb', () => ({ getDynamoDbClient: vi.fn(() => ({})) }));
@@ -10,6 +11,9 @@ vi.mock('../storage/analysisResultStorage', () => ({
   AnalysisResultStorage: vi.fn().mockImplementation(() => ({
     getAnalysisResult: mockGetAnalysisResult,
   })),
+}));
+vi.mock('../util/logger', () => ({
+  logger: { error: vi.fn(), warn: mockLoggerWarn, info: vi.fn() },
 }));
 
 import { getAnalysisHandler } from './getAnalysis';
@@ -49,6 +53,14 @@ describe('getAnalysisHandler', () => {
 
     expect(status).toBe(404);
     expect(body.errors).toContain('Analysis result not found');
+  });
+
+  it('logs a warning with the songKey when no analysis result is found', async () => {
+    mockGetAnalysisResult.mockResolvedValue(null);
+
+    await call({ songKey: 'Guster/Terrified/abc123' });
+
+    expect(mockLoggerWarn).toHaveBeenCalledWith('analysis result not found', { songKey: 'Guster/Terrified/abc123' });
   });
 
   it('returns the stored result, using the songKey exactly as received (slashes and all)', async () => {

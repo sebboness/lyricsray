@@ -9,6 +9,7 @@ export interface TopSong {
     songName: string;
     analysisCount: number;
     pageViewCount: number;
+    shareCount?: number;
 }
 
 export interface UaBreakdown {
@@ -16,6 +17,14 @@ export interface UaBreakdown {
     searchEngine: number;
     aiCrawler: number;
     person: number;
+}
+
+export interface ShareBreakdown {
+    whatsapp: number;
+    facebook: number;
+    twitter: number;
+    email: number;
+    copy: number;
 }
 
 export interface DailyStat {
@@ -28,6 +37,12 @@ export interface DailyStat {
     topSongs: TopSong[];
     uaBreakdown: UaBreakdown;
     lastComputedAt: string;
+    totalShares?: number;
+    shareBreakdown?: ShareBreakdown;
+    totalCtaClicks?: number;
+    totalCtaDismissals?: number;
+    totalExternalLinkClicks?: number;
+    notFoundSongKeys?: { songKey: string; count: number }[];
 }
 
 export class DailyStatsStorage {

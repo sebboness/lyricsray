@@ -74,4 +74,100 @@ describe('AnalyticsEventStorage', () => {
             await expect(storage.writePageViewEvent(baseParams)).resolves.not.toThrow();
         });
     });
+
+    describe('writeShareEvent', () => {
+        it('sends a PutCommand with eventType share and shareMethod', async () => {
+            await storage.writeShareEvent({ ...baseParams, shareMethod: 'whatsapp', songKey: baseParams.songKey });
+
+            const cmd = mockSend.mock.calls[0][0];
+            expect(cmd).toBeInstanceOf(PutCommand);
+            expect(cmd.input.Item).toMatchObject({
+                eventType: 'share',
+                shareMethod: 'whatsapp',
+                songKey: baseParams.songKey,
+            });
+        });
+
+        it('does not throw when the DynamoDB call fails', async () => {
+            mockSend.mockRejectedValue(new Error('ddb down'));
+
+            await expect(
+                storage.writeShareEvent({ ...baseParams, shareMethod: 'copy', songKey: baseParams.songKey }),
+            ).resolves.not.toThrow();
+        });
+    });
+
+    describe('writeCtaEvent', () => {
+        it('sends a PutCommand with eventType cta and ctaAction', async () => {
+            await storage.writeCtaEvent({ ...baseParams, ctaAction: 'clicked', ctaType: 'kofi' });
+
+            const cmd = mockSend.mock.calls[0][0];
+            expect(cmd).toBeInstanceOf(PutCommand);
+            expect(cmd.input.Item).toMatchObject({
+                eventType: 'cta',
+                ctaAction: 'clicked',
+                ctaType: 'kofi',
+            });
+        });
+
+        it('does not throw when the DynamoDB call fails', async () => {
+            mockSend.mockRejectedValue(new Error('ddb down'));
+
+            await expect(
+                storage.writeCtaEvent({ ...baseParams, ctaAction: 'dismissed', ctaType: 'kofi' }),
+            ).resolves.not.toThrow();
+        });
+    });
+
+    describe('writeLinkEvent', () => {
+        it('sends a PutCommand with eventType externalLink, linkTarget, and linkContext', async () => {
+            await storage.writeLinkEvent({ ...baseParams, linkTarget: 'kofi-profile', linkContext: 'footer' });
+
+            const cmd = mockSend.mock.calls[0][0];
+            expect(cmd).toBeInstanceOf(PutCommand);
+            expect(cmd.input.Item).toMatchObject({
+                eventType: 'externalLink',
+                linkTarget: 'kofi-profile',
+                linkContext: 'footer',
+            });
+        });
+
+        it('does not throw when the DynamoDB call fails', async () => {
+            mockSend.mockRejectedValue(new Error('ddb down'));
+
+            await expect(
+                storage.writeLinkEvent({ ...baseParams, linkTarget: 'hexonite', linkContext: 'footer' }),
+            ).resolves.not.toThrow();
+        });
+    });
+
+    describe('writeSongNotFoundEvent', () => {
+        it('sends a PutCommand with eventType songNotFound and the songKey', async () => {
+            await storage.writeSongNotFoundEvent({ ...baseParams, songKey: 'Artist/Song/hash123' });
+
+            const cmd = mockSend.mock.calls[0][0];
+            expect(cmd).toBeInstanceOf(PutCommand);
+            expect(cmd.input.Item).toMatchObject({
+                eventType: 'songNotFound',
+                songKey: 'Artist/Song/hash123',
+            });
+        });
+
+        it('includes a ttl and a generated eventId', async () => {
+            await storage.writeSongNotFoundEvent({ ...baseParams, songKey: 'Artist/Song/hash123' });
+
+            const item = mockSend.mock.calls[0][0].input.Item;
+            expect(item.ttl).toBeTypeOf('number');
+            expect(item.ttl).toBeGreaterThan(Math.floor(Date.now() / 1000));
+            expect(item.eventId).toHaveLength(36);
+        });
+
+        it('does not throw when the DynamoDB call fails', async () => {
+            mockSend.mockRejectedValue(new Error('ddb down'));
+
+            await expect(
+                storage.writeSongNotFoundEvent({ ...baseParams, songKey: 'Artist/Song/hash123' }),
+            ).resolves.not.toThrow();
+        });
+    });
 });

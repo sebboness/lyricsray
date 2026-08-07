@@ -10,7 +10,7 @@ const statsTable = `${appName}-${env}-daily-stats`;
 
 interface RawEvent {
     eventId: string;
-    eventType: 'analysis' | 'pageView';
+    eventType: 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink' | 'songNotFound';
     date: string;
     timestamp: string;
     songKey?: string;
@@ -21,6 +21,9 @@ interface RawEvent {
     browser?: string;
     os?: string;
     cacheHit?: boolean;
+    shareMethod?: 'whatsapp' | 'facebook' | 'twitter' | 'email' | 'copy';
+    ctaAction?: 'clicked' | 'dismissed';
+    linkTarget?: string;
 }
 
 interface SongCounts {
@@ -28,6 +31,7 @@ interface SongCounts {
     songName: string;
     analysisCount: number;
     pageViewCount: number;
+    shareCount: number;
 }
 
 async function fetchEventsForDate(dbClient: DynamoDBDocumentClient, date: string): Promise<RawEvent[]> {
@@ -59,19 +63,35 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
     let cacheHits = 0;
     let cacheMisses = 0;
     let totalPageViews = 0;
+    let totalShares = 0;
+    let totalCtaClicks = 0;
+    let totalCtaDismissals = 0;
+    let totalExternalLinkClicks = 0;
+    const shareBreakdown = { whatsapp: 0, facebook: 0, twitter: 0, email: 0, copy: 0 };
     const uaBreakdown = { bot: 0, searchEngine: 0, aiCrawler: 0, person: 0 };
     const uniqueIps = new Set<string>();
     const songMap = new Map<string, SongCounts>();
+    const notFoundMap = new Map<string, number>();
 
     for (const event of events) {
         if (event.hashedIp) uniqueIps.add(event.hashedIp);
-        if (event.uaType && event.uaType in uaBreakdown) uaBreakdown[event.uaType]++;
 
         if (event.eventType === 'analysis') {
             totalAnalyses++;
             if (event.cacheHit) cacheHits++; else cacheMisses++;
         } else if (event.eventType === 'pageView') {
             totalPageViews++;
+            if (event.uaType && event.uaType in uaBreakdown) uaBreakdown[event.uaType]++;
+        } else if (event.eventType === 'share') {
+            totalShares++;
+            if (event.shareMethod && event.shareMethod in shareBreakdown) shareBreakdown[event.shareMethod]++;
+        } else if (event.eventType === 'cta') {
+            if (event.ctaAction === 'clicked') totalCtaClicks++;
+            else if (event.ctaAction === 'dismissed') totalCtaDismissals++;
+        } else if (event.eventType === 'externalLink') {
+            totalExternalLinkClicks++;
+        } else if (event.eventType === 'songNotFound' && event.songKey) {
+            notFoundMap.set(event.songKey, (notFoundMap.get(event.songKey) ?? 0) + 1);
         }
 
         if (event.songKey) {
@@ -80,9 +100,11 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
                 songName: event.songName ?? '',
                 analysisCount: 0,
                 pageViewCount: 0,
+                shareCount: 0,
             };
             if (event.eventType === 'analysis') existing.analysisCount++;
             else if (event.eventType === 'pageView') existing.pageViewCount++;
+            else if (event.eventType === 'share') existing.shareCount++;
             songMap.set(event.songKey, existing);
         }
     }
@@ -90,6 +112,11 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
     const topSongs = Array.from(songMap.entries())
         .map(([songKey, counts]) => ({ songKey, ...counts }))
         .sort((a, b) => (b.analysisCount + b.pageViewCount) - (a.analysisCount + a.pageViewCount))
+        .slice(0, 20);
+
+    const notFoundSongKeys = Array.from(notFoundMap.entries())
+        .map(([songKey, count]) => ({ songKey, count }))
+        .sort((a, b) => b.count - a.count)
         .slice(0, 20);
 
     await dbClient.send(new PutCommand({
@@ -100,8 +127,14 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
             cacheHits,
             cacheMisses,
             totalPageViews,
+            totalShares,
+            shareBreakdown,
+            totalCtaClicks,
+            totalCtaDismissals,
+            totalExternalLinkClicks,
             uniqueHashedIps: uniqueIps.size,
             topSongs,
+            notFoundSongKeys,
             uaBreakdown,
             lastComputedAt: new Date().toISOString(),
         },
