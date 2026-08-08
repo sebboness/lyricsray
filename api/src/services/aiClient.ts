@@ -73,6 +73,8 @@ export class AiClient {
     }
 
     responseText = responseText.substring(braceOpenIdx, braceCloseIdx + 1);
+    // Guard against the model returning bare `undefined` (invalid JSON) instead of `null`
+    responseText = responseText.replace(/:\s*undefined\b/g, ': null');
 
     try {
       const analysis = JSON.parse(responseText);
@@ -83,8 +85,8 @@ export class AiClient {
         themes: analysis.themes || [],
         tokensIn: response.usage.input_tokens,
         tokensOut: response.usage.output_tokens,
-        artistName: analysis.artistName || undefined,
-        songName: analysis.songName || undefined,
+        artistName: analysis.artistName ?? undefined,
+        songName: analysis.songName ?? undefined,
       };
     } catch (parseError) {
       logger.error('error parsing claude response', { parseError, responseText });
@@ -132,8 +134,8 @@ Provide your analysis in the following JSON format:
     "analysis": "Brief explanation of your assessment, including specific concerns if any",
     "recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16', '18')",
     "themes": "string array: List of top 6 themes in the lyrics as keywords",
-    "artistName": "string?: Name of the artist if known; undefined if unknown",
-    "songName": "string?: Name of the song if known; undefined if unknown"
+    "artistName": "string | null: Name of the artist if known; null if unknown",
+    "songName": "string | null: Name of the song if known; null if unknown"
 }
 
 Be conservative in your assessment and err on the side of caution when determining the minimum recommended age. Consider what themes and content are generally appropriate for different age groups.`;

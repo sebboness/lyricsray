@@ -121,13 +121,52 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
     const resolvedArtistName = artistName || analysis.artistName;
     const resolvedSongName = songName || analysis.songName;
 
+    if (!artistName && !songName)
+      logger.info('ai name inference for lyrics-only request', {
+        artistName: analysis.artistName ?? null,
+        songName: analysis.songName ?? null,
+        bothResolved: !!analysis.artistName && !!analysis.songName,
+      });
+
+    // Re-generate the key only when both names are resolved — a partial key (one placeholder '-')
+    // is not addressable by the artist page and not worth overwriting the original.
+    const bothNamesResolved = !!resolvedArtistName && !!resolvedSongName;
+    const resolvedSongKey = (bothNamesResolved && (resolvedArtistName !== artistName || resolvedSongName !== songName))
+      ? makeSongKey(resolvedArtistName, resolvedSongName, lyrics)
+      : songKey;
+
+    // For lyrics-only submissions, check if any analysis for the same artist+song already exists.
+    // Uses prefix matching on the GSI (same approach as the 2-segment URL lookup) so that minor
+    // lyric variations — which produce a different hash — still resolve to the existing record.
+    if (!artistName && !songName && resolvedSongKey !== songKey) {
+      try {
+        const resolvedArtistKey = resolvedSongKey.split('/')[0];
+        const resolvedSongPrefix = resolvedSongKey.split('/').slice(0, 2).join('/');
+        const artistResults = await analysisResultDb.getAnalysesByArtist(resolvedArtistKey, 100);
+        const existing = artistResults.find(item => item.songKey.startsWith(resolvedSongPrefix + '/'));
+        if (existing) {
+          logger.info('found existing analysis for resolved artist+song', { resolvedArtistKey, resolvedSongPrefix });
+          return ok({
+            appropriate: existing.appropriate,
+            analysis: existing.analysis,
+            recommendedAge: existing.recommendedAge.toString(),
+            themes: existing.themes || [],
+            songKey: existing.songKey,
+            cacheHit: true,
+          }, origin);
+        }
+      } catch (err) {
+        logger.error('error checking storage for resolved artist+song', { resolvedSongKey, err });
+      }
+    }
+
     const analysisResult: AnalysisResult = {
       appropriate: analysis.appropriate,
       analysis: analysis.analysis,
       recommendedAge: analysis.recommendedAge,
       themes: analysis.themes || [],
       date: moment.utc().toISOString(),
-      songKey,
+      songKey: resolvedSongKey,
       entityType: 'ANALYSIS',
       song: {
         albumName,
@@ -141,9 +180,9 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
 
     try {
       await analysisResultDb.saveAnalysisResult(analysisResult);
-      logger.info('analysis result saved to storage', { artistName: resolvedArtistName, songName: resolvedSongName });
+      logger.info('analysis result saved to storage', { artistName: resolvedArtistName, songName: resolvedSongName, resolvedSongKey });
     } catch (err) {
-      logger.error('failed to save analysis result to storage', { artistName, songName, err });
+      logger.error('failed to save analysis result to storage', { artistName: resolvedArtistName, songName: resolvedSongName, err });
     }
 
     return ok({
@@ -151,7 +190,7 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
       analysis: analysis.analysis,
       recommendedAge: analysis.recommendedAge.toString(),
       themes: analysis.themes || [],
-      songKey,
+      songKey: resolvedSongKey,
       cacheHit: false,
     }, origin, {
       'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
