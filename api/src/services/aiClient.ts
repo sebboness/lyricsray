@@ -9,6 +9,8 @@ export interface LyricsAnalysis {
   themes: string[];
   tokensIn: number;
   tokensOut: number;
+  artistName?: string;
+  songName?: string;
 }
 
 export class AiClient {
@@ -81,6 +83,8 @@ export class AiClient {
         themes: analysis.themes || [],
         tokensIn: response.usage.input_tokens,
         tokensOut: response.usage.output_tokens,
+        artistName: analysis.artistName || undefined,
+        songName: analysis.songName || undefined,
       };
     } catch (parseError) {
       logger.error('error parsing claude response', { parseError, responseText });
@@ -127,7 +131,9 @@ Provide your analysis in the following JSON format:
     "appropriate": "integer: Level of appropriateness, 1 through 3, where 1 = generally appropriate for most ages, 2 = exercise caution/parental guidance suggested, 3 = mature content/older audiences only",
     "analysis": "Brief explanation of your assessment, including specific concerns if any",
     "recommendedAge": "Minimum recommended age (e.g., '13', 'All', '16', '18')",
-    "themes": "string array: List of themes in the lyrics as keywords"
+    "themes": "string array: List of top 6 themes in the lyrics as keywords",
+    "artistName": "string?: Name of the artist if known; undefined if unknown",
+    "songName": "string?: Name of the song if known; undefined if unknown"
 }
 
 Be conservative in your assessment and err on the side of caution when determining the minimum recommended age. Consider what themes and content are generally appropriate for different age groups.`;

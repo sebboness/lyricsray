@@ -84,6 +84,29 @@ describe('AiClient', () => {
       expect(result.themes).toEqual([]);
     });
 
+    it('passes through artistName and songName when the AI provides them', async () => {
+      mockCreate.mockResolvedValue(textResponse(JSON.stringify({
+        appropriate: 1, analysis: 'clean', recommendedAge: 'All', themes: [],
+        artistName: 'Taylor Swift', songName: 'Shake It Off',
+      })));
+
+      const result = await client.analyzeLyrics('la la la');
+
+      expect(result.artistName).toBe('Taylor Swift');
+      expect(result.songName).toBe('Shake It Off');
+    });
+
+    it('returns undefined for artistName and songName when the AI omits them', async () => {
+      mockCreate.mockResolvedValue(textResponse(JSON.stringify({
+        appropriate: 1, analysis: 'clean', recommendedAge: 'All', themes: [],
+      })));
+
+      const result = await client.analyzeLyrics('la la la');
+
+      expect(result.artistName).toBeUndefined();
+      expect(result.songName).toBeUndefined();
+    });
+
     it('throws when the response has no content blocks', async () => {
       mockCreate.mockResolvedValue({ content: [], usage: { input_tokens: 1, output_tokens: 1 } });
 

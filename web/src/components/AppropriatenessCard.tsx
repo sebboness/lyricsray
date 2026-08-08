@@ -81,26 +81,39 @@ export function AppropriatenessCard({
         <>
             <Card sx={{ mb: 2 }}>
                 <CardContent>
+                    {/* Mobile: label full-width on top */}
+                    <Typography
+                        variant="h6"
+                        color={appropriatenessData.color}
+                        fontWeight="600"
+                        sx={{ display: { xs: 'block', sm: 'none' }, mb: 1 }}
+                    >
+                        {appropriatenessData.text}
+                    </Typography>
+
                     <Box display="flex" alignItems="center" justifyContent="space-between">
-                        {/* Left side: Icon and text */}
+                        {/* Left: icon + text */}
                         <Box display="flex" alignItems="center" gap={2}>
-                            {(appropriatenessData.icon)}
-                            <Box gap={2}>
-                                <Typography 
-                                    variant="h6" 
+                            <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+                                {appropriatenessData.icon}
+                            </Box>
+                            <Box>
+                                {/* Desktop: label inline */}
+                                <Typography
+                                    variant="h6"
                                     color={appropriatenessData.color}
                                     fontWeight="600"
+                                    sx={{ display: { xs: 'none', sm: 'block' } }}
                                 >
                                     {appropriatenessData.text}
                                 </Typography>
-
                                 <Typography variant="body2" color="text.secondary">
                                     <strong>Minimum age:</strong> {getRecommendedAgeDisplay(recommendedAge)}
                                 </Typography>
                             </Box>
                         </Box>
 
-                        {/* Right side: Share button with modal */}
+                        {/* Right: Share button */}
                         {showShareButton && songKey && (
                             <ShareButtonWithModal
                                 songKey={songKey}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { AnalysisDisplay } from '@/app/analysis/[...songKeys]/AnalysisDisplay';
+import { AnalysisDisplay } from '@/app/analysis/[artistName]/[songName]/[hash]/AnalysisDisplay';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 
 function buildResult(appropriate: number): AnalysisResult {
