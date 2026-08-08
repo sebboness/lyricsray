@@ -9,19 +9,22 @@ import {
     Button,
 } from '@mui/material';
 import ArrowForward from '@mui/icons-material/ArrowForward';
-import { PopularSongItem } from '@/lib/getPopularSongs';
-import { SongListRow } from './SongListRow';
+import { SongListRow, SongListRowItem } from './SongListRow';
 
 interface PopularSongsClientProps {
     title?: string;
     showTitle?: boolean;
-    songs: PopularSongItem[];
+    songs: SongListRowItem[];
+    actionLabel?: string;
+    actionHref?: string;
 }
 
 export function PopularSongsClient({
     title = "Popular",
     showTitle = true,
-    songs
+    songs,
+    actionLabel = "More recent songs",
+    actionHref = "/recent-searches",
 }: PopularSongsClientProps) {
     if (songs.length === 0) {
         return null;
@@ -49,11 +52,11 @@ export function PopularSongsClient({
             <Box sx={{ textAlign: 'right', mt: 2 }}>
                 <Button
                     component={NextLink}
-                    href="/recent-searches"
+                    href={actionHref}
                     variant="contained"
                     endIcon={<ArrowForward />}
                 >
-                    More recent songs
+                    {actionLabel}
                 </Button>
             </Box>
         </Paper>

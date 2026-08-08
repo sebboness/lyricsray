@@ -5,6 +5,8 @@ import { altchaChallengeHandler } from './src/handlers/altchaChallenge';
 import { searchSongHandler } from './src/handlers/searchSong';
 import { analyzeSongHandler } from './src/handlers/analyzeSong';
 import { getAnalysisHandler } from './src/handlers/getAnalysis';
+import { getArtistAnalysesHandler } from './src/handlers/getArtistAnalyses';
+import { getRandomSongsHandler } from './src/handlers/getRandomSongs';
 import { popularSongsHandler } from './src/handlers/popularSongs';
 import { recentSearchesHandler } from './src/handlers/recentSearches';
 import {
@@ -25,6 +27,8 @@ router.get('/v1/altcha/challenge', altchaChallengeHandler);
 router.post('/v1/search-song', searchSongHandler);
 router.post('/v1/analyze-song', analyzeSongHandler);
 router.get('/v1/analyze-song', getAnalysisHandler);
+router.get('/v1/artist-analyses', getArtistAnalysesHandler);
+router.get('/v1/random-songs', getRandomSongsHandler);
 router.get('/v1/popular-songs', popularSongsHandler);
 router.get('/v1/recent-searches', recentSearchesHandler);
 

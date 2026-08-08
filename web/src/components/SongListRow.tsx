@@ -74,20 +74,21 @@ export function SongListRow({ song, index, total, showDate = false }: SongListRo
                             <Box component="span" sx={{ fontSize: '0.9em', fontStyle: 'italic' }}>by {song.artistName}</Box>
                         </Typography>
 
-                        {/* Right side (date + age + icon) */}
+                        {/* Right side (date + age) */}
                         <Box
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 1,
-                                flexWrap: 'wrap',
+                                flexShrink: 0,
                             }}
                         >
                             {showDate && (
                                 <Typography
                                     sx={{
+                                        display: { xs: 'none', sm: 'block' },
                                         color: 'text.secondary',
-                                        fontSize: { xs: '0.75em', sm: '0.9em' },
+                                        fontSize: '0.9em',
                                     }}
                                 >
                                     {moment(song.date).format('MMM D, YYYY')}

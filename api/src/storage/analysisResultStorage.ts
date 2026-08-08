@@ -1,6 +1,8 @@
 import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { logger } from '../util/logger';
 
+const APP_START_MS = new Date('2026-04-22').getTime();
+
 const tableName = `${process.env.APP_NAME!.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analysis-results`;
 
 export interface AnalysisResult {
@@ -48,7 +50,13 @@ export class AnalysisResultStorage {
    */
   async saveAnalysisResult(analysisResult: AnalysisResult): Promise<AnalysisResult> {
     try {
-      await this.dbClient.send(new PutCommand({ TableName: tableName, Item: { ...analysisResult } }));
+      const artistKey = analysisResult.songKey.includes('/')
+        ? analysisResult.songKey.split('/')[0]
+        : undefined;
+      await this.dbClient.send(new PutCommand({
+        TableName: tableName,
+        Item: { ...analysisResult, ...(artistKey ? { artistKey } : {}) },
+      }));
       return analysisResult;
     } catch (err) {
       logger.error('saveAnalysisResult failed', { err, songKey: analysisResult.songKey });
@@ -84,6 +92,63 @@ export class AnalysisResultStorage {
    * Gets multiple analysis results by their songKeys using BatchGetItem.
    * @param songKeys Array of songKeys to fetch
    */
+  /** Returns analyses for a given artist, sorted newest-first, via the ArtistAnalysesIndex GSI. */
+  async getAnalysesByArtist(artistKey: string, limit = 50): Promise<AnalysisResult[]> {
+    try {
+      const { Items } = await this.dbClient.send(new QueryCommand({
+        TableName: tableName,
+        IndexName: 'ArtistAnalysesIndex',
+        KeyConditionExpression: 'artistKey = :artistKey',
+        ExpressionAttributeValues: { ':artistKey': artistKey },
+        ScanIndexForward: false,
+        Limit: limit,
+        ProjectionExpression: 'songKey, #d, song.songName, song.artistName, song.thumbnailUrl, recommendedAge, themes, appropriate',
+        ExpressionAttributeNames: { '#d': 'date' },
+      }));
+      return (Items as AnalysisResult[]) ?? [];
+    } catch (err) {
+      logger.error('getAnalysesByArtist failed', { err, artistKey });
+      throw err;
+    }
+  }
+
+  /**
+   * Returns up to 4 random analyses by querying RecentAnalysesIndex with 4 random
+   * dates in parallel, then deduplicating. The optional excludeSongKey song is omitted.
+   */
+  async getRandomSongs(excludeSongKey?: string): Promise<AnalysisResult[]> {
+    // Divide the timeline into 4 equal buckets and pick one random date per bucket.
+    // This ensures queries sample different parts of the timeline, avoiding duplicate returns.
+    const rangeMs = Date.now() - APP_START_MS;
+    const bucketMs = rangeMs / 4;
+    const randomDate = (bucketIndex: number) =>
+      new Date(APP_START_MS + bucketIndex * bucketMs + Math.random() * bucketMs).toISOString();
+
+    try {
+      const queries = Array.from({ length: 4 }, (_, i) =>
+        this.dbClient.send(new QueryCommand({
+          TableName: tableName,
+          IndexName: 'RecentAnalysesIndex',
+          KeyConditionExpression: 'entityType = :et AND #d <= :date',
+          ExpressionAttributeValues: { ':et': 'ANALYSIS', ':date': randomDate(i) },
+          ExpressionAttributeNames: { '#d': 'date' },
+          ScanIndexForward: false,
+          Limit: 1,
+          ProjectionExpression: 'songKey, #d, song.songName, song.artistName, song.thumbnailUrl, recommendedAge, themes, appropriate',
+        }))
+      );
+
+      const results = await Promise.all(queries);
+      const seen = new Set<string>(excludeSongKey ? [excludeSongKey] : []);
+      return results
+        .flatMap(r => (r.Items as AnalysisResult[]) ?? [])
+        .filter(s => s.song?.songName && s.song?.artistName && !seen.has(s.songKey) && !!seen.add(s.songKey));
+    } catch (err) {
+      logger.error('getRandomSongs failed', { err });
+      throw err;
+    }
+  }
+
   async getBatchAnalysisResults(songKeys: string[]): Promise<AnalysisResult[]> {
     if (!songKeys || songKeys.length === 0) return [];
 
