@@ -17,12 +17,25 @@ resource "aws_dynamodb_table" "analysis_results" {
       type = "S"
     }
 
+    attribute {
+      name = "artistKey"
+      type = "S"
+    }
+
     hash_key = "songKey"
-    
+
     # Global Secondary Index for querying recent analyses
     global_secondary_index {
       name            = "RecentAnalysesIndex"
       hash_key        = "entityType"
+      range_key       = "date"
+      projection_type = "ALL"
+    }
+
+    # Global Secondary Index for querying all analyses by artist
+    global_secondary_index {
+      name            = "ArtistAnalysesIndex"
+      hash_key        = "artistKey"
       range_key       = "date"
       projection_type = "ALL"
     }

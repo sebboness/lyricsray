@@ -2,19 +2,10 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getDynamoDbClient } from '../storage/dynamodb';
 import { AnalysisResultStorage } from '../storage/analysisResultStorage';
 import { ok, fromError } from '../util/response';
+import { SongItem } from '../types/songItem';
 
 const ddbClient = getDynamoDbClient();
 const analysisResultDb = new AnalysisResultStorage(ddbClient);
-
-interface PopularSongItem {
-  songKey: string;
-  songName: string;
-  artistName: string;
-  recommendedAge: number;
-  themes: string[];
-  appropriate: number;
-  date: string;
-}
 
 export async function popularSongsHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const origin = event.headers?.Origin ?? event.headers?.origin;
@@ -22,7 +13,7 @@ export async function popularSongsHandler(event: APIGatewayProxyEvent): Promise<
     const maxItems = parseInt(event.queryStringParameters?.limit ?? '5', 10) || 5;
     const recentAnalyses = await analysisResultDb.getRecentAnalyses(maxItems * 4, 'POPULAR');
 
-    const formatted: PopularSongItem[] = recentAnalyses
+    const formatted: SongItem[] = recentAnalyses
       .filter((item) => item.song?.songName && item.song?.artistName && item.recommendedAge && item.appropriate && item.date)
       .map((item) => ({
         songKey: item.songKey,

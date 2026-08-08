@@ -242,6 +242,44 @@ describe('analyzeSongHandler', () => {
     });
   });
 
+  describe('AI-inferred artist/song names', () => {
+    it('uses AI-inferred names when the request omits artistName and songName', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'Taylor Swift', songName: 'Shake It Off',
+      });
+
+      await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      const saved = mockSaveAnalysisResult.mock.calls[0][0];
+      expect(saved.song.artistName).toBe('Taylor Swift');
+      expect(saved.song.songName).toBe('Shake It Off');
+    });
+
+    it('prefers request-provided names over AI-inferred names', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'AI Guessed Artist', songName: 'AI Guessed Song',
+      });
+
+      await callHandler({ altchaPayload: 'valid', lyrics: 'la la la', artistName: 'Real Artist', songName: 'Real Song' });
+
+      const saved = mockSaveAnalysisResult.mock.calls[0][0];
+      expect(saved.song.artistName).toBe('Real Artist');
+      expect(saved.song.songName).toBe('Real Song');
+    });
+
+    it('stores undefined artist/song when neither request nor AI provides them', async () => {
+      await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      const saved = mockSaveAnalysisResult.mock.calls[0][0];
+      expect(saved.song.artistName).toBeUndefined();
+      expect(saved.song.songName).toBeUndefined();
+    });
+  });
+
   describe('error handling', () => {
     it('returns 500 when the AI client throws', async () => {
       mockAnalyzeLyrics.mockRejectedValue(new Error('anthropic down'));

@@ -23,3 +23,10 @@ export const encodeSongKeyForPath = (songKey: string) => (songKey.includes('#') 
  * @returns Route path for a song analysis result.
  */
 export const getAnalysisDetailsPath = (songKey: string) => `${getBaseUrl()}/analysis/${encodeSongKeyForPath(songKey)}`;
+
+/**
+ * Gets the route path for an artist landing page.
+ * @param songKey Any songKey for that artist — the artist segment is extracted from it.
+ * @returns Route path for the artist landing page.
+ */
+export const getArtistPagePath = (songKey: string) => `${getBaseUrl()}/analysis/${songKey.split('/')[0]}`;

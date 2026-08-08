@@ -1,4 +1,6 @@
-import { notFound } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+
+import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
@@ -9,12 +11,18 @@ import { getDynamoDbClient } from '@/storage/dynamodb';
 import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
 import { hashValue } from '@/util/hash';
 import { parseUserAgent } from '@/util/userAgent';
+import { getRequestContext } from '@/util/request';
+import { getRandomSongs } from '@/lib/getRandomSongs';
+import { PopularSongsClient } from '@/components/PopularSongsClient';
+import { Container } from '@mui/material';
 
 const analyticsStorage = new AnalyticsEventStorage(getDynamoDbClient());
 
 interface PageProps {
     params: Promise<{
-        songKeys: string[];
+        artistName: string;
+        songName: string;
+        hash: string;
     }>;
 }
 
@@ -23,18 +31,6 @@ function reEncodeSegment(segment: string): string {
         try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
     }
     return encodeURIComponent(segment);
-}
-
-/**
- * Reconstructs the full song key from the catch-all route's path segments.
- * Current-format keys are 3 segments (artist/song/hash); legacy single-segment
- * keys (Artist|Song#hash) are decoded verbatim.
- */
-function reconstructSongKey(songKeys: string[]): string {
-    if (songKeys.length === 1) {
-        try { return decodeURIComponent(songKeys[0]); } catch { return songKeys[0]; }
-    }
-    return songKeys.map(reEncodeSegment).join('/');
 }
 
 async function fetchResult(songKey: string): Promise<AnalysisResult | null> {
@@ -48,32 +44,32 @@ async function fetchResult(songKey: string): Promise<AnalysisResult | null> {
     }
 }
 
-/**
- * Fetches the analysis result, with a single retry that substitutes '-' for any
- * '%2B' in the key. Old-format keys used '+' as the space proxy; after migration
- * those keys became '-'. A URL with '+' in a path segment arrives here as '%2B',
- * so swapping to '-' recovers the migrated key.
- */
-async function getAnalysisResult(songKey: string): Promise<AnalysisResult | null> {
+async function getAnalysisResult(songKey: string): Promise<{ result: AnalysisResult | null; redirectTo: string | null }> {
     const result = await fetchResult(songKey);
-    if (result !== null) return result;
+    if (result) return { result, redirectTo: null };
 
     if (songKey.includes('%2B')) {
-        return fetchResult(songKey.replaceAll('%2B', '-'));
+        const retried = await fetchResult(songKey.replaceAll('%2B', '-'));
+        if (retried) return { result: null, redirectTo: `/analysis/${retried.songKey}` };
     }
-    return null;
+    return { result: null, redirectTo: null };
 }
 
 export default async function AnalysisDetailsPage({ params }: PageProps) {
-    const { songKeys } = await params;
-    const songKey = reconstructSongKey(songKeys);
-    const [result, requestHeaders] = await Promise.all([getAnalysisResult(songKey), headers()]);
+    const { artistName, songName, hash } = await params;
+    const songKey = [artistName, songName, hash].map(reEncodeSegment).join('/');
 
-    const ua = requestHeaders.get('user-agent') ?? '';
-    const ip = requestHeaders.get('cf-connecting-ip')
-        ?? requestHeaders.get('x-real-ip')
-        ?? requestHeaders.get('x-forwarded-for')?.split(',')[0].trim()
-        ?? '';
+    const [{ result, redirectTo }, randomSongs, requestHeaders] = await Promise.all([
+        getAnalysisResult(songKey),
+        getRandomSongs(songKey),
+        headers(),
+    ]);
+
+    if (redirectTo) {
+        permanentRedirect(redirectTo);
+    }
+
+    const { ua, ip } = getRequestContext(requestHeaders);
     const now = new Date();
     const baseEvent = {
         date: now.toISOString().split('T')[0],
@@ -94,25 +90,34 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
         songName: result.song?.songName ?? '',
     });
 
-    return <AnalysisDisplay result={result} />;
+    return (
+        <>
+            <AnalysisDisplay result={result} />
+            {randomSongs.length > 0 && (
+                <Container maxWidth="md" sx={{ pb: 4 }}>
+                    <PopularSongsClient title="More analyzed lyrics" showTitle songs={randomSongs} />
+                </Container>
+            )}
+        </>
+    );
 }
 
-// Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps) {
-    const { songKeys } = await params;
-    const songKey = reconstructSongKey(songKeys);
+    const { artistName, songName, hash } = await params;
+    const songKey = [artistName, songName, hash].map(reEncodeSegment).join('/');
     const result = await getAnalysisResult(songKey);
 
-    if (!result) {
+    if (!result.result) {
         return { title: 'Analysis Not Found | LyricsRay' };
     }
 
-    const songTitle = result.song?.songName || 'Unknown Song';
-    const artist = result.song?.artistName || 'Unknown Artist';
+    const { result: analysis } = result;
+    const songTitle = analysis.song?.songName || 'Unknown Song';
+    const artist = analysis.song?.artistName || 'Unknown Artist';
     const title = `LyricsRay Analysis for ${songTitle} by ${artist}`;
     const description = `Age-appropriate lyrics analysis for "${songTitle}" by ${artist}. `
-        + `Minimum age: ${result.recommendedAge}. `
-        + `Analysis: ${result.analysis.length > 100 ? (result.analysis.substring(0, 100) + '...') : result.analysis}`;
+        + `Minimum age: ${analysis.recommendedAge}. `
+        + `Analysis: ${analysis.analysis.length > 100 ? (analysis.analysis.substring(0, 100) + '...') : analysis.analysis}`;
 
     return {
         title,

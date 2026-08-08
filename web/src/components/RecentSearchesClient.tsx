@@ -1,11 +1,10 @@
 'use client';
 
 import { Paper, List } from '@mui/material';
-import { RecentSearchItem } from '@/lib/getRecentSearches';
-import { SongListRow } from './SongListRow';
+import { SongListRow, SongListRowItem } from './SongListRow';
 
 interface RecentSearchesClientProps {
-    songs: RecentSearchItem[];
+    songs: SongListRowItem[];
 }
 
 export function RecentSearchesClient({ songs }: RecentSearchesClientProps) {

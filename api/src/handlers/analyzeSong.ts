@@ -117,6 +117,10 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
     const analysis = await aiClient.analyzeLyrics(lyrics);
     analysis.appropriate = tryParseInt(analysis.appropriate);
 
+    // Use AI-inferred artist/song names only when the request was lyrics-only
+    const resolvedArtistName = artistName || analysis.artistName;
+    const resolvedSongName = songName || analysis.songName;
+
     const analysisResult: AnalysisResult = {
       appropriate: analysis.appropriate,
       analysis: analysis.analysis,
@@ -127,9 +131,9 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
       entityType: 'ANALYSIS',
       song: {
         albumName,
-        artistName,
+        artistName: resolvedArtistName,
         lyrics,
-        songName,
+        songName: resolvedSongName,
         thumbnailUrl: undefined,
         yearReleased: undefined,
       },
@@ -137,7 +141,7 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
 
     try {
       await analysisResultDb.saveAnalysisResult(analysisResult);
-      logger.info('analysis result saved to storage', { artistName, songName });
+      logger.info('analysis result saved to storage', { artistName: resolvedArtistName, songName: resolvedSongName });
     } catch (err) {
       logger.error('failed to save analysis result to storage', { artistName, songName, err });
     }
