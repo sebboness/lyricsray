@@ -50,9 +50,10 @@ export class AnalysisResultStorage {
    */
   async saveAnalysisResult(analysisResult: AnalysisResult): Promise<AnalysisResult> {
     try {
-      const artistKey = analysisResult.songKey.includes('/')
+      const artistKeyCandidate = analysisResult.songKey.includes('/')
         ? analysisResult.songKey.split('/')[0]
         : undefined;
+      const artistKey = artistKeyCandidate && artistKeyCandidate !== '-' ? artistKeyCandidate : undefined;
       await this.dbClient.send(new PutCommand({
         TableName: tableName,
         Item: { ...analysisResult, ...(artistKey ? { artistKey } : {}) },

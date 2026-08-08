@@ -5,6 +5,7 @@ const {
   mockVerify,
   mockGetClientIp,
   mockGetAnalysisResult,
+  mockGetAnalysesByArtist,
   mockSaveAnalysisResult,
   mockCheckAndIncrementRateLimit,
   mockGetLyricsPrompt,
@@ -14,6 +15,7 @@ const {
   mockVerify: vi.fn(),
   mockGetClientIp: vi.fn(),
   mockGetAnalysisResult: vi.fn(),
+  mockGetAnalysesByArtist: vi.fn(),
   mockSaveAnalysisResult: vi.fn(),
   mockCheckAndIncrementRateLimit: vi.fn(),
   mockGetLyricsPrompt: vi.fn(),
@@ -27,6 +29,7 @@ vi.mock('../storage/dynamodb', () => ({ getDynamoDbClient: vi.fn(() => ({})) }))
 vi.mock('../storage/analysisResultStorage', () => ({
   AnalysisResultStorage: vi.fn().mockImplementation(() => ({
     getAnalysisResult: mockGetAnalysisResult,
+    getAnalysesByArtist: mockGetAnalysesByArtist,
     saveAnalysisResult: mockSaveAnalysisResult,
   })),
 }));
@@ -66,6 +69,7 @@ beforeEach(() => {
     allowed: true,
     remaining: { hourly: 9, daily: 99, burst: 4 },
   });
+  mockGetAnalysesByArtist.mockResolvedValue([]);
   mockGetLyricsPrompt.mockReturnValue('prompt');
   mockGetTokenInputEstimate.mockResolvedValue(50);
   mockAnalyzeLyrics.mockResolvedValue({
@@ -257,7 +261,22 @@ describe('analyzeSongHandler', () => {
       expect(saved.song.songName).toBe('Shake It Off');
     });
 
-    it('prefers request-provided names over AI-inferred names', async () => {
+    it('regenerates songKey using AI-inferred names so the saved record is addressable by artist/song', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'Taylor Swift', songName: 'Shake It Off',
+      });
+
+      const { body } = await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      const saved = mockSaveAnalysisResult.mock.calls[0][0];
+      expect(saved.songKey).toContain('Taylor-Swift');
+      expect(saved.songKey).toContain('Shake-It-Off');
+      expect(body.data.songKey).toBe(saved.songKey);
+    });
+
+    it('does not regenerate songKey when request already provided names', async () => {
       mockAnalyzeLyrics.mockResolvedValue({
         appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
         tokensIn: 50, tokensOut: 100,
@@ -269,6 +288,70 @@ describe('analyzeSongHandler', () => {
       const saved = mockSaveAnalysisResult.mock.calls[0][0];
       expect(saved.song.artistName).toBe('Real Artist');
       expect(saved.song.songName).toBe('Real Song');
+      expect(saved.songKey).toContain('Real-Artist');
+      expect(saved.songKey).not.toContain('AI-Guessed');
+    });
+
+    it('returns existing result as cache hit when lyrics-only and artist+song prefix matches an existing record', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 1, analysis: 'Clean', recommendedAge: 'All', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'Taylor Swift', songName: 'Shake It Off',
+      });
+      mockGetAnalysesByArtist.mockResolvedValue([
+        { songKey: 'Taylor-Swift/Shake-It-Off/differenthash', appropriate: 1, analysis: 'Cached', recommendedAge: 13, themes: [] },
+      ]);
+
+      const { status, body } = await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      expect(status).toBe(200);
+      expect(body.data.cacheHit).toBe(true);
+      expect(body.data.analysis).toBe('Cached');
+      expect(body.data.songKey).toBe('Taylor-Swift/Shake-It-Off/differenthash');
+      expect(mockSaveAnalysisResult).not.toHaveBeenCalled();
+    });
+
+    it('skips the artist+song lookup when the request included artist or song name', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'AI Guessed Artist', songName: 'AI Guessed Song',
+      });
+
+      await callHandler({ altchaPayload: 'valid', lyrics: 'la la la', artistName: 'Real Artist', songName: 'Real Song' });
+
+      expect(mockGetAnalysesByArtist).not.toHaveBeenCalled();
+    });
+
+    it('still saves with resolved key when the artist+song lookup throws', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'Taylor Swift', songName: 'Shake It Off',
+      });
+      mockGetAnalysesByArtist.mockRejectedValue(new Error('ddb read failed'));
+
+      const { status } = await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      expect(status).toBe(200);
+      expect(mockSaveAnalysisResult).toHaveBeenCalledTimes(1);
+      const saved = mockSaveAnalysisResult.mock.calls[0][0];
+      expect(saved.songKey).toContain('Taylor-Swift');
+    });
+
+    it('does not regenerate songKey when AI only resolves one of the two names', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: undefined, songName: 'Two Moons',
+      });
+
+      await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      const saved = mockSaveAnalysisResult.mock.calls[0][0];
+      // Key should stay as the anonymous '-/-/{hash}' form, not '-/Two-Moons/{hash}'
+      expect(saved.songKey.startsWith('-/-/')).toBe(true);
+      expect(mockGetAnalysesByArtist).not.toHaveBeenCalled();
     });
 
     it('stores undefined artist/song when neither request nor AI provides them', async () => {
