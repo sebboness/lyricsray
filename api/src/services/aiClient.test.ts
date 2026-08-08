@@ -96,6 +96,17 @@ describe('AiClient', () => {
       expect(result.songName).toBe('Shake It Off');
     });
 
+    it('handles bare undefined literals in JSON response without throwing', async () => {
+      const raw = '{\n  "appropriate": 3,\n  "analysis": "Heavy themes",\n  "recommendedAge": "18",\n  "themes": ["self-harm"],\n  "artistName": undefined,\n  "songName": undefined\n}';
+      mockCreate.mockResolvedValue(textResponse(raw));
+
+      const result = await client.analyzeLyrics('la la la');
+
+      expect(result.appropriate).toBe(3);
+      expect(result.artistName).toBeUndefined();
+      expect(result.songName).toBeUndefined();
+    });
+
     it('returns undefined for artistName and songName when the AI omits them', async () => {
       mockCreate.mockResolvedValue(textResponse(JSON.stringify({
         appropriate: 1, analysis: 'clean', recommendedAge: 'All', themes: [],
