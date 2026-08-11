@@ -50,6 +50,8 @@ export interface DailyStat {
     externalLinkBreakdown?: { 'kofi-profile': number; hexonite: number };
     notFoundSongKeys?: { songKey: string; count: number }[];
     hourlyBreakdown?: HourlyBucket[];
+    ipRateLimitHits?: number;
+    globalRateLimitHits?: number;
 }
 
 export class DailyStatsStorage {

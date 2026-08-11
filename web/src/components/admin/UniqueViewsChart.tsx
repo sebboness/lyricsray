@@ -8,12 +8,12 @@ import { Typography, Box, useTheme } from '@mui/material';
 import { DailyStat } from '@/storage/DailyStatsStorage';
 import { utcDateToLocalMonthDay } from '@/util/dateFormat';
 
-interface EngagementChartProps {
+interface UniqueViewsChartProps {
     stats: DailyStat[];
     days: number;
 }
 
-export function EngagementChart({ stats, days }: EngagementChartProps) {
+export function UniqueViewsChart({ stats, days }: UniqueViewsChartProps) {
     const theme = useTheme();
     const [hidden, setHidden] = useState<Set<string>>(new Set());
     const toggleSeries = (entry: { value: string }) => setHidden((prev) => {
@@ -24,11 +24,7 @@ export function EngagementChart({ stats, days }: EngagementChartProps) {
 
     const data = [...stats].reverse().map((s) => ({
         date: utcDateToLocalMonthDay(s.date),
-        Shares: s.totalShares ?? 0,
-        'Ko-fi clicks': s.totalCtaClicks ?? 0,
-        'External links': s.totalExternalLinkClicks ?? 0,
-        'IP rate limits': s.ipRateLimitHits ?? 0,
-        'Global rate limits': s.globalRateLimitHits ?? 0,
+        'Unique visitors': s.uniqueHashedIps ?? 0,
     }));
 
     if (data.length === 0) {
@@ -42,7 +38,7 @@ export function EngagementChart({ stats, days }: EngagementChartProps) {
     return (
         <Box>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                Engagement per day (last {days} days)
+                Unique visitors per day (last {days} days)
             </Typography>
             <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="30%">
@@ -81,11 +77,7 @@ export function EngagementChart({ stats, days }: EngagementChartProps) {
                             <span style={{ opacity: hidden.has(value) ? 0.4 : 1, userSelect: 'none' }}>{value}</span>
                         )}
                     />
-                    <Bar dataKey="Shares" hide={hidden.has('Shares')} stackId="a" fill="#EC4899" radius={[0, 0, 3, 3]} />
-                    <Bar dataKey="Ko-fi clicks" hide={hidden.has('Ko-fi clicks')} stackId="a" fill="#F59E0B" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="External links" hide={hidden.has('External links')} stackId="a" fill="#8B5CF6" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="IP rate limits" hide={hidden.has('IP rate limits')} stackId="a" fill="#EF4444" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="Global rate limits" hide={hidden.has('Global rate limits')} stackId="a" fill="#7C3AED" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Unique visitors" hide={hidden.has('Unique visitors')} fill="#3B82F6" radius={[3, 3, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </Box>

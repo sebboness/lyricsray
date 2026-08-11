@@ -31,10 +31,10 @@ import { rollupStatsHandler } from './rollupStats';
 
 const makeEvent = (overrides: Partial<{
     eventId: string;
-    eventType: 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink';
+    eventType: 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink' | 'songNotFound' | 'rateLimitHit';
     date: string; timestamp: string; hashedIp: string; uaType: string;
     cacheHit: boolean; songKey: string; artistName: string; songName: string;
-    shareMethod: string; ctaAction: string; linkTarget: string;
+    shareMethod: string; ctaAction: string; linkTarget: string; limitType: 'ip' | 'global';
 }>) => ({
     eventId: 'id-1',
     eventType: 'analysis' as const,
@@ -340,6 +340,68 @@ describe('rollupStatsHandler', () => {
         expect(todayPut.notFoundSongKeys[0]).toEqual({ songKey: 'A/S1/h', count: 2 });
         expect(todayPut.notFoundSongKeys[1]).toEqual({ songKey: 'A/S2/h', count: 1 });
         expect(todayPut.totalAnalyses).toBe(0);
+    });
+
+    it('counts IP and global rate limit hits separately', async () => {
+        const events = [
+            makeEvent({ eventType: 'rateLimitHit', limitType: 'ip' }),
+            makeEvent({ eventType: 'rateLimitHit', limitType: 'ip' }),
+            makeEvent({ eventType: 'rateLimitHit', limitType: 'global' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.ipRateLimitHits).toBe(2);
+        expect(todayPut.globalRateLimitHits).toBe(1);
+        expect(todayPut.totalAnalyses).toBe(0);
+    });
+
+    it('defaults rate limit hit to ip bucket when limitType is absent', async () => {
+        const events = [makeEvent({ eventType: 'rateLimitHit' })]; // no limitType
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.ipRateLimitHits).toBe(1);
+        expect(todayPut.globalRateLimitHits).toBe(0);
+    });
+
+    it('stores zero for both rate limit counters when no rate limit events exist', async () => {
+        const events = [makeEvent({ eventType: 'analysis', cacheHit: false })];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.ipRateLimitHits).toBe(0);
+        expect(todayPut.globalRateLimitHits).toBe(0);
     });
 
     it('continues to process today if yesterday fails', async () => {
