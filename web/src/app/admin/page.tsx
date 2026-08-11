@@ -12,6 +12,7 @@ import { HourlyActivityChart } from '@/components/admin/HourlyActivityChart';
 import { NotFoundSongKeysTable } from '@/components/admin/NotFoundSongKeysTable';
 import { DayRangeFilter } from '@/components/admin/DayRangeFilter';
 import { EngagementChart } from '@/components/admin/EngagementChart';
+import { UniqueViewsChart } from '@/components/admin/UniqueViewsChart';
 
 const statsStorage = new DailyStatsStorage(getDynamoDbClient());
 
@@ -128,6 +129,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 <Grid size={{ xs: 12 }}>
                     <Paper sx={{ p: 2.5, borderRadius: 2 }}>
                         <VisitorsChart stats={stats} days={days} />
+                    </Paper>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                    <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+                        <UniqueViewsChart stats={stats} days={days} />
                     </Paper>
                 </Grid>
                 <Grid size={{ xs: 12 }}>

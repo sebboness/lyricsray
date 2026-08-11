@@ -170,4 +170,41 @@ describe('AnalyticsEventStorage', () => {
             ).resolves.not.toThrow();
         });
     });
+
+    describe('writeRateLimitEvent', () => {
+        it('sends a PutCommand with eventType rateLimitHit and the limitType', async () => {
+            await storage.writeRateLimitEvent({ ...baseParams, limitType: 'ip' });
+
+            const cmd = mockSend.mock.calls[0][0];
+            expect(cmd).toBeInstanceOf(PutCommand);
+            expect(cmd.input.Item).toMatchObject({
+                eventType: 'rateLimitHit',
+                limitType: 'ip',
+            });
+        });
+
+        it('stores limitType: global for global rate limit hits', async () => {
+            await storage.writeRateLimitEvent({ ...baseParams, limitType: 'global' });
+
+            const cmd = mockSend.mock.calls[0][0];
+            expect(cmd.input.Item.limitType).toBe('global');
+        });
+
+        it('includes a ttl and a generated eventId', async () => {
+            await storage.writeRateLimitEvent({ ...baseParams, limitType: 'ip' });
+
+            const item = mockSend.mock.calls[0][0].input.Item;
+            expect(item.ttl).toBeTypeOf('number');
+            expect(item.ttl).toBeGreaterThan(Math.floor(Date.now() / 1000));
+            expect(item.eventId).toHaveLength(36);
+        });
+
+        it('does not throw when the DynamoDB call fails', async () => {
+            mockSend.mockRejectedValue(new Error('ddb down'));
+
+            await expect(
+                storage.writeRateLimitEvent({ ...baseParams, limitType: 'ip' }),
+            ).resolves.not.toThrow();
+        });
+    });
 });

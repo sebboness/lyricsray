@@ -54,6 +54,16 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         if (error instanceof ApiRequestError) {
             if (error.statusCode === 429) {
+                const limitType = (error.headers.get('X-RateLimit-Limit-Type') ?? 'ip') as 'ip' | 'global';
+                const now = new Date();
+                const ua = request.headers.get('user-agent') ?? '';
+                void analyticsStorage.writeRateLimitEvent({
+                    date: now.toISOString().split('T')[0],
+                    timestamp: now.toISOString(),
+                    hashedIp: hashValue(getClientIp(request)),
+                    ...parseUserAgent(ua),
+                    limitType,
+                });
                 return NextResponse.json(
                     {
                         error: error.errors[0] ?? 'Rate limit exceeded',
@@ -61,7 +71,7 @@ export async function POST(request: NextRequest) {
                     },
                     {
                         status: 429,
-                        headers: forwardHeaders(error.headers, ['Retry-After', ...RATE_LIMIT_HEADERS]),
+                        headers: forwardHeaders(error.headers, ['Retry-After', 'X-RateLimit-Limit-Type', ...RATE_LIMIT_HEADERS]),
                     }
                 );
             }

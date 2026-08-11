@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const { mockApiPostPublic, mockWriteAnalysisEvent } = vi.hoisted(() => ({
+const { mockApiPostPublic, mockWriteAnalysisEvent, mockWriteRateLimitEvent } = vi.hoisted(() => ({
     mockApiPostPublic: vi.fn(),
     mockWriteAnalysisEvent: vi.fn().mockResolvedValue(undefined),
+    mockWriteRateLimitEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/logger/logger', () => ({
@@ -20,6 +21,7 @@ vi.mock('@/storage/dynamodb', () => ({ getDynamoDbClient: vi.fn(() => ({})) }));
 vi.mock('@/storage/AnalyticsEventStorage', () => ({
     AnalyticsEventStorage: vi.fn().mockImplementation(() => ({
         writeAnalysisEvent: mockWriteAnalysisEvent,
+        writeRateLimitEvent: mockWriteRateLimitEvent,
     })),
 }));
 
@@ -52,6 +54,7 @@ const successData = {
 beforeEach(() => {
     vi.clearAllMocks();
     mockWriteAnalysisEvent.mockResolvedValue(undefined);
+    mockWriteRateLimitEvent.mockResolvedValue(undefined);
 });
 
 describe('POST /api/analyze-song (BFF proxy)', () => {
@@ -102,6 +105,42 @@ describe('POST /api/analyze-song (BFF proxy)', () => {
         expect(res.status).toBe(429);
         const body = await res.json();
         expect(body.retryAfter).toBe(30);
+    });
+
+    it('fires a rateLimitHit event with limitType ip when X-RateLimit-Limit-Type is ip', async () => {
+        const headers = new Headers({ 'Retry-After': '60', 'X-RateLimit-Limit-Type': 'ip' });
+        mockApiPostPublic.mockRejectedValue(new ApiRequestError(429, ['Hourly limit exceeded'], headers));
+
+        await POST(makeRequest({ altchaPayload: 'valid', lyrics: 'la la la' }));
+        await new Promise((r) => setTimeout(r, 0));
+
+        expect(mockWriteRateLimitEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ limitType: 'ip', uaType: 'person' }),
+        );
+        expect(mockWriteAnalysisEvent).not.toHaveBeenCalled();
+    });
+
+    it('fires a rateLimitHit event with limitType global when X-RateLimit-Limit-Type is global', async () => {
+        const headers = new Headers({ 'Retry-After': '86400', 'X-RateLimit-Limit-Type': 'global' });
+        mockApiPostPublic.mockRejectedValue(new ApiRequestError(429, ['Service capacity exceeded'], headers));
+
+        await POST(makeRequest({ altchaPayload: 'valid', lyrics: 'la la la' }));
+        await new Promise((r) => setTimeout(r, 0));
+
+        expect(mockWriteRateLimitEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ limitType: 'global' }),
+        );
+    });
+
+    it('defaults to limitType ip when X-RateLimit-Limit-Type header is absent', async () => {
+        mockApiPostPublic.mockRejectedValue(new ApiRequestError(429, ['Rate limit exceeded'], new Headers()));
+
+        await POST(makeRequest({ altchaPayload: 'valid', lyrics: 'la la la' }));
+        await new Promise((r) => setTimeout(r, 0));
+
+        expect(mockWriteRateLimitEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ limitType: 'ip' }),
+        );
     });
 
     it('returns the Lambda status code on non-429 API errors', async () => {

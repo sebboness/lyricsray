@@ -22,6 +22,7 @@ interface RateLimitResult {
   allowed: boolean;
   reason?: string;
   retryAfter?: number; // seconds
+  limitType?: 'ip' | 'global';
   remaining: {
     hourly: number;
     daily: number;
@@ -70,6 +71,7 @@ export class RateLimiter {
           allowed: false,
           reason: burstState.reason,
           retryAfter: burstState.retryAfter,
+          limitType: 'ip',
           remaining: { hourly: 0, daily: 0, burst: burstState.remaining },
         };
       }
@@ -190,6 +192,7 @@ export class RateLimiter {
           allowed: false,
           reason: 'Daily limit exceeded. Please try again tomorrow.',
           retryAfter: this.getSecondsUntilMidnight(),
+          limitType: 'ip',
           remaining: { hourly: 0, daily: 0, burst: 0 },
         };
       }
@@ -199,6 +202,7 @@ export class RateLimiter {
           allowed: false,
           reason: 'Hourly limit exceeded. Please wait before trying again.',
           retryAfter: this.getSecondsUntilNextHour(),
+          limitType: 'ip',
           remaining: { hourly: 0, daily: Math.max(0, this.config.dailyLimit - currentDailyCount), burst: 0 },
         };
       }
@@ -207,6 +211,7 @@ export class RateLimiter {
         allowed: false,
         reason: 'Service capacity exceeded. Please try again tomorrow.',
         retryAfter: this.getSecondsUntilMidnight(),
+        limitType: 'global',
         remaining: { hourly: 0, daily: 0, burst: 0 },
       };
     }
