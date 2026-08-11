@@ -133,8 +133,8 @@ resource "aws_scheduler_schedule" "rollup" {
     maximum_window_in_minutes = 15
   }
 
-  schedule_expression          = local.env == "prod" ? "cron(0 */3 * * ? *)" : "cron(0 0 * * ? *)"
-  schedule_expression_timezone = "UTC"
+  schedule_expression          = local.env == "prod" ? "cron(0 8,10,12,14,16,18,20,22 * * ? *)" : "cron(0 0 * * ? *)"
+  schedule_expression_timezone = local.env == "prod" ? "America/Los_Angeles" : "UTC"
 
   target {
     arn      = aws_lambda_function.rollup.arn

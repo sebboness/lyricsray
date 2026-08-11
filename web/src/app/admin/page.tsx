@@ -1,4 +1,4 @@
-import { Box, Divider, Grid, Tooltip, Typography } from '@mui/material';
+import { Box, Divider, Grid, Paper, Tooltip, Typography } from '@mui/material';
 import { Suspense } from 'react';
 import { getSession } from '@/lib/session';
 import { getDynamoDbClient } from '@/storage/dynamodb';
@@ -11,6 +11,7 @@ import { VisitorsChart } from '@/components/admin/VisitorsChart';
 import { HourlyActivityChart } from '@/components/admin/HourlyActivityChart';
 import { NotFoundSongKeysTable } from '@/components/admin/NotFoundSongKeysTable';
 import { DayRangeFilter } from '@/components/admin/DayRangeFilter';
+import { EngagementChart } from '@/components/admin/EngagementChart';
 
 const statsStorage = new DailyStatsStorage(getDynamoDbClient());
 
@@ -115,16 +116,29 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             {/* Charts */}
             <Grid container spacing={3}>
                 <Grid size={{ xs: 12, lg: 8 }}>
-                    <AnalysisChart stats={stats} />
+                    <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+                        <AnalysisChart stats={stats} days={days} />
+                    </Paper>
                 </Grid>
                 <Grid size={{ xs: 12, lg: 4 }}>
-                    <UaBreakdownChart stats={stats} />
+                    <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+                        <UaBreakdownChart stats={stats} />
+                    </Paper>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                    <VisitorsChart stats={stats} />
+                    <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+                        <VisitorsChart stats={stats} days={days} />
+                    </Paper>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                    <HourlyActivityChart recentStats={stats.slice(0, 2)} />
+                    <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+                        <EngagementChart stats={stats} days={days} />
+                    </Paper>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                    <Paper sx={{ p: 2.5, borderRadius: 2 }}>
+                        <HourlyActivityChart recentStats={stats.slice(0, 3)} />
+                    </Paper>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                     <TopSongsTable stats={stats} />

@@ -8,12 +8,12 @@ import { Typography, Box, useTheme } from '@mui/material';
 import { DailyStat } from '@/storage/DailyStatsStorage';
 import { utcDateToLocalMonthDay } from '@/util/dateFormat';
 
-interface AnalysisChartProps {
+interface EngagementChartProps {
     stats: DailyStat[];
     days: number;
 }
 
-export function AnalysisChart({ stats, days }: AnalysisChartProps) {
+export function EngagementChart({ stats, days }: EngagementChartProps) {
     const theme = useTheme();
     const [hidden, setHidden] = useState<Set<string>>(new Set());
     const toggleSeries = (entry: { value: string }) => setHidden((prev) => {
@@ -22,11 +22,12 @@ export function AnalysisChart({ stats, days }: AnalysisChartProps) {
         return next;
     });
 
-    // Show last 30 days oldest-first for left-to-right timeline
     const data = [...stats].reverse().map((s) => ({
         date: utcDateToLocalMonthDay(s.date),
-        'From cache': s.cacheHits,
-        'New analysis': s.cacheMisses,
+        Shares: s.totalShares ?? 0,
+        'Ko-fi clicks': s.totalCtaClicks ?? 0,
+        'External links': s.totalExternalLinkClicks ?? 0,
+        'Unique visitors': s.uniqueHashedIps ?? 0,
     }));
 
     if (data.length === 0) {
@@ -40,7 +41,7 @@ export function AnalysisChart({ stats, days }: AnalysisChartProps) {
     return (
         <Box>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                Analyses per day (last {days} days)
+                Engagement per day (last {days} days)
             </Typography>
             <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap="30%">
@@ -79,8 +80,10 @@ export function AnalysisChart({ stats, days }: AnalysisChartProps) {
                             <span style={{ opacity: hidden.has(value) ? 0.4 : 1, userSelect: 'none' }}>{value}</span>
                         )}
                     />
-                    <Bar dataKey="From cache" hide={hidden.has('From cache')} stackId="a" fill="#10B981" radius={[0, 0, 3, 3]} />
-                    <Bar dataKey="New analysis" hide={hidden.has('New analysis')} stackId="a" fill="#3B82F6" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Unique visitors" hide={hidden.has('Unique visitors')} stackId="a" fill="#3B82F6" radius={[0, 0, 3, 3]} />
+                    <Bar dataKey="Shares" hide={hidden.has('Shares')} stackId="a" fill="#EC4899" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Ko-fi clicks" hide={hidden.has('Ko-fi clicks')} stackId="a" fill="#F59E0B" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="External links" hide={hidden.has('External links')} stackId="a" fill="#8B5CF6" radius={[3, 3, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </Box>
