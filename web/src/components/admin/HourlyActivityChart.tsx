@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -7,28 +8,28 @@ import { Typography, Box, useTheme } from '@mui/material';
 import { DailyStat } from '@/storage/DailyStatsStorage';
 
 interface HourlyActivityChartProps {
-    recentStats: DailyStat[]; // sorted newest first; uses [0] and [1]
+    recentStats: DailyStat[]; // sorted newest first; needs up to 3 days to cover any timezone
 }
 
 function buildSlots(recentStats: DailyStat[]) {
-    // Oldest day first so the 48-slot array runs chronologically
-    const days = [...recentStats].reverse();
+    const now = new Date();
+    // Floor to the start of the current local hour
+    const currentHourStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0, 0);
     const slots: { label: string; 'Page views': number; Analyses: number }[] = [];
 
-    for (const day of days) {
-        const breakdown = day.hourlyBreakdown
-            ?? Array.from({ length: 24 }, () => ({ pageViews: 0, analyses: 0 }));
-
-        breakdown.forEach((bucket, utcHour) => {
-            const dt = new Date(`${day.date}T${String(utcHour).padStart(2, '0')}:00:00Z`);
-            const mm = String(dt.getMonth() + 1).padStart(2, '0');
-            const dd = String(dt.getDate()).padStart(2, '0');
-            const hh = String(dt.getHours()).padStart(2, '0');
-            slots.push({
-                label: `${mm}-${dd} ${hh}:00`,
-                'Page views': bucket.pageViews,
-                Analyses: bucket.analyses,
-            });
+    for (let i = 47; i >= 0; i--) {
+        const slotTime = new Date(currentHourStart.getTime() - i * 60 * 60 * 1000);
+        const utcDate = slotTime.toISOString().split('T')[0];
+        const utcHour = slotTime.getUTCHours();
+        const day = recentStats.find((s) => s.date === utcDate);
+        const bucket = day?.hourlyBreakdown?.[utcHour] ?? { pageViews: 0, analyses: 0 };
+        const mm = String(slotTime.getMonth() + 1).padStart(2, '0');
+        const dd = String(slotTime.getDate()).padStart(2, '0');
+        const hh = String(slotTime.getHours()).padStart(2, '0');
+        slots.push({
+            label: `${mm}-${dd} ${hh}:00`,
+            'Page views': bucket.pageViews,
+            Analyses: bucket.analyses,
         });
     }
 
@@ -37,6 +38,12 @@ function buildSlots(recentStats: DailyStat[]) {
 
 export function HourlyActivityChart({ recentStats }: HourlyActivityChartProps) {
     const theme = useTheme();
+    const [hidden, setHidden] = useState<Set<string>>(new Set());
+    const toggleSeries = (entry: { value: string }) => setHidden((prev) => {
+        const next = new Set(prev);
+        if (next.has(entry.value)) next.delete(entry.value); else next.add(entry.value);
+        return next;
+    });
 
     if (recentStats.length === 0) {
         return (
@@ -91,9 +98,16 @@ export function HourlyActivityChart({ recentStats }: HourlyActivityChartProps) {
                         }}
                         cursor={{ fill: theme.palette.action.hover }}
                     />
-                    <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} iconType="square" />
-                    <Bar dataKey="Page views" stackId="a" fill="#3B82F6" radius={[0, 0, 3, 3]} />
-                    <Bar dataKey="Analyses" stackId="a" fill="#10B981" radius={[3, 3, 0, 0]} />
+                    <Legend
+                        wrapperStyle={{ fontSize: 12, paddingTop: 8, cursor: 'pointer' }}
+                        iconType="square"
+                        onClick={toggleSeries}
+                        formatter={(value) => (
+                            <span style={{ opacity: hidden.has(value) ? 0.4 : 1, userSelect: 'none' }}>{value}</span>
+                        )}
+                    />
+                    <Bar dataKey="Page views" hide={hidden.has('Page views')} stackId="a" fill="#3B82F6" radius={[0, 0, 3, 3]} />
+                    <Bar dataKey="Analyses" hide={hidden.has('Analyses')} stackId="a" fill="#10B981" radius={[3, 3, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </Box>
