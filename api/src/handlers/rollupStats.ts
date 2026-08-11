@@ -10,7 +10,7 @@ const statsTable = `${appName}-${env}-daily-stats`;
 
 interface RawEvent {
     eventId: string;
-    eventType: 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink' | 'songNotFound';
+    eventType: 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink' | 'songNotFound' | 'rateLimitHit';
     date: string;
     timestamp: string;
     songKey?: string;
@@ -24,6 +24,7 @@ interface RawEvent {
     shareMethod?: 'whatsapp' | 'facebook' | 'twitter' | 'email' | 'copy';
     ctaAction?: 'clicked' | 'dismissed';
     linkTarget?: string;
+    limitType?: 'ip' | 'global';
 }
 
 interface SongCounts {
@@ -67,6 +68,8 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
     let totalCtaClicks = 0;
     let totalCtaDismissals = 0;
     let totalExternalLinkClicks = 0;
+    let ipRateLimitHits = 0;
+    let globalRateLimitHits = 0;
     const shareBreakdown = { whatsapp: 0, facebook: 0, twitter: 0, email: 0, copy: 0 };
     const externalLinkBreakdown = { 'kofi-profile': 0, hexonite: 0 };
     const uaBreakdown = { bot: 0, searchEngine: 0, aiCrawler: 0, person: 0 };
@@ -100,6 +103,9 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
             }
         } else if (event.eventType === 'songNotFound' && event.songKey) {
             notFoundMap.set(event.songKey, (notFoundMap.get(event.songKey) ?? 0) + 1);
+        } else if (event.eventType === 'rateLimitHit') {
+            if (event.limitType === 'global') globalRateLimitHits++;
+            else ipRateLimitHits++;
         }
 
         if (event.songKey) {
@@ -146,6 +152,8 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
             notFoundSongKeys,
             hourlyBreakdown,
             uaBreakdown,
+            ipRateLimitHits,
+            globalRateLimitHits,
             lastComputedAt: new Date().toISOString(),
         },
     }));

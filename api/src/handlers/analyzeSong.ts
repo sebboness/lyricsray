@@ -104,6 +104,7 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
           'Retry-After': rateLimitResult.retryAfter?.toString() || '3600',
           'X-RateLimit-Remaining-Hourly': rateLimitResult.remaining.hourly.toString(),
           'X-RateLimit-Remaining-Daily': rateLimitResult.remaining.daily.toString(),
+          'X-RateLimit-Limit-Type': rateLimitResult.limitType ?? 'ip',
         },
       );
     }

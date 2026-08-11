@@ -96,6 +96,7 @@ describe('RateLimiter', () => {
             expect(result.reason).toContain('Daily limit exceeded');
             expect(result.retryAfter).toBeDefined();
             expect(result.remaining.daily).toBe(0);
+            expect(result.limitType).toBe('ip');
         });
 
         it('denies the request when the hourly limit is exceeded', async () => {
@@ -117,6 +118,7 @@ describe('RateLimiter', () => {
             expect(result.reason).toContain('Hourly limit exceeded');
             expect(result.remaining.hourly).toBe(0);
             expect(result.remaining.daily).toBe(50);
+            expect(result.limitType).toBe('ip');
         });
 
         it('denies the request when the global limit causes the transaction to fail', async () => {
@@ -129,6 +131,7 @@ describe('RateLimiter', () => {
             expect(result.allowed).toBe(false);
             expect(result.reason).toContain('Service capacity exceeded');
             expect(result.retryAfter).toBeDefined();
+            expect(result.limitType).toBe('global');
         });
 
         it('denies the request when the burst limit is exceeded, without attempting a transaction', async () => {
@@ -148,6 +151,7 @@ describe('RateLimiter', () => {
             expect(result.allowed).toBe(false);
             expect(result.reason).toContain('Rate limit exceeded');
             expect(result.remaining.burst).toBe(0);
+            expect(result.limitType).toBe('ip');
             expect(mockSend).toHaveBeenCalledTimes(1);
         });
 
@@ -283,6 +287,27 @@ describe('RateLimiter', () => {
             );
             expect(result.allowed).toBe(false);
             expect(result.reason).toContain('Service capacity exceeded');
+            expect(result.limitType).toBe('global');
+        });
+
+        it('sets limitType: ip when the daily IP limit is hit', () => {
+            const result = rateLimiter['handleTransactionError'](
+                new TransactionCanceledException({ message: 'cancelled', $metadata: {} }),
+                'hashed-ip',
+                { id: 'IP-x', hour: '2023-01-01-12', hourlyCount: 1, dailyCount: 100, burstCount: 0 },
+                '2023-01-01-12',
+            );
+            expect(result.limitType).toBe('ip');
+        });
+
+        it('sets limitType: ip when the hourly IP limit is hit', () => {
+            const result = rateLimiter['handleTransactionError'](
+                new TransactionCanceledException({ message: 'cancelled', $metadata: {} }),
+                'hashed-ip',
+                { id: 'IP-x', hour: '2023-01-01-12', hourlyCount: 10, dailyCount: 5, burstCount: 0 },
+                '2023-01-01-12',
+            );
+            expect(result.limitType).toBe('ip');
         });
 
         it('fails open with the full configured limits when currentRecord is undefined and a non-throttling error occurs', () => {

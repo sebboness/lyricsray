@@ -4,7 +4,7 @@ import { logger } from '@/logger/logger';
 
 const tableName = `${process.env.APP_NAME?.toLowerCase()}-${process.env.ENV?.toLowerCase()}-analytics-events`;
 
-export type AnalyticsEventType = 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink' | 'songNotFound';
+export type AnalyticsEventType = 'analysis' | 'pageView' | 'share' | 'cta' | 'externalLink' | 'songNotFound' | 'rateLimitHit';
 
 interface BaseEvent {
     date: string;
@@ -51,6 +51,10 @@ export interface ExternalLinkEventParams extends BaseEvent {
 
 export interface SongNotFoundEventParams extends BaseEvent {
     songKey: string;
+}
+
+export interface RateLimitEventParams extends BaseEvent {
+    limitType: 'ip' | 'global';
 }
 
 function ttlInSeconds(days: number): number {
@@ -153,6 +157,22 @@ export class AnalyticsEventStorage {
             }));
         } catch (err) {
             logger.error('Failed to write song not found analytics event', { err });
+        }
+    }
+
+    async writeRateLimitEvent(params: RateLimitEventParams): Promise<void> {
+        try {
+            await this.dbClient.send(new PutCommand({
+                TableName: tableName,
+                Item: {
+                    eventId: crypto.randomUUID(),
+                    eventType: 'rateLimitHit' as AnalyticsEventType,
+                    ttl: ttlInSeconds(60),
+                    ...params,
+                },
+            }));
+        } catch (err) {
+            logger.error('Failed to write rate limit analytics event', { err });
         }
     }
 }
