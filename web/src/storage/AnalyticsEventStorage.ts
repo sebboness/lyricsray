@@ -57,7 +57,7 @@ export interface RateLimitEventParams extends BaseEvent {
     limitType: 'ip' | 'global';
 }
 
-function ttlInSeconds(days: number): number {
+function ttlTimestamp(days: number): number {
     return Math.floor(Date.now() / 1000) + days * 86400;
 }
 
@@ -71,7 +71,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'analysis' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
@@ -87,7 +87,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'pageView' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
@@ -103,7 +103,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'share' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
@@ -119,7 +119,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'cta' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
@@ -135,7 +135,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'externalLink' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
@@ -151,7 +151,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'songNotFound' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
@@ -167,7 +167,7 @@ export class AnalyticsEventStorage {
                 Item: {
                     eventId: crypto.randomUUID(),
                     eventType: 'rateLimitHit' as AnalyticsEventType,
-                    ttl: ttlInSeconds(60),
+                    ttl: ttlTimestamp(7),
                     ...params,
                 },
             }));
