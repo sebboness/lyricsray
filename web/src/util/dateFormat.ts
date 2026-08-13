@@ -1,9 +1,8 @@
 /**
- * Converts a UTC date string (YYYY-MM-DD) to a MM-DD label in the browser's
- * local timezone. ISO date-only strings are parsed as UTC midnight per spec,
- * so getMonth/getDate read back in local time — which is what we want for charts.
+ * Extracts MM-DD from a UTC date string (YYYY-MM-DD).
+ * Daily stats are keyed by UTC date, so labels reflect UTC — no local timezone
+ * conversion, avoiding SSR/hydration mismatches and off-by-one-day display.
  */
 export function utcDateToLocalMonthDay(utcDate: string): string {
-    const d = new Date(utcDate);
-    return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return utcDate.slice(5); // "YYYY-MM-DD" → "MM-DD"
 }
