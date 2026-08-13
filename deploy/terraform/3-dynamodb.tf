@@ -97,4 +97,9 @@ resource "aws_dynamodb_table" "analysis_rate_limits" {
     }
 
     hash_key = "id"
+
+    ttl {
+        attribute_name = "ttl"
+        enabled        = true
+    }
 }
