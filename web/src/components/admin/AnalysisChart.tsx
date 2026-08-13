@@ -22,7 +22,6 @@ export function AnalysisChart({ stats, days }: AnalysisChartProps) {
         return next;
     });
 
-    // Show last 30 days oldest-first for left-to-right timeline
     const data = [...stats].reverse().map((s) => ({
         date: utcDateToLocalMonthDay(s.date),
         'From cache': s.cacheHits,
