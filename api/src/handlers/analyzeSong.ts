@@ -82,6 +82,8 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
         analysis: song.analysis,
         recommendedAge: song.recommendedAge.toString(),
         themes: song.themes || [],
+        summary: song.summary || '',
+        themePercentages: song.themePercentages || [],
         songKey,
         cacheHit: true,
       }, origin);
@@ -152,6 +154,8 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
             analysis: existing.analysis,
             recommendedAge: existing.recommendedAge.toString(),
             themes: existing.themes || [],
+            summary: existing.summary || '',
+            themePercentages: existing.themePercentages || [],
             songKey: existing.songKey,
             cacheHit: true,
           }, origin);
@@ -166,6 +170,8 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
       analysis: analysis.analysis,
       recommendedAge: analysis.recommendedAge,
       themes: analysis.themes || [],
+      summary: analysis.summary || '',
+      themePercentages: analysis.themePercentages || [],
       date: moment.utc().toISOString(),
       songKey: resolvedSongKey,
       entityType: 'ANALYSIS',
@@ -191,6 +197,8 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
       analysis: analysis.analysis,
       recommendedAge: analysis.recommendedAge.toString(),
       themes: analysis.themes || [],
+      summary: analysis.summary || '',
+      themePercentages: analysis.themePercentages || [],
       songKey: resolvedSongKey,
       cacheHit: false,
     }, origin, {

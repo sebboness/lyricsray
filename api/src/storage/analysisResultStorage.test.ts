@@ -16,6 +16,8 @@ function makeResult(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     analysis: 'Some analysis',
     appropriate: 1,
     entityType: 'ANALYSIS',
+    summary: 'Romantic themes',
+    themePercentages: [{ theme: 'romance', percentage: 55 }],
     ...overrides,
   };
 }

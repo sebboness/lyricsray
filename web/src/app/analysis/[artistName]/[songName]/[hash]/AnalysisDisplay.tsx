@@ -14,7 +14,7 @@ import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { trackEvent } from '@/util/trackEvent';
-import { LyricsThemes } from '@/components/LyricsThemes';
+import { ThemeBreakdown } from '@/components/ThemeBreakdown';
 import { ExplicitContentGate } from '@/components/ExplicitContentGate';
 import { LyricsPaper } from '@/components/LyricsPaper';
 
@@ -82,6 +82,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         songKey={result.songKey}
                         songTitle={result.song.songName || 'Unknown Song'}
                         artistName={result.song.artistName || 'Unknown Artist'}
+                        summary={result.summary}
                     />
 
                     {/* Analysis */}
@@ -93,10 +94,14 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                             {result.analysis}
                         </Typography>
 
-                        <Typography variant="h6" fontWeight="600" mb={2}>
-                            Themes
-                        </Typography>
-                        <LyricsThemes themes={result.themes} />
+                        {result.themes && result.themes.length > 0 && (
+                            <>
+                                <Typography variant="h6" fontWeight="600" mb={2}>
+                                    Themes
+                                </Typography>
+                                <ThemeBreakdown themes={result.themes} themePercentages={result.themePercentages} />
+                            </>
+                        )}
 
                         <Typography variant="body1" color="text.secondary" mt={2}>
                             <Link href="/about">

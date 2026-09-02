@@ -78,3 +78,42 @@ describe('LyricsAnalysisForm support prompt', () => {
         expect(localStorage.getItem('lyricsray_support_prompt_next_at')).toBe('12');
     }, 10000);
 });
+
+describe('LyricsAnalysisForm inline result', () => {
+    it('shows the summary returned by the API under the appropriateness card', async () => {
+        (global.fetch as any).mockResolvedValue(jsonResponse(200, { ...successResult, summary: 'Mild innuendo' }));
+
+        await submitLyrics();
+
+        await waitFor(() => expect(screen.getByText('Mild innuendo')).toBeInTheDocument());
+    });
+
+    it('renders no summary line when the API omits it (e.g. a legacy cached result)', async () => {
+        await submitLyrics();
+
+        await waitFor(() => expect(screen.getByText(/Did this analysis help you\?/i)).toBeInTheDocument());
+        expect(screen.queryByText('Mild innuendo')).not.toBeInTheDocument();
+    });
+
+    it('renders theme percentage bars when the API returns themePercentages', async () => {
+        (global.fetch as any).mockResolvedValue(jsonResponse(200, {
+            ...successResult,
+            themes: ['fun', 'romance'],
+            themePercentages: [
+                { theme: 'fun', percentage: 80 },
+                { theme: 'romance', percentage: 20 },
+            ],
+        }));
+
+        await submitLyrics();
+
+        await waitFor(() => expect(screen.getAllByRole('progressbar').length).toBe(2));
+    });
+
+    it('falls back to plain theme chips when the API omits themePercentages', async () => {
+        await submitLyrics();
+
+        await waitFor(() => expect(screen.getByText('fun')).toBeInTheDocument());
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+});
