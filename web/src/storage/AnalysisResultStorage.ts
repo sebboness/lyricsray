@@ -1,3 +1,8 @@
+export interface ThemePercentage {
+    theme: string;
+    percentage: number;
+}
+
 export interface AnalysisResult {
     songKey: string;
     date: string;
@@ -7,6 +12,8 @@ export interface AnalysisResult {
     analysis: string;
     appropriate: number;
     entityType: string;
+    summary?: string;
+    themePercentages?: ThemePercentage[];
 }
 
 export interface AnalysisSongDetails {

@@ -21,6 +21,8 @@ interface AnalyzeSongResponse {
     recommendedAge: string;
     songKey: string;
     themes: string[];
+    summary?: string;
+    themePercentages?: { theme: string; percentage: number }[];
     cacheHit?: boolean;
     error?: string;
 }

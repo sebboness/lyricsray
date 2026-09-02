@@ -43,7 +43,7 @@ import { trackEvent } from '@/util/trackEvent';
 import { clearRateLimitedUntil, formatRemainingTime, getRateLimitedUntil, setRateLimitedUntil } from '@/util/rateLimitClient';
 import { incrementAnalysisCount, shouldShowSupportPrompt, dismissSupportPrompt } from '@/util/analysisCountClient';
 import { encodeSongKeyForPath } from '@/util/routeHelper';
-import { LyricsThemes } from './LyricsThemes';
+import { ThemeBreakdown } from '@/components/ThemeBreakdown';
 
 const DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3600;
 const FRIENDLY_SERVER_ERROR_MESSAGE = "Something went wrong on our end. Please try again in a little while.";
@@ -70,6 +70,8 @@ interface AnalysisResult {
     recommendedAge: number;
     songKey: string;
     themes: string[];
+    summary?: string;
+    themePercentages?: { theme: string; percentage: number }[];
     error?: string;
     // 'validation' errors (bad input, failed human verification) show the server's
     // specific message; 'server' errors (500s, network failures) show a generic,
@@ -739,6 +741,7 @@ export function LyricsAnalysisForm() {
                                     songKey={result.songKey}
                                     songTitle={selectedSong?.title || 'Unknown Song'}
                                     artistName={selectedSong?.artist || 'Unknown Artist'}
+                                    summary={result.summary}
                                 />
 
                                 {promptEligible && <SupportPromptBanner onDismiss={handleDismissPrompt} />}
@@ -746,11 +749,11 @@ export function LyricsAnalysisForm() {
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     {result.analysis}
                                 </Typography>
-                                
+
                                 <Typography variant="h6" fontWeight="600" mb={2}>
                                     Themes
                                 </Typography>
-                                <LyricsThemes themes={result.themes} />
+                                <ThemeBreakdown themes={result.themes} themePercentages={result.themePercentages} />
 
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
                                     <Link href={`/analysis/${encodeSongKeyForPath(result.songKey)}`}>

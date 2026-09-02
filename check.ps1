@@ -13,9 +13,9 @@ function Step($label, $dir, $cmd) {
     }
 }
 
+Step "API tests"  "api" "npm run test"
 Step "Web tests"  "web" "npx vitest run"
 Step "Web build"  "web" "npm run build"
-Step "API tests"  "api" "npm run test"
 
 Write-Host "`nAll checks passed." -ForegroundColor Green
 Set-Location $root

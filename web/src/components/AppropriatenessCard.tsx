@@ -13,6 +13,7 @@ interface AppropriatenessCardProps {
     showShareButton?: boolean;
     songTitle?: string;
     artistName?: string;
+    summary?: string;
 }
 
 interface AppropriateData {
@@ -66,7 +67,8 @@ export function AppropriatenessCard({
     showShareButton = false,
     songTitle = 'this song',
     artistName = 'Unknown Artist',
-}: AppropriatenessCardProps) {    
+    summary,
+}: AppropriatenessCardProps) {
     // Size configurations
     const sizeConfig = {
         small: { icon: 36, titleVariant: 'h6' as const, gap: 2 },
@@ -110,6 +112,11 @@ export function AppropriatenessCard({
                                 <Typography variant="body2" color="text.secondary">
                                     <strong>Minimum age:</strong> {getRecommendedAgeDisplay(recommendedAge)}
                                 </Typography>
+                                {summary && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        {summary}
+                                    </Typography>
+                                )}
                             </Box>
                         </Box>
 
