@@ -77,6 +77,8 @@ beforeEach(() => {
     analysis: 'Some mature themes',
     recommendedAge: '16',
     themes: ['violence'],
+    summary: 'Violence, mild language',
+    themePercentages: [{ theme: 'violence', percentage: 60 }],
     tokensIn: 50,
     tokensOut: 100,
   });
@@ -147,14 +149,39 @@ describe('analyzeSongHandler', () => {
         analysis: 'cached analysis',
         recommendedAge: 18,
         themes: ['drugs'],
+        summary: 'Drug references',
+        themePercentages: [{ theme: 'drugs', percentage: 40 }],
       });
 
       const { status, body } = await callHandler(VALID_BODY);
 
       expect(status).toBe(200);
-      expect(body.data).toMatchObject({ appropriate: 3, analysis: 'cached analysis', recommendedAge: '18', themes: ['drugs'], cacheHit: true });
+      expect(body.data).toMatchObject({
+        appropriate: 3,
+        analysis: 'cached analysis',
+        recommendedAge: '18',
+        themes: ['drugs'],
+        summary: 'Drug references',
+        themePercentages: [{ theme: 'drugs', percentage: 40 }],
+        cacheHit: true,
+      });
       expect(mockCheckAndIncrementRateLimit).not.toHaveBeenCalled();
       expect(mockAnalyzeLyrics).not.toHaveBeenCalled();
+    });
+
+    it('defaults summary and themePercentages when a legacy cached result lacks them', async () => {
+      mockGetAnalysisResult.mockResolvedValue({
+        songKey: 'k1',
+        appropriate: 3,
+        analysis: 'cached analysis',
+        recommendedAge: 18,
+        themes: ['drugs'],
+      });
+
+      const { body } = await callHandler(VALID_BODY);
+
+      expect(body.data.summary).toBe('');
+      expect(body.data.themePercentages).toEqual([]);
     });
 
     it('falls through to the normal analysis flow when the cache lookup itself throws', async () => {
@@ -204,7 +231,15 @@ describe('analyzeSongHandler', () => {
       const { status, headers, body } = await callHandler(VALID_BODY);
 
       expect(status).toBe(200);
-      expect(body.data).toMatchObject({ appropriate: 2, analysis: 'Some mature themes', recommendedAge: '16', themes: ['violence'], cacheHit: false });
+      expect(body.data).toMatchObject({
+        appropriate: 2,
+        analysis: 'Some mature themes',
+        recommendedAge: '16',
+        themes: ['violence'],
+        summary: 'Violence, mild language',
+        themePercentages: [{ theme: 'violence', percentage: 60 }],
+        cacheHit: false,
+      });
       expect(headers['X-RateLimit-Remaining-Hourly']).toBe('9');
       expect(headers['X-RateLimit-Remaining-Daily']).toBe('99');
       expect(mockSaveAnalysisResult).toHaveBeenCalledTimes(1);
@@ -299,7 +334,15 @@ describe('analyzeSongHandler', () => {
         artistName: 'Taylor Swift', songName: 'Shake It Off',
       });
       mockGetAnalysesByArtist.mockResolvedValue([
-        { songKey: 'Taylor-Swift/Shake-It-Off/differenthash', appropriate: 1, analysis: 'Cached', recommendedAge: 13, themes: [] },
+        {
+          songKey: 'Taylor-Swift/Shake-It-Off/differenthash',
+          appropriate: 1,
+          analysis: 'Cached',
+          recommendedAge: 13,
+          themes: ['pop'],
+          summary: 'Upbeat, nothing explicit',
+          themePercentages: [{ theme: 'pop', percentage: 90 }],
+        },
       ]);
 
       const { status, body } = await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
@@ -308,7 +351,25 @@ describe('analyzeSongHandler', () => {
       expect(body.data.cacheHit).toBe(true);
       expect(body.data.analysis).toBe('Cached');
       expect(body.data.songKey).toBe('Taylor-Swift/Shake-It-Off/differenthash');
+      expect(body.data.summary).toBe('Upbeat, nothing explicit');
+      expect(body.data.themePercentages).toEqual([{ theme: 'pop', percentage: 90 }]);
       expect(mockSaveAnalysisResult).not.toHaveBeenCalled();
+    });
+
+    it('defaults summary and themePercentages when the resolved artist+song match lacks them', async () => {
+      mockAnalyzeLyrics.mockResolvedValue({
+        appropriate: 1, analysis: 'Clean', recommendedAge: 'All', themes: [],
+        tokensIn: 50, tokensOut: 100,
+        artistName: 'Taylor Swift', songName: 'Shake It Off',
+      });
+      mockGetAnalysesByArtist.mockResolvedValue([
+        { songKey: 'Taylor-Swift/Shake-It-Off/differenthash', appropriate: 1, analysis: 'Cached', recommendedAge: 13, themes: [] },
+      ]);
+
+      const { body } = await callHandler({ altchaPayload: 'valid', lyrics: 'la la la' });
+
+      expect(body.data.summary).toBe('');
+      expect(body.data.themePercentages).toEqual([]);
     });
 
     it('skips the artist+song lookup when the request included artist or song name', async () => {
