@@ -4,8 +4,13 @@ import { getRecentSearches } from '@/lib/getRecentSearches';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RecentSearches() {
-    const recentSearches = await getRecentSearches();
+interface RecentSearchesPageProps {
+    searchParams: Promise<{ cursor?: string }>;
+}
+
+export default async function RecentSearches({ searchParams }: RecentSearchesPageProps) {
+    const { cursor } = await searchParams;
+    const { songs: recentSearches, nextCursor } = await getRecentSearches(cursor);
 
     return (
         <Container maxWidth="md" sx={{ position: 'relative', zIndex: 10, py: 8 }}>
@@ -26,7 +31,7 @@ export default async function RecentSearches() {
                 </Typography>
             </Paper>
 
-            <RecentSearchesClient songs={recentSearches} />
+            <RecentSearchesClient songs={recentSearches} nextCursor={nextCursor} />
         </Container>
     );
 }
