@@ -111,6 +111,45 @@ describe('AnalysisResultStorage', () => {
     });
   });
 
+  describe('getRecentAnalysesPage', () => {
+    it('queries by the given entityType, limit, and exclusiveStartKey', async () => {
+      mockSend.mockResolvedValueOnce({ Items: [] });
+
+      await storage.getRecentAnalysesPage(20, 'ANALYSIS', { entityType: 'ANALYSIS', date: '2026-07-20' });
+
+      const command = mockSend.mock.calls[0][0];
+      expect(command).toBeInstanceOf(QueryCommand);
+      expect(command.input.Limit).toBe(20);
+      expect(command.input.ExpressionAttributeValues[':entityType']).toBe('ANALYSIS');
+      expect(command.input.ExclusiveStartKey).toEqual({ entityType: 'ANALYSIS', date: '2026-07-20' });
+    });
+
+    it('returns the items and lastEvaluatedKey from the response', async () => {
+      const item = makeResult();
+      mockSend.mockResolvedValueOnce({ Items: [item], LastEvaluatedKey: { songKey: 'artist/song/abc123' } });
+
+      const page = await storage.getRecentAnalysesPage(20, 'ANALYSIS');
+
+      expect(page.items).toEqual([item]);
+      expect(page.lastEvaluatedKey).toEqual({ songKey: 'artist/song/abc123' });
+    });
+
+    it('returns an empty items array and no lastEvaluatedKey when nothing more is found', async () => {
+      mockSend.mockResolvedValueOnce({});
+
+      const page = await storage.getRecentAnalysesPage(20, 'ANALYSIS');
+
+      expect(page.items).toEqual([]);
+      expect(page.lastEvaluatedKey).toBeUndefined();
+    });
+
+    it('rethrows when the DynamoDB call fails', async () => {
+      mockSend.mockRejectedValueOnce(new Error('ddb down'));
+
+      await expect(storage.getRecentAnalysesPage(20, 'ANALYSIS')).rejects.toThrow('ddb down');
+    });
+  });
+
   describe('getBatchAnalysisResults', () => {
     it('returns an empty array without calling DynamoDB when songKeys is empty', async () => {
       const results = await storage.getBatchAnalysisResults([]);

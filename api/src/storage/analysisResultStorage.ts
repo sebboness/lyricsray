@@ -27,6 +27,11 @@ export interface AnalysisSongDetails {
 
 export type EntityType = 'ANALYSIS' | 'POPULAR';
 
+export interface AnalysesPage {
+  items: AnalysisResult[];
+  lastEvaluatedKey?: Record<string, unknown>;
+}
+
 export class AnalysisResultStorage {
   constructor(private readonly dbClient: DynamoDBDocumentClient) {}
 
@@ -85,6 +90,36 @@ export class AnalysisResultStorage {
       return (Items as AnalysisResult[]) ?? [];
     } catch (err) {
       logger.error('getRecentAnalyses failed', { err, entityType });
+      throw err;
+    }
+  }
+
+  /**
+   * Gets a page of recent analysis results using the GSI, for cursor-based pagination.
+   * @param limit The maximum number of raw results to return
+   * @param entityType The entity type to query for
+   * @param exclusiveStartKey The DynamoDB key to resume from, if paginating
+   */
+  async getRecentAnalysesPage(
+    limit: number,
+    entityType: EntityType,
+    exclusiveStartKey?: Record<string, unknown>,
+  ): Promise<AnalysesPage> {
+    try {
+      const { Items, LastEvaluatedKey } = await this.dbClient.send(new QueryCommand({
+        TableName: tableName,
+        IndexName: 'RecentAnalysesIndex',
+        KeyConditionExpression: 'entityType = :entityType',
+        ExpressionAttributeValues: { ':entityType': entityType },
+        ScanIndexForward: false,
+        Limit: limit,
+        ExclusiveStartKey: exclusiveStartKey,
+        ProjectionExpression: 'songKey, #dateField, song.songName, song.artistName, recommendedAge, themes, appropriate, analysis',
+        ExpressionAttributeNames: { '#dateField': 'date' },
+      }));
+      return { items: (Items as AnalysisResult[]) ?? [], lastEvaluatedKey: LastEvaluatedKey };
+    } catch (err) {
+      logger.error('getRecentAnalysesPage failed', { err, entityType });
       throw err;
     }
   }
