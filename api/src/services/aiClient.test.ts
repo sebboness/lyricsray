@@ -210,6 +210,8 @@ describe('AiClient', () => {
       expect(prompt).toContain('second song lyrics');
       expect(prompt).toContain('exactly 2 objects');
       expect(prompt).toContain('MUST include the "id" field');
+      expect(prompt).toContain('Take the artist/song identification seriously');
+      expect(prompt).toContain('only answer null for artistName/songName when you');
     });
   });
 
