@@ -69,13 +69,6 @@ import {
     UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 
-dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
-
-import { AiClient, BatchLyricsAnalysis } from '../src/services/aiClient';
-import { AnalysisResult, AnalysisResultStorage } from '../src/storage/analysisResultStorage';
-import { makeSongKey } from '../src/util/songKey';
-import { buildResolvedRecord, chunk, resolveNames } from './backfillSummariesLogic';
-
 // ── argument helpers ──────────────────────────────────────────────────────────
 
 function argValue(flag: string): string | undefined {
@@ -85,7 +78,27 @@ function argValue(flag: string): string | undefined {
     return process.argv.find(a => a.startsWith(`${flag}=`))?.slice(flag.length + 1);
 }
 
-const ENV        = argValue('--env');
+const ENV = argValue('--env');
+
+// AnalysisResultStorage (imported below) reads its own table name from process.env.ENV at
+// import time, independent of this script's --env flag. Set it explicitly here, BEFORE
+// dotenv.config() and BEFORE that import, so both this script's own TABLE_NAME (derived from
+// --env below) and AnalysisResultStorage's internal table name agree — otherwise the scan
+// (which uses this script's TABLE_NAME) and every getAnalysisResult/saveAnalysisResult call
+// (which used AnalysisResultStorage's table name, silently pinned to api/.env.local's ENV)
+// would target two different tables, and every "existing record" lookup would come back null.
+// dotenv does not override an already-set process.env var, so this value wins.
+if (ENV === 'dev' || ENV === 'prod') {
+    process.env.ENV = ENV;
+}
+
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
+
+import { AiClient, BatchLyricsAnalysis } from '../src/services/aiClient';
+import { AnalysisResult, AnalysisResultStorage } from '../src/storage/analysisResultStorage';
+import { makeSongKey } from '../src/util/songKey';
+import { buildResolvedRecord, chunk, resolveNames } from './backfillSummariesLogic';
+
 const REGION     = argValue('--region') ?? 'us-west-2';
 const LIMIT      = parseInt(argValue('--limit') ?? '100', 10);
 const BATCH_SIZE = parseInt(argValue('--batch-size') ?? '10', 10);
@@ -121,6 +134,15 @@ if (!Number.isFinite(DELAY_MS) || DELAY_MS < 0) {
 }
 
 const TABLE_NAME = `lyricsray-${ENV}-analysis-results`;
+
+// Guards against this script and AnalysisResultStorage silently disagreeing on which table to
+// use again in the future (see the comment above where process.env.ENV is set) — if this ever
+// fires, getAnalysisResult/saveAnalysisResult would target the wrong environment's table while
+// the scan above correctly targets --env, and every record would appear to "no longer exist".
+if (process.env.ENV !== ENV) {
+    console.error(`Error: process.env.ENV ("${process.env.ENV}") does not match --env ("${ENV}"). Refusing to run, since AnalysisResultStorage would read/write the wrong table.`);
+    process.exit(1);
+}
 
 // ── clients ───────────────────────────────────────────────────────────────────
 

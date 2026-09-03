@@ -1,3 +1,4 @@
+import moment from 'moment';
 import { AnalysisResult } from '../src/storage/analysisResultStorage';
 import { BatchLyricsAnalysis } from '../src/services/aiClient';
 
@@ -53,17 +54,23 @@ export function resolveNames(
 
 /**
  * Builds the second, resolved-name record to save alongside the original — same rating
- * data (appropriate/recommendedAge/analysis/date/lyrics) as the original, but with the
- * resolved names, resolved songKey, and the freshly backfilled themes/summary/themePercentages.
+ * data (appropriate/recommendedAge/analysis/lyrics) as the original, but with the resolved
+ * names, resolved songKey, the freshly backfilled themes/summary/themePercentages, and a
+ * fresh `date` (defaulting to now). This is a newly-created DynamoDB item, so it gets its
+ * own creation date rather than inheriting the original's — otherwise it would silently
+ * sort as old on the RecentAnalysesIndex GSI (used by recent-searches/popular-songs) and
+ * never surface as "recent" despite being brand new.
  */
 export function buildResolvedRecord(
   original: AnalysisResult,
   resolution: NameResolution,
   analysis: Pick<BatchLyricsAnalysis, 'themes' | 'summary' | 'themePercentages'>,
+  date: string = moment.utc().toISOString(),
 ): AnalysisResult {
   return {
     ...original,
     songKey: resolution.resolvedSongKey,
+    date,
     themes: analysis.themes,
     summary: analysis.summary,
     themePercentages: analysis.themePercentages,
