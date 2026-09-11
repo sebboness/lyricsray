@@ -31,26 +31,26 @@ export function LyricsModal({ open, onClose, title, artist, lyrics, isMature }: 
                     width: { xs: '90%', sm: 500, md: 800 },
                     maxHeight: '80vh',
                     bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     borderRadius: 2,
-                    boxShadow: '0 0 50px rgba(255, 0, 255, 0.3)',
                     overflow: 'hidden',
                 }}
             >
                 <Box
                     sx={{
                         p: 2,
-                        borderBottom: 1,
-                        borderColor: 'rgba(255, 0, 255, 0.2)',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 204, 255, 0.1))',
                     }}
                 >
                     <Typography variant="h6" component="h2">
                         {title || 'Unknown song'} by {artist || 'Unknown artist'}
                     </Typography>
-                    <Button variant="contained" onClick={onClose} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                    <Button variant="outlined" onClick={onClose} size="small" sx={{ minWidth: 'auto', p: 1 }}>
                         <Close />
                     </Button>
                 </Box>

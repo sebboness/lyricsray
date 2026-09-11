@@ -34,6 +34,7 @@ const StyledAgeBadge = styled(Box, {
             padding: '2px 8px',
             borderRadius: 6,
             backgroundColor: `${verdictColor}1f`,
+            border: `1px solid ${verdictColor}55`,
         }
         : {
             fontSize: '2.75rem',

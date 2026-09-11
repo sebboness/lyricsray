@@ -7,8 +7,8 @@ import {
     Paper,
     TextField,
     Button,
-    Tabs,
-    Tab,
+    ToggleButtonGroup,
+    ToggleButton,
     Alert,
     CircularProgress,
     Divider,
@@ -22,17 +22,14 @@ import {
     Avatar,
     Link,
 } from '@mui/material';
-import MusicNote from '@mui/icons-material/MusicNote';
 import Search from '@mui/icons-material/Search';
-import Note from '@mui/icons-material/Note';
 import CheckCircle from '@mui/icons-material/CheckCircle';
-import RecordVoiceOver from '@mui/icons-material/RecordVoiceOver';
 import Close from '@mui/icons-material/Close';
-import Security from '@mui/icons-material/Security';
+import MusicNote from '@mui/icons-material/MusicNote';
 import HourglassTop from '@mui/icons-material/HourglassTop';
-import { useTheme } from '@mui/material/styles';
 import { AltchaWidget } from '@/components/AltchaWidget';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
+import { EyebrowLabel } from '@/components/EyebrowLabel';
 import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { LyricsModal } from '@/components/LyricsModal';
 import { SupportPromptBanner } from '@/components/SupportPromptBanner';
@@ -79,13 +76,6 @@ interface AnalysisResult {
     errorKind?: 'validation' | 'server';
 }
 
-const tip1 = `Paste the complete lyrics for the most accurate analysis*`;
-const tip2 = `You may submit lyrics in any language!`;
-
-const noteLyricsMaxLen = `* Keep in mind that the maximum allowed length of lyrics to analyze
-is ${LYRICS_MAX_LENGTH} characters. If your lyrics are longer, consider
-submitting only part of the lyrics.`;
-
 const emptyFormData: FormData = {
     songName: '',
     songArtist: '',
@@ -94,8 +84,6 @@ const emptyFormData: FormData = {
 };
 
 export function LyricsAnalysisForm() {
-    const theme = useTheme();
-
     const [formData, setFormData] = useState<FormData>(emptyFormData);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -212,7 +200,9 @@ export function LyricsAnalysisForm() {
         }));
     };
 
-    const handleTabChange = (_: React.SyntheticEvent, newValue: 'search' | 'lyrics') => {
+    const handleTabChange = (newValue: 'search' | 'lyrics' | null) => {
+        if (!newValue) return;
+
         setFormData(prev => ({
             ...prev,
             inputMethod: newValue,
@@ -457,22 +447,10 @@ export function LyricsAnalysisForm() {
             />
 
             {/* Introduction and Form Card */}
-            <Paper elevation={3} sx={{ p: 4, mb: 4, borderRadius: 3 }}>
-                <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
-                    Choose to search for a song by title and artist, or paste lyrics directly if you already have them.
-                    We will analyze the content and provide you with a detailed assessment and age recommendation.
-                </Typography>
-
+            <Paper sx={{ p: { xs: 3, sm: 4 } }}>
                 {isRateLimited && (
                     <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
-                        <Alert
-                            severity="info"
-                            icon={<HourglassTop />}
-                            sx={{
-                                background: 'rgba(0, 204, 255, 0.08)',
-                                border: '1px solid rgba(0, 204, 255, 0.25)',
-                            }}
-                        >
+                        <Alert severity="info" icon={<HourglassTop />}>
                             <Typography variant="body1" fontWeight="600" sx={{ mb: 0.5 }}>
                                 We&apos;re taking a quick breather!
                             </Typography>
@@ -486,151 +464,84 @@ export function LyricsAnalysisForm() {
 
                 {!result && !isRateLimited && (
                     <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
-                        <Typography variant="h5" fontWeight="600" mb={3}>
-                            Analyze a Song
-                        </Typography>
-
-                        <Typography variant="body1" color="text.secondary" component="p" sx={{ mb: 3 }}>
-                            <strong>Two ways to analyze:</strong> Search the database or paste any lyrics directly
-                            for instant analysis.
-                        </Typography>
-
                         {/* Form */}
                         <Box component="form" onSubmit={handleSubmit}>
-                            {/* Tabbed Interface */}
-                            <Box>
-                                <Tabs
-                                    value={formData.inputMethod}
-                                    onChange={handleTabChange}
-                                    sx={{
-                                        mb: 3,
-                                        '& .MuiTab-root': {
-                                            fontWeight: 600,
-                                            '&.Mui-selected': {
-                                                color: theme.palette.primary.main,
-                                            },
-                                        },
-                                        '& .MuiTabs-indicator': {
-                                            background: 'linear-gradient(90deg, #ff00ff, #00ccff)',
-                                            height: 5,
-                                        },
-                                    }}
-                                    variant="fullWidth"
-                                >
-                                    <Tab
-                                        value="search"
-                                        label="Search by Song"
-                                        icon={<Search />}
-                                        iconPosition="start"
-                                    />
-                                    <Tab
-                                        value="lyrics"
-                                        label="Paste Lyrics"
-                                        icon={<Note />}
-                                        iconPosition="start"
-                                    />
-                                </Tabs>
+                            <ToggleButtonGroup
+                                exclusive
+                                fullWidth
+                                value={formData.inputMethod}
+                                onChange={(_, value) => handleTabChange(value)}
+                                sx={{ mb: 3 }}
+                            >
+                                <ToggleButton value="search">Search a song</ToggleButton>
+                                <ToggleButton value="lyrics">Paste lyrics</ToggleButton>
+                            </ToggleButtonGroup>
 
-                                {/* Tab Content */}
-                                <Box sx={{ minHeight: 200 }}>
-                                    {formData.inputMethod === 'search' ? (
-                                        <Box>
-                                            <Grid container spacing={3}>
-                                                <Grid size={{ xs:12, md: 6 }}>
-                                                    <TextField
-                                                        name="songName"
-                                                        label="Song Name"
-                                                        value={formData.songName}
-                                                        onChange={handleInputChange}
-                                                        placeholder="e.g., Happy"
-                                                        required={formData.inputMethod === 'search'}
-                                                        fullWidth
-                                                        slotProps={{
-                                                            input: {
-                                                                startAdornment: <MusicNote sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                                            }
-                                                        }}
-                                                    />
-                                                </Grid>
-                                                <Grid size={{ xs:12, md: 6 }}>
-                                                    <TextField
-                                                        name="songArtist"
-                                                        label="Artist Name (Optional)"
-                                                        value={formData.songArtist}
-                                                        onChange={handleInputChange}
-                                                        placeholder="e.g., Pharrell Williams"
-                                                        required={false}
-                                                        fullWidth
-                                                        slotProps={{
-                                                            input: {
-                                                                startAdornment: <RecordVoiceOver sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                                            }
-                                                        }}
-                                                    />
-                                                </Grid>
-                                            </Grid>
-                                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                                💡 Tip: {tip2}
-                                            </Typography>
-                                        </Box>
-                                    ) : (
-                                        <Box>
+                            {/* Tab Content */}
+                            <Box sx={{ minHeight: 200 }}>
+                                {formData.inputMethod === 'search' ? (
+                                    <Grid container spacing={2}>
+                                        <Grid size={{ xs: 12, md: 6 }}>
                                             <TextField
-                                                name="lyrics"
-                                                label="Song Lyrics"
-                                                value={formData.lyrics}
+                                                name="songName"
+                                                label="Song"
+                                                value={formData.songName}
                                                 onChange={handleInputChange}
-                                                multiline
-                                                rows={8}
-                                                slotProps={{
-                                                    htmlInput: { maxLength: LYRICS_MAX_LENGTH }
-                                                }}
-                                                placeholder="Paste the complete song lyrics here..."
-                                                required={formData.inputMethod === 'lyrics'}
+                                                placeholder="e.g., Happy"
+                                                required={formData.inputMethod === 'search'}
                                                 fullWidth
+                                                slotProps={{ inputLabel: { shrink: true } }}
                                             />
-                                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                                💡 Tip #1: {tip1}
-                                                <br />
-                                                💡 Tip #2: {tip2}
-                                                <br />
-                                                &nbsp;&nbsp;
-                                                <i>{noteLyricsMaxLen}</i>
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </Box>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, md: 6 }}>
+                                            <TextField
+                                                name="songArtist"
+                                                label="Artist, optional"
+                                                value={formData.songArtist}
+                                                onChange={handleInputChange}
+                                                placeholder="e.g., Pharrell Williams"
+                                                required={false}
+                                                fullWidth
+                                                slotProps={{ inputLabel: { shrink: true } }}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                ) : (
+                                    <Box>
+                                        <TextField
+                                            name="lyrics"
+                                            label="Song lyrics"
+                                            value={formData.lyrics}
+                                            onChange={handleInputChange}
+                                            multiline
+                                            rows={8}
+                                            slotProps={{
+                                                htmlInput: { maxLength: LYRICS_MAX_LENGTH },
+                                                inputLabel: { shrink: true },
+                                            }}
+                                            placeholder="Paste the complete song lyrics here..."
+                                            required={formData.inputMethod === 'lyrics'}
+                                            fullWidth
+                                        />
+                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                            Up to {LYRICS_MAX_LENGTH} characters.
+                                        </Typography>
+                                    </Box>
+                                )}
                             </Box>
 
                             {/* ALTCHA Human Verification */}
-                            <Box sx={{ my: 4 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                    <Security sx={{ color: theme.palette.primary.main }} />
-                                    <Typography variant="h6" fontWeight="600">
-                                        Human Verification
-                                    </Typography>
-                                    {altchaVerified && (
-                                        <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
-                                    )}
-                                </Box>
-
-                                {/* ALTCHA Widget Container */}
+                            <Box sx={{ mt: 3 }}>
                                 {altchaChallenge && !altchaVerified && (
-                                    <>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                            Complete this quick verification to prevent automated abuse of our AI analysis service.
-                                        </Typography>
-
-                                        <AltchaWidget
-                                            challengeurl="/api/altcha/challenge"
-                                            style={{
-                                                '--altcha-color-base': theme.palette.background.paper,
-                                                '--altcha-color-text': theme.palette.text.primary,
-                                                '--altcha-border-radius': '8px',
-                                            }}
-                                            onstatechange={handleAltchaStateChange}
-                                        />
-                                    </>
+                                    <AltchaWidget
+                                        challengeurl="/api/altcha/challenge"
+                                        style={{
+                                            '--altcha-color-base': 'transparent',
+                                            '--altcha-color-text': '#eef1f4',
+                                            '--altcha-border-radius': '11px',
+                                        }}
+                                        onstatechange={handleAltchaStateChange}
+                                    />
                                 )}
                                 {altchaVerified && (
                                     <Typography variant="body2" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -638,9 +549,9 @@ export function LyricsAnalysisForm() {
                                     </Typography>
                                 )}
 
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                                     By submitting the search request, you agree to
-                                    our <Link href="/privacy-and-terms">Privacy Policy & Terms of Service</Link>.
+                                    our <Link href="/privacy-and-terms">Privacy Policy &amp; Terms of Service</Link>.
                                 </Typography>
                             </Box>
 
@@ -650,19 +561,21 @@ export function LyricsAnalysisForm() {
                                     type="submit"
                                     variant="contained"
                                     size="large"
+                                    fullWidth
                                     disabled={!isFormValid || isLoading || isSearching}
                                     startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <Search />}
-                                    sx={{ px: 4, py: 1.5 }}
                                 >
-                                    {isSearching ? 'Searching Songs...' :
-                                    isLoading ? 'Analyzing Song...' :
-                                    formData.inputMethod === 'search' ? 'Search & Analyze' : 'Analyze Lyrics'}
+                                    {isSearching ? 'Searching…' : isLoading ? 'Analyzing…' : 'Analyze'}
                                 </Button>
 
-                                {!altchaVerified && (
+                                {!altchaVerified ? (
                                     <Typography variant="caption" color="error" sx={{ display: 'block', mt: 1 }}>
                                         Please complete human verification above
                                     </Typography>
+                                ) : (
+                                    <EyebrowLabel sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
+                                        Any language · No account needed
+                                    </EyebrowLabel>
                                 )}
                             </Box>
                         </Box>
@@ -678,24 +591,11 @@ export function LyricsAnalysisForm() {
                         {result.error ? (
                             <>
                                 {result.errorKind === 'server' ? (
-                                    <Alert
-                                        severity="info"
-                                        icon={<HourglassTop />}
-                                        sx={{
-                                            background: 'rgba(0, 204, 255, 0.08)',
-                                            border: '1px solid rgba(0, 204, 255, 0.25)',
-                                        }}
-                                    >
+                                    <Alert severity="info" icon={<HourglassTop />}>
                                         {result.error}
                                     </Alert>
                                 ) : (
-                                    <Alert
-                                        severity="error"
-                                        sx={{
-                                            background: 'rgba(255, 51, 102, 0.1)',
-                                            border: '1px solid rgba(255, 51, 102, 0.3)',
-                                        }}
-                                    >
+                                    <Alert severity="error">
                                         {result.error}
                                     </Alert>
                                 )}
@@ -767,7 +667,7 @@ export function LyricsAnalysisForm() {
                                     </Link>
                                 </Typography>
 
-                                <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
+                                <Divider sx={{ my: 3 }} />
 
                                 <Typography variant="h6" mb={3} sx={{ fontWeight: 600 }}>
                                     Remember: You know your child best. Use LyricsRay as a tool to inform your
@@ -829,23 +729,23 @@ export function LyricsAnalysisForm() {
                     width: { xs: '90%', sm: 500 },
                     maxHeight: '80vh',
                     bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     borderRadius: 2,
-                    boxShadow: '0 0 50px rgba(255, 0, 255, 0.3)',
                     overflow: 'hidden'
                 }}>
                     <Box sx={{
                         p: 2,
-                        borderBottom: 1,
-                        borderColor: 'rgba(255, 0, 255, 0.2)',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 204, 255, 0.1))',
                     }}>
                         <Typography variant="h6" component="h2">
                             Select the Correct Song
                         </Typography>
-                        <Button variant="contained" onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
+                        <Button variant="outlined" onClick={handleCloseModal} size="small" sx={{ minWidth: 'auto', p: 1 }}>
                             <Close />
                         </Button>
                     </Box>
@@ -853,23 +753,10 @@ export function LyricsAnalysisForm() {
                         <List>
                             {searchResults.map((song) => (
                                 <ListItem key={song.id} disablePadding>
-                                    <ListItemButton
-                                        onClick={() => handleSongSelect(song)}
-                                        sx={{
-                                            '&:hover': {
-                                                background: 'rgba(255, 0, 255, 0.1)',
-                                            },
-                                        }}
-                                    >
+                                    <ListItemButton onClick={() => handleSongSelect(song)}>
                                         <ListItemAvatar>
-                                            <Avatar
-                                                src={song.thumbnail}
-                                                sx={{
-                                                    bgcolor: 'rgba(255, 0, 255, 0.2)',
-                                                    border: '1px solid rgba(255, 0, 255, 0.3)',
-                                                }}
-                                            >
-                                                <MusicNote sx={{ color: theme.palette.primary.main }} />
+                                            <Avatar src={song.thumbnail}>
+                                                <MusicNote color="primary" />
                                             </Avatar>
                                         </ListItemAvatar>
                                         <ListItemText

@@ -176,6 +176,35 @@ export const getTheme = () => createTheme({
                 indicator: { height: 2, backgroundColor: '#9d90ff' },
             },
         },
+        MuiToggleButtonGroup: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#14151d',
+                    border: '1px solid #23242f',
+                    borderRadius: 11,
+                    padding: 4,
+                    gap: 4,
+                },
+            },
+        },
+        MuiToggleButton: {
+            styleOverrides: {
+                root: {
+                    border: 'none',
+                    borderRadius: 8,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: '#8a939e',
+                    padding: '8px 16px',
+                    '&.Mui-selected': {
+                        backgroundColor: '#23242f',
+                        color: '#eef1f4',
+                        '&:hover': { backgroundColor: '#23242f' },
+                    },
+                },
+            },
+        },
         MuiTab: {
             styleOverrides: {
                 root: {

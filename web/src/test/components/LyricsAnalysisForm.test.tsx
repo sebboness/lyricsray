@@ -23,9 +23,9 @@ const successResult = {
 
 async function submitLyrics() {
     render(<LyricsAnalysisForm />);
-    await userEvent.click(await screen.findByRole('tab', { name: /paste lyrics/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /paste lyrics/i }));
     await userEvent.type(await screen.findByLabelText(/song lyrics/i), 'la la la lyrics');
-    await userEvent.click(screen.getByRole('button', { name: /analyze lyrics/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^analyze$/i }));
 }
 
 beforeEach(() => {

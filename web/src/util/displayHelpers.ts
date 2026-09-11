@@ -10,6 +10,15 @@ export const getRecommendedAgeDisplay = (recommendedAge: string | number): strin
     return (recommendedAge + "").toLowerCase() === 'all' ? 'All ages' : `Age ${recommendedAge}+`;
 }
 
+/**
+ * Short age display for compact pill badges (e.g. "16+", "ALL") as opposed to
+ * the longer "Age 16+" / "All ages" form of {@link getRecommendedAgeDisplay}.
+ */
+export const getShortAgeDisplay = (recommendedAge: string | number): string => {
+    if (!recommendedAge) return "";
+    return (recommendedAge + "").toLowerCase() === 'all' ? 'ALL' : `${recommendedAge}+`;
+}
+
 export type VerdictKey = 'safe' | 'caution' | 'blocked' | 'unknown';
 
 export interface AppropriatenessDisplay {
