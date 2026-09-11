@@ -10,32 +10,39 @@ export const dynamic = 'force-dynamic';
 const ROOT_TOKEN = '~';
 
 interface RecentSearchesPageProps {
-    searchParams: Promise<{ cursor?: string; history?: string }>;
+    searchParams: Promise<{ cursor?: string; history?: string; appropriate?: string }>;
 }
 
 export default async function RecentSearches({ searchParams }: RecentSearchesPageProps) {
-    const { cursor, history: historyParam } = await searchParams;
+    const { cursor, history: historyParam, appropriate: appropriateParam } = await searchParams;
     const history = historyParam ? historyParam.split(',') : [];
-    const { songs: recentSearches, nextCursor } = await getRecentSearches(cursor);
+
+    const parsedAppropriate = parseInt(appropriateParam ?? '', 10);
+    const appropriate = [1, 2, 3].includes(parsedAppropriate) ? parsedAppropriate : undefined;
+
+    const { songs: recentSearches, nextCursor } = await getRecentSearches(cursor, undefined, appropriate);
+
+    const buildHref = (params: Record<string, string | undefined>) => {
+        const search = new URLSearchParams();
+        if (params.cursor) search.set('cursor', params.cursor);
+        if (params.history) search.set('history', params.history);
+        if (appropriate !== undefined) search.set('appropriate', String(appropriate));
+        const query = search.toString();
+        return query ? `/recent-searches?${query}` : '/recent-searches';
+    };
 
     let prevHref: string | undefined;
     if (cursor) {
         const prevCursor = history[history.length - 1];
         if (!prevCursor || prevCursor === ROOT_TOKEN) {
-            prevHref = '/recent-searches';
+            prevHref = buildHref({});
         } else {
-            const remaining = history.slice(0, -1);
-            const params = new URLSearchParams({ cursor: prevCursor });
-            if (remaining.length > 0) params.set('history', remaining.join(','));
-            prevHref = `/recent-searches?${params.toString()}`;
+            prevHref = buildHref({ cursor: prevCursor, history: history.slice(0, -1).join(',') || undefined });
         }
     }
 
     const nextHref = nextCursor
-        ? `/recent-searches?${new URLSearchParams({
-            cursor: nextCursor,
-            history: [...history, cursor ?? ROOT_TOKEN].join(','),
-        }).toString()}`
+        ? buildHref({ cursor: nextCursor, history: [...history, cursor ?? ROOT_TOKEN].join(',') })
         : undefined;
 
     return (
@@ -44,10 +51,10 @@ export default async function RecentSearches({ searchParams }: RecentSearchesPag
                 Recent
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                The last songs analyzed by parents using LyricsRay.
+                Recent songs analyzed by parents using LyricsRay.
             </Typography>
 
-            <RecentSearchesClient songs={recentSearches} prevHref={prevHref} nextHref={nextHref} />
+            <RecentSearchesClient songs={recentSearches} prevHref={prevHref} nextHref={nextHref} appropriate={appropriate} />
         </Container>
     );
 }

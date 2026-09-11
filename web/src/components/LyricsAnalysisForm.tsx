@@ -733,7 +733,7 @@ export function LyricsAnalysisForm() {
                                 <Typography variant="h6" fontWeight="600" mb={2}>
                                     Themes
                                 </Typography>
-                                <ThemeBreakdown themes={result.themes} themePercentages={result.themePercentages} />
+                                <ThemeBreakdown themes={result.themes} themePercentages={result.themePercentages} appropriate={result.appropriate} />
 
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
                                     <Link href={`/analysis/${encodeSongKeyForPath(result.songKey)}`}>

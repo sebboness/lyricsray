@@ -7,6 +7,8 @@ import {
     Typography,
     LinearProgress,
 } from '@mui/material';
+import { getAppropriatenessDisplay } from '@/util/displayHelpers';
+import type { VerdictKey } from '@/util/displayHelpers';
 
 interface ThemePercentage {
     theme: string;
@@ -16,16 +18,18 @@ interface ThemePercentage {
 interface ThemeBreakdownProps {
     themes: string[];
     themePercentages?: ThemePercentage[];
+    /** The song's overall appropriateness level — bars are colored to match its verdict. */
+    appropriate?: number;
 }
 
-/** Maps a theme's raw percentage to the same colors used for verdicts elsewhere. */
-const getThemeSeverityColor = (percentage: number): 'success' | 'warning' | 'error' => {
-    if (percentage >= 50) return 'error';
-    if (percentage >= 20) return 'warning';
-    return 'success';
+const verdictToBarColor: Record<VerdictKey, 'success' | 'warning' | 'error' | 'primary'> = {
+    safe: 'success',
+    caution: 'warning',
+    blocked: 'error',
+    unknown: 'primary',
 };
 
-export function ThemeBreakdown({ themes, themePercentages }: ThemeBreakdownProps) {
+export function ThemeBreakdown({ themes, themePercentages, appropriate = 0 }: ThemeBreakdownProps) {
     if (!themes || themes.length === 0) {
         return null;
     }
@@ -48,10 +52,21 @@ export function ThemeBreakdown({ themes, themePercentages }: ThemeBreakdownProps
     // Scale bars relative to the highest theme percentage in this song, so the most
     // prevalent theme always renders as a full bar rather than sitting at its raw value.
     const maxPercentage = Math.max(0, ...Array.from(percentageByTheme.values()));
+    const barColor = verdictToBarColor[getAppropriatenessDisplay(appropriate).verdictKey];
+
+    // Highest percentage first; themes with no percentage data sort last.
+    const sortedThemes = [...themes].sort((a, b) => {
+        const pa = percentageByTheme.get(a.toLowerCase());
+        const pb = percentageByTheme.get(b.toLowerCase());
+        if (pa === undefined && pb === undefined) return 0;
+        if (pa === undefined) return 1;
+        if (pb === undefined) return -1;
+        return pb - pa;
+    });
 
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, columnGap: 4, rowGap: 2 }}>
-            {themes.map((t) => {
+            {sortedThemes.map((t) => {
                 const percentage = percentageByTheme.get(t.toLowerCase());
                 const label = t.replace(/_/g, ' ');
 
@@ -71,7 +86,7 @@ export function ThemeBreakdown({ themes, themePercentages }: ThemeBreakdownProps
                         <LinearProgress
                             variant="determinate"
                             value={relativeValue}
-                            color={getThemeSeverityColor(percentage)}
+                            color={barColor}
                             aria-label={`${label}: ${percentage}%`}
                         />
                     </Box>

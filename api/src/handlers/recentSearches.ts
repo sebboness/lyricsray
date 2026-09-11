@@ -39,6 +39,9 @@ export async function recentSearchesHandler(event: APIGatewayProxyEvent): Promis
     const maxItems = parseInt(event.queryStringParameters?.limit ?? '', 10) || RECENT_SEARCHES_LIMIT;
     let exclusiveStartKey: Record<string, unknown> | undefined = decodeCursor(event.queryStringParameters?.cursor);
 
+    const appropriateParam = parseInt(event.queryStringParameters?.appropriate ?? '', 10);
+    const appropriate = [1, 2, 3].includes(appropriateParam) ? appropriateParam : undefined;
+
     const songs: SongItem[] = [];
     let nextCursor: string | undefined;
 
@@ -47,6 +50,7 @@ export async function recentSearchesHandler(event: APIGatewayProxyEvent): Promis
         RECENT_SEARCHES_FETCH_LIMIT,
         'ANALYSIS',
         exclusiveStartKey,
+        appropriate,
       );
 
       for (const item of items) {

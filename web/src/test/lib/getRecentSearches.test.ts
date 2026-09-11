@@ -39,6 +39,14 @@ describe('getRecentSearches', () => {
         expect(mockApiGetPublic).toHaveBeenCalledWith('/v1/recent-searches?limit=25');
     });
 
+    it('includes the appropriate filter when given', async () => {
+        mockApiGetPublic.mockResolvedValue({ data: { songs: [] }, headers: new Headers() });
+
+        await getRecentSearches(undefined, 50, 2);
+
+        expect(mockApiGetPublic).toHaveBeenCalledWith('/v1/recent-searches?limit=50&appropriate=2');
+    });
+
     it('returns the songs and nextCursor from the API response', async () => {
         const songs = [
             { songKey: 'k1', songName: 'Song', artistName: 'Artist', recommendedAge: 13, themes: [], appropriate: 1, date: '2026-07-20T00:00:00.000Z' },

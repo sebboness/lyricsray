@@ -104,7 +104,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                                 <Typography variant="h6" fontWeight="600" mb={2}>
                                     Themes
                                 </Typography>
-                                <ThemeBreakdown themes={result.themes} themePercentages={result.themePercentages} />
+                                <ThemeBreakdown themes={result.themes} themePercentages={result.themePercentages} appropriate={result.appropriate} />
                             </>
                         )}
 
