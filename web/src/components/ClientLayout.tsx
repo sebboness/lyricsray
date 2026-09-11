@@ -11,13 +11,16 @@ import {
     Button,
     BottomNavigation,
     BottomNavigationAction,
+    useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { TrackedExternalLink } from '@/components/TrackedExternalLink';
 import { trackEvent } from '@/util/trackEvent';
+import ScanField from '@/components/ScanField';
 
 interface ClientLayoutProps {
     children: React.ReactNode;
@@ -40,6 +43,8 @@ const bottomNavItems = [
 export function ClientLayout({ children }: ClientLayoutProps) {
     const pathname = usePathname();
     const router = useRouter();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isAdminArea = pathname === "/login" || pathname.startsWith("/admin");
     const activeBottomNavValue = bottomNavItems.find((item) =>
         item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
@@ -52,10 +57,15 @@ export function ClientLayout({ children }: ClientLayoutProps) {
 
     return (
         <Box sx={{
+            position: 'relative',
+            zIndex: 0,
+            overflow: 'hidden',
             minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
         }}>
+            <ScanField variant={isMobile ? 'mobile' : 'desktop'} />
+
             {/* Header */}
             <AppBar position="sticky" sx={{ top: 0 }}>
                 <Container maxWidth="md">

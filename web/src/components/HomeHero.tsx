@@ -1,4 +1,6 @@
-import { Container, Grid, Typography } from '@mui/material';
+import NextLink from 'next/link';
+import { Button, Container, Grid, Typography } from '@mui/material';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 
 interface HomeHeroProps {
     /** The analyze form, rendered in the left column under the hero copy. */
@@ -16,9 +18,23 @@ export function HomeHero({ children, sidebar }: HomeHeroProps) {
                     <Typography variant="h1" sx={{ fontSize: { xs: '2rem', sm: '2.75rem' }, mb: 2 }}>
                         Is this song safe for your kid?
                     </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 480 }}>
+                    <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480 }}>
                         Paste a title or the lyrics. You get an age, a verdict, and the reason behind it, in any language, without an account.
                     </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, maxWidth: 480 }}>
+                        LyricsRay evaluates songs for explicit language, mature themes, and age-appropriate content using AI-powered lyrics analysis.
+                    </Typography>
+
+                    <Button
+                        component={NextLink}
+                        href="/about"
+                        variant="outlined"
+                        size="small"
+                        endIcon={<InfoOutlined />}
+                        sx={{ mt: 2.5, mb: 4 }}
+                    >
+                        About
+                    </Button>
 
                     {children}
                 </Grid>

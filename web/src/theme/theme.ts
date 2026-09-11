@@ -92,8 +92,13 @@ export const getTheme = () => createTheme({
         MuiPaper: {
             defaultProps: { elevation: 0 },
             styleOverrides: {
+                // Translucent so the ScanField glow behind the app shell reads through
+                // cards as depth. Anything overlaying a lot of text (dialogs, menus,
+                // the bottom nav) re-solidifies itself below.
                 root: {
                     backgroundImage: 'none',
+                    backgroundColor: 'rgba(20, 21, 29, 0.72)',
+                    backdropFilter: 'blur(6px)',
                     border: '1px solid #23242f',
                 },
                 outlined: { borderColor: '#23242f' },
@@ -262,7 +267,16 @@ export const getTheme = () => createTheme({
         },
         MuiBackdrop: { styleOverrides: { root: { backgroundColor: 'rgba(10, 10, 16, 0.72)' } } },
         MuiDialog: {
-            styleOverrides: { paper: { borderRadius: 16, border: '1px solid #2c2d3a' } },
+            // Solid — a dialog overlays other content, so it shouldn't be translucent
+            // like the generic MuiPaper root above.
+            styleOverrides: {
+                paper: {
+                    borderRadius: 16,
+                    border: '1px solid #2c2d3a',
+                    backgroundColor: '#14151d',
+                    backdropFilter: 'none',
+                },
+            },
         },
     },
 });

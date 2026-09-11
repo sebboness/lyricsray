@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { useState, ChangeEvent, FormEvent, useEffect, useRef } from 'react';
 import {
     Box,
     Typography,
@@ -10,7 +10,6 @@ import {
     ToggleButtonGroup,
     ToggleButton,
     Alert,
-    CircularProgress,
     Divider,
     Grid,
     Modal,
@@ -28,9 +27,9 @@ import Close from '@mui/icons-material/Close';
 import MusicNote from '@mui/icons-material/MusicNote';
 import HourglassTop from '@mui/icons-material/HourglassTop';
 import { AltchaWidget } from '@/components/AltchaWidget';
+import { AnalyzingPanel, AnalyzeStep, AnalyzeStepId } from '@/components/AnalyzingPanel';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { EyebrowLabel } from '@/components/EyebrowLabel';
-import { LoadingAnalysisModal } from '@/components/LoadingAnalysisModal';
 import { LyricsModal } from '@/components/LyricsModal';
 import { SupportPromptBanner } from '@/components/SupportPromptBanner';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
@@ -83,6 +82,41 @@ const emptyFormData: FormData = {
     inputMethod: 'search'
 };
 
+// The "checking themes"/"setting an age" steps aren't backed by discrete API
+// calls — they're timed placeholders that advance partway through the
+// analyze request, then snap to done as soon as the real response arrives.
+const STEP_LABELS: Record<AnalyzeStepId, string> = {
+    'searching-song': 'Searching for song',
+    'lyrics-found': 'Lyrics found',
+    'checking-themes': 'Checking themes and context',
+    'setting-age': 'Setting an age',
+};
+
+const TIMED_STEP_ADVANCE_MS = 2200;
+
+const buildSearchPhaseSteps = (): AnalyzeStep[] => [
+    { id: 'searching-song', label: STEP_LABELS['searching-song'], status: 'active' as const },
+    { id: 'lyrics-found', label: STEP_LABELS['lyrics-found'], status: 'pending' as const },
+    { id: 'checking-themes', label: STEP_LABELS['checking-themes'], status: 'pending' as const },
+    { id: 'setting-age', label: STEP_LABELS['setting-age'], status: 'pending' as const },
+];
+
+const buildAnalyzePhaseSteps = (includeSearchStep: boolean): AnalyzeStep[] => [
+    ...(includeSearchStep
+        ? [{ id: 'searching-song' as const, label: STEP_LABELS['searching-song'], status: 'done' as const }]
+        : []),
+    { id: 'lyrics-found', label: STEP_LABELS['lyrics-found'], status: 'done' as const },
+    { id: 'checking-themes', label: STEP_LABELS['checking-themes'], status: 'active' as const },
+    { id: 'setting-age', label: STEP_LABELS['setting-age'], status: 'pending' as const },
+];
+
+const advanceTimedSteps = (steps: AnalyzeStep[]): AnalyzeStep[] =>
+    steps.map((step): AnalyzeStep => {
+        if (step.id === 'checking-themes' && step.status !== 'done') return { ...step, status: 'done' as const };
+        if (step.id === 'setting-age' && step.status !== 'done') return { ...step, status: 'active' as const };
+        return step;
+    });
+
 export function LyricsAnalysisForm() {
     const [formData, setFormData] = useState<FormData>(emptyFormData);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -94,6 +128,20 @@ export function LyricsAnalysisForm() {
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [analysisCount, setAnalysisCount] = useState(0);
     const [promptEligible, setPromptEligible] = useState(false);
+
+    // Drives the AnalyzingPanel step checklist. See buildSearchPhaseSteps/
+    // buildAnalyzePhaseSteps/advanceTimedSteps above.
+    const [analyzeSteps, setAnalyzeSteps] = useState<AnalyzeStep[]>([]);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const stepTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+    const clearStepTimers = () => {
+        stepTimersRef.current.forEach(clearTimeout);
+        stepTimersRef.current = [];
+    };
+
+    // Clear any pending step timers if the form unmounts mid-analysis
+    useEffect(() => () => clearStepTimers(), []);
 
     // ALTCHA state
     const [altchaPayload, setAltchaPayload] = useState<string>('');
@@ -216,6 +264,12 @@ export function LyricsAnalysisForm() {
     const searchSongs = async () => {
         setSelectedSong(null);
         setIsSearching(true);
+        clearStepTimers();
+        setAnalyzeSteps(buildSearchPhaseSteps());
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         try {
             const response = await fetch('/api/search-song', {
                 method: 'POST',
@@ -227,6 +281,7 @@ export function LyricsAnalysisForm() {
                     artist: formData.songArtist,
                     altchaPayload,
                 }),
+                signal: controller.signal,
             });
 
             const data = await response.json();
@@ -268,6 +323,8 @@ export function LyricsAnalysisForm() {
                 });
             }
         } catch (error) {
+            if ((error as { name?: string })?.name === 'AbortError') return; // user cancelled
+
             console.error('Error searching songs:', error);
             setResult({
                 appropriate: 0,
@@ -282,17 +339,17 @@ export function LyricsAnalysisForm() {
         }
     };
 
-    const scrollToResults = () => {
-        setTimeout(() => {
-            const element = document.getElementById('analyze-results-wrapper');
-            if (element)
-                element.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
-    };
-
     const analyzeLyricsDirectly = async (song: SongSearchResult) => {
         setIsLoading(true);
         setShowSongModal(false);
+        clearStepTimers();
+        setAnalyzeSteps(buildAnalyzePhaseSteps(formData.inputMethod === 'search'));
+        stepTimersRef.current.push(
+            setTimeout(() => setAnalyzeSteps((prev) => advanceTimedSteps(prev)), TIMED_STEP_ADVANCE_MS)
+        );
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         try {
             const response = await fetch('/api/analyze-song', {
@@ -308,6 +365,7 @@ export function LyricsAnalysisForm() {
                     artistName: song.artist,
                     albumName: song.album,
                 }),
+                signal: controller.signal,
             });
 
             const data = await response.json();
@@ -337,7 +395,6 @@ export function LyricsAnalysisForm() {
                     error: isServerError ? FRIENDLY_SERVER_ERROR_MESSAGE : data.error,
                     errorKind: isServerError ? 'server' : 'validation',
                 });
-                scrollToResults();
                 return;
             }
 
@@ -345,8 +402,9 @@ export function LyricsAnalysisForm() {
             const count = incrementAnalysisCount();
             setAnalysisCount(count);
             setPromptEligible(shouldShowSupportPrompt(count));
-            scrollToResults();
         } catch (error) {
+            if ((error as { name?: string })?.name === 'AbortError') return; // user cancelled
+
             console.error('Error analyzing lyrics:', error);
             setResult({
                 appropriate: 0,
@@ -358,6 +416,7 @@ export function LyricsAnalysisForm() {
                 errorKind: 'server',
             });
         } finally {
+            clearStepTimers();
             setIsLoading(false);
         }
     };
@@ -416,6 +475,13 @@ export function LyricsAnalysisForm() {
         // Keep Altcha verification - don't reset unless it has expired
     };
 
+    const handleCancelAnalyzing = () => {
+        abortControllerRef.current?.abort();
+        clearStepTimers();
+        setIsSearching(false);
+        setIsLoading(false);
+    };
+
     const handleDismissPrompt = () => {
         dismissSupportPrompt(analysisCount);
         setPromptEligible(false);
@@ -439,15 +505,23 @@ export function LyricsAnalysisForm() {
         (formData.inputMethod === 'lyrics' && formData.lyrics.trim())
     ) && altchaVerified;
 
+    const isAnalyzing = isSearching || isLoading;
+    const analyzingSongName = selectedSong?.title || formData.songName || 'Your lyrics';
+    const analyzingArtistName = selectedSong?.artist || formData.songArtist || undefined;
+
     return (
         <>
-            <LoadingAnalysisModal
-                open={isSearching || isLoading}
-                type={isSearching ? 'searching' : 'analyzing'}
-            />
-
             {/* Introduction and Form Card */}
             <Paper sx={{ p: { xs: 3, sm: 4 } }}>
+                {isAnalyzing ? (
+                    <AnalyzingPanel
+                        songName={analyzingSongName}
+                        artistName={analyzingArtistName}
+                        steps={analyzeSteps}
+                        onCancel={handleCancelAnalyzing}
+                    />
+                ) : (
+                <>
                 {isRateLimited && (
                     <Box id="analyze-form-wrapper" sx={{ scrollMarginTop: 180 }}>
                         <Alert severity="info" icon={<HourglassTop />}>
@@ -562,10 +636,10 @@ export function LyricsAnalysisForm() {
                                     variant="contained"
                                     size="large"
                                     fullWidth
-                                    disabled={!isFormValid || isLoading || isSearching}
-                                    startIcon={(isLoading || isSearching) ? <CircularProgress size={20} /> : <Search />}
+                                    disabled={!isFormValid}
+                                    startIcon={<Search />}
                                 >
-                                    {isSearching ? 'Searching…' : isLoading ? 'Analyzing…' : 'Analyze'}
+                                    Analyze
                                 </Button>
 
                                 {!altchaVerified ? (
@@ -717,6 +791,8 @@ export function LyricsAnalysisForm() {
                             </Box>
                         )}
                     </Box>)}
+                </>
+                )}
             </Paper>
 
             {/* Song Selection Modal */}
