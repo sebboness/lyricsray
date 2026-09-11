@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     Box,
     Container,
@@ -9,37 +8,42 @@ import {
     Toolbar,
     Link,
     Typography,
+    Button,
+    BottomNavigation,
+    BottomNavigationAction,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import CropSquareIcon from '@mui/icons-material/CropSquare';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { TrackedExternalLink } from '@/components/TrackedExternalLink';
+import { trackEvent } from '@/util/trackEvent';
 
 interface ClientLayoutProps {
     children: React.ReactNode;
 }
 
-const bulletPoint = () => <Typography variant="body2" color="text.secondary">•</Typography>;
+const BOTTOM_NAV_HEIGHT = 68;
+
+const navLinks = [
+    { href: '/', label: 'Analyze' },
+    { href: '/recent-searches', label: 'Recent' },
+    { href: '/about', label: 'About' },
+];
+
+const bottomNavItems = [
+    { href: '/', label: 'Analyze', icon: <RadioButtonUncheckedIcon /> },
+    { href: '/recent-searches', label: 'Recent', icon: <CropSquareIcon /> },
+    { href: '/about', label: 'About', icon: <InfoOutlinedIcon /> },
+];
 
 export function ClientLayout({ children }: ClientLayoutProps) {
-    const theme = useTheme();
     const pathname = usePathname();
-    const isHomePage = pathname === "/";
+    const router = useRouter();
     const isAdminArea = pathname === "/login" || pathname.startsWith("/admin");
-    const [showNavbarLogo, setShowNavbarLogo] = useState(!isHomePage);
-
-    // Listen for header logo visibility changes only on Home page
-    useEffect(() => {
-        const handleHeaderLogoVisibility = (event: any) => {
-            // Show navbar logo when header logo is NOT visible
-            setShowNavbarLogo(!isHomePage || (isHomePage && !event.detail.visible));
-        };
-
-        window.addEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
-
-        return () => {
-            window.removeEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
-        };
-    }, [isHomePage]);
+    const activeBottomNavValue = bottomNavItems.find((item) =>
+        item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+    )?.href ?? false;
 
     // Admin area has its own chrome (AdminShell) — skip the public nav/footer entirely.
     if (isAdminArea) {
@@ -47,243 +51,184 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     }
 
     return (
-        <Box sx={{ 
+        <Box sx={{
             minHeight: '100vh',
-            position: 'relative',
-            overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
         }}>
-            {/* Animated background elements */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `radial-gradient(circle at 20% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
-                                radial-gradient(circle at 80% 80%, rgba(0, 204, 255, 0.1) 0%, transparent 50%),
-                                radial-gradient(circle at 40% 60%, rgba(153, 51, 255, 0.05) 0%, transparent 50%)`,
-                    animation: 'pulse 4s ease-in-out infinite',
-                    '@keyframes pulse': {
-                        '0%, 100%': { opacity: 0.7 },
-                        '50%': { opacity: 1 },
-                    },
-                }}
-            />
-
-            {/* Floating Navigation Bar */}
-            <AppBar 
-                position="fixed" 
-                sx={{ 
-                    background: theme.palette.background.paper,
-                    backdropFilter: 'blur(15px)',
-                    borderBottom: '1px solid rgba(255, 0, 255, 0.2)',
-                    boxShadow: '0 4px 20px rgba(255, 0, 255, 0.15)',
-                    zIndex: 1000,
-                    top: 0,
-                }}
-            >
+            {/* Header */}
+            <AppBar position="sticky" sx={{ top: 0 }}>
                 <Container maxWidth="md">
-                    <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 0, sm: 2 } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Link 
-                                href="/" 
-                                sx={{ 
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: '1rem',
-                                    fontWeight: 500,
-                                    transition: 'all 0.3s ease',
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
-                                }}
-                            >
-                                <Box
-                                    component="img"
-                                    src="/images/logo-textonly-64.png"
-                                    alt="LyricsRay"
-                                    sx={{
-                                        width: '100%',
-                                        maxHeight: '32px',
-                                        height: 'auto',
-                                        display: 'block',
-                                        margin: '0 auto',
-                                        transition: 'all 0.3s ease-in-out',
-                                        '&:hover': {
-                                            filter: 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.5))',
-                                        },
-                                    }}
-                                />
-                            </Link>
-
-                            <Link 
-                                href="/about" 
-                                sx={{ 
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: { xs: '0.85rem', sm: '1rem' },
-                                    fontWeight: 500,
-                                    transition: 'color 0.3s ease',
-                                    '&:hover': {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
-                                }}
-                            >
-                                About
-                            </Link>
-
-                            <Link
-                                href="/privacy-and-terms"
+                    <Toolbar sx={{ justifyContent: 'space-between', gap: 2, px: { xs: 0 } }}>
+                        <Link
+                            href="/"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                color: 'text.primary',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            <Box
+                                component="img"
+                                src="/images/logo.png"
+                                alt=""
                                 sx={{
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: { xs: '0.85rem', sm: '1rem' },
-                                    fontWeight: 500,
-                                    transition: 'color 0.3s ease',
-                                    '&:hover': {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'top',
+                                    flexShrink: 0,
                                 }}
-                            >
-                                Privacy
-                            </Link>
-
-                            <Link
-                                href="/recent-searches"
+                            />
+                            <Typography
                                 sx={{
-                                    display: { xs: 'none', sm: 'inline' },
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: { xs: '0.85rem', sm: '1rem' },
-                                    fontWeight: 500,
-                                    transition: 'color 0.3s ease',
-                                    '&:hover': {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                    fontWeight: 700,
+                                    fontSize: '0.9375rem',
+                                    letterSpacing: '0.04em',
                                 }}
                             >
-                                Recent Searches
-                            </Link>
+                                LYRICSRAY
+                            </Typography>
+                        </Link>
+
+                        <Box
+                            sx={{
+                                display: { xs: 'none', sm: 'flex' },
+                                alignItems: 'center',
+                                gap: 3,
+                                flex: 1,
+                                ml: 2,
+                            }}
+                        >
+                            {navLinks.map((navLink) => {
+                                const isActive = navLink.href === '/'
+                                    ? pathname === '/'
+                                    : pathname.startsWith(navLink.href);
+
+                                return (
+                                    <Link
+                                        key={navLink.href}
+                                        href={navLink.href}
+                                        sx={{
+                                            color: isActive ? 'text.primary' : 'text.secondary',
+                                            fontWeight: isActive ? 600 : 500,
+                                            fontSize: '0.875rem',
+                                            textDecoration: isActive ? 'underline' : 'none',
+                                            textUnderlineOffset: '6px',
+                                            '&:hover': { color: 'text.primary' },
+                                        }}
+                                    >
+                                        {navLink.label}
+                                    </Link>
+                                );
+                            })}
+                        </Box>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                    trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'header' });
+                                    window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                                }}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                            >
+                                Support on Ko-fi
+                            </Button>
                         </Box>
                     </Toolbar>
                 </Container>
             </AppBar>
 
-            {/* Main Content with padding to account for fixed navbar */}
-            <Box sx={{ flex: 1, pt: 0, my: 4 }}>
+            {/* Main Content */}
+            <Box sx={{ flex: 1, pb: { xs: `${BOTTOM_NAV_HEIGHT}px`, sm: 0 } }}>
                 {children}
             </Box>
 
             {/* Footer */}
-            <Box 
+            <Box
                 component="footer"
-                sx={{ 
+                sx={{
                     mt: 'auto',
-                    background: 'rgba(26, 26, 46, 0.9)',
-                    backdropFilter: 'blur(10px)',
-                    borderTop: '1px solid rgba(255, 0, 255, 0.2)',
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
                     py: 3,
-                    position: 'relative',
-                    zIndex: 20
+                    display: { xs: 'none', sm: 'block' },
                 }}
             >
                 <Container maxWidth="md">
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
                         alignItems: 'center',
-                        gap: 4,
-                        flexWrap: 'wrap'
+                        flexWrap: 'wrap',
+                        gap: 1,
                     }}>
-                        <Link 
-                            href="/about"
-                            sx={{ 
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.primary.main,
-                                }
-                            }}
-                        >
+                        <Link href="/about" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                             About
                         </Link>
-                        <Link 
-                            href="/privacy-and-terms"
-                            sx={{ 
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.primary.main,
-                                }
-                            }}
-                        >
+                        <Typography color="text.secondary">·</Typography>
+                        <Link href="/privacy-and-terms" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                             Privacy &amp; Terms
                         </Link>
-                        {bulletPoint()}
+                        <Typography color="text.secondary">·</Typography>
                         <TrackedExternalLink
                             href="https://www.hexonite.net/sebastian"
                             linkTarget="hexonite"
                             linkContext="footer"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.secondary.main,
-                                }
-                            }}
+                            color="text.secondary"
+                            sx={{ fontSize: '0.875rem' }}
                         >
                             Created by Sebastian Stefaniuk
                         </TrackedExternalLink>
-                        {bulletPoint()}
+                        <Typography color="text.secondary">·</Typography>
                         <TrackedExternalLink
                             href={KO_FI_LINK}
                             linkTarget="kofi-profile"
                             linkContext="footer"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.secondary.main,
-                                }
-                            }}
+                            color="text.secondary"
+                            sx={{ fontSize: '0.875rem' }}
                         >
-                            ☕ Help keep this free
+                            Help keep this free
                         </TrackedExternalLink>
                     </Box>
-                    <Typography 
-                        variant="caption" 
-                        color="text.secondary" 
-                        sx={{ 
-                            display: 'block',
-                            textAlign: 'center',
-                            mt: 2,
-                            opacity: 0.7
-                        }}
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', textAlign: 'center', mt: 2 }}
                     >
                         © {new Date().getFullYear()} LyricsRay. AI-powered lyric analysis for child safety.
                     </Typography>
                 </Container>
             </Box>
+
+            {/* Mobile bottom navigation */}
+            <BottomNavigation
+                showLabels
+                value={activeBottomNavValue}
+                onChange={(_, value) => router.push(value)}
+                sx={{
+                    display: { xs: 'flex', sm: 'none' },
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: (theme) => theme.zIndex.appBar,
+                }}
+            >
+                {bottomNavItems.map((item) => (
+                    <BottomNavigationAction
+                        key={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                        value={item.href}
+                    />
+                ))}
+            </BottomNavigation>
         </Box>
     );
 }

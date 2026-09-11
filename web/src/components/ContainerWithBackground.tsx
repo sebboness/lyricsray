@@ -3,46 +3,12 @@
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { Box, Button, Container, Link, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
 
 interface ContainerWithBackgroundProps {
     children: React.ReactNode;
 }
 
 export function ContainerWithBackground({ children }: ContainerWithBackgroundProps) {
-
-    const [isHeaderLogoVisible, setIsHeaderLogoVisible] = useState(true);
-
-    // Observe header logo visibility
-    useEffect(() => {
-        const headerLogo = document.getElementById('header-logo');
-        
-        if (!headerLogo) return;
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsHeaderLogoVisible(entry.isIntersecting);
-            },
-            {
-                threshold: 0.1, // Trigger when 10% of logo is visible
-                rootMargin: '-80px 0px 0px 0px', // Account for navbar height
-            }
-        );
-
-        observer.observe(headerLogo);
-
-        return () => observer.disconnect();
-    }, []);
-
-    // Emit visibility state to parent (for navbar)
-    useEffect(() => {
-        // Dispatch custom event that navbar can listen to
-        window.dispatchEvent(
-            new CustomEvent('headerLogoVisibility', { 
-                detail: { visible: isHeaderLogoVisible } 
-            })
-        );
-    }, [isHeaderLogoVisible]);
 
     // Handle scroll to main content
     const handleScrollToContent = () => {
@@ -82,7 +48,7 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                     }}
                 >
                     {/* LyricsRay Logo */}
-                    <Box id="header-logo">
+                    <Box>
                         <Box
                             component="img"
                             src="/images/logo-textonly-768.png"
