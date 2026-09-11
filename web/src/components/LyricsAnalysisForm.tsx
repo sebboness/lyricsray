@@ -27,10 +27,12 @@ import Close from '@mui/icons-material/Close';
 import MusicNote from '@mui/icons-material/MusicNote';
 import HourglassTop from '@mui/icons-material/HourglassTop';
 import { AltchaWidget } from '@/components/AltchaWidget';
-import { AnalyzingPanel, AnalyzeStep, AnalyzeStepId } from '@/components/AnalyzingPanel';
+import { AnalyzingPanel } from '@/components/AnalyzingPanel';
+import type { AnalyzeStep, AnalyzeStepId } from '@/components/AnalyzingPanel';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { EyebrowLabel } from '@/components/EyebrowLabel';
 import { LyricsModal } from '@/components/LyricsModal';
+import { ShareButtonWithModal } from '@/components/ShareButtonWithModal';
 import { SupportPromptBanner } from '@/components/SupportPromptBanner';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
@@ -658,10 +660,6 @@ export function LyricsAnalysisForm() {
 
                 {result && (
                     <Box id="analyze-results-wrapper">
-                        <Typography variant="h5" fontWeight="600" mb={3}>
-                            Analysis results for lyrics
-                        </Typography>
-
                         {result.error ? (
                             <>
                                 {result.errorKind === 'server' ? (
@@ -689,15 +687,27 @@ export function LyricsAnalysisForm() {
                             </>
                         ) : (
                             <Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                                    <Box>
+                                        <EyebrowLabel>Analysis</EyebrowLabel>
+                                        <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                                            {selectedSong?.title || 'Your lyrics'}
+                                        </Typography>
+                                        {selectedSong?.artist && (
+                                            <Typography variant="body2" color="text.secondary">
+                                                {selectedSong.artist}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    <ShareButtonWithModal
+                                        songKey={result.songKey}
+                                        songTitle={selectedSong?.title || 'Unknown Song'}
+                                        artistName={selectedSong?.artist || 'Unknown Artist'}
+                                    />
+                                </Box>
+
                                 {selectedSong && (
-                                    <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                                        {selectedSong.title || selectedSong.artist ? (
-                                            <>
-                                                <strong>{selectedSong.title || "Unknown song"}</strong>&nbsp;
-                                                by <strong>{selectedSong.artist || "Unknown artist"}</strong>
-                                                <br />
-                                            </>
-                                        ) : <></>}
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                         {result?.appropriate === 3 ? (
                                             <>This song&apos;s lyrics contain mature content.&nbsp;</>
                                         ) : (
@@ -711,10 +721,6 @@ export function LyricsAnalysisForm() {
                                 <AppropriatenessCard
                                     appropriate={result.appropriate}
                                     recommendedAge={result.recommendedAge}
-                                    showShareButton={true}
-                                    songKey={result.songKey}
-                                    songTitle={selectedSong?.title || 'Unknown Song'}
-                                    artistName={selectedSong?.artist || 'Unknown Artist'}
                                     summary={result.summary}
                                 />
 

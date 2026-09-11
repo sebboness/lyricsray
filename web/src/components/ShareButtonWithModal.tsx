@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import {
     Box,
+    Button,
     Modal,
     Typography,
     IconButton,
@@ -110,28 +111,14 @@ export function ShareButtonWithModal({
     return (
         <>
             {/* Share Button */}
-            <Box 
-                display="flex" 
-                flexDirection="column" 
-                alignItems="center"
-                sx={{ cursor: 'pointer' }}
+            <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Share sx={{ fontSize: 18 }} />}
                 onClick={() => setOpen(true)}
             >
-                <IconButton 
-                    aria-label="share"
-                    size="small"
-                    component="span"
-                >
-                    <Share sx={{ fontSize: 36 }} />
-                </IconButton>
-                <Typography 
-                    variant="caption" 
-                    color="text.secondary"
-                    sx={{ mt: -0.5 }}
-                >
-                    Share
-                </Typography>
-            </Box>
+                Share
+            </Button>
 
             {/* Share Modal */}
             <Modal open={open} onClose={handleClose}>
@@ -142,19 +129,19 @@ export function ShareButtonWithModal({
                     transform: 'translate(-50%, -50%)',
                     width: { xs: '90%', sm: 450 },
                     bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     borderRadius: 2,
-                    boxShadow: '0 0 50px rgba(255, 0, 255, 0.3)',
                     overflow: 'hidden'
                 }}>
                     {/* Header */}
-                    <Box sx={{ 
-                        p: 2, 
-                        borderBottom: 1, 
-                        borderColor: 'rgba(255, 0, 255, 0.2)', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                    <Box sx={{
+                        p: 2,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 204, 255, 0.1))',
                     }}>
                         <Typography variant="h6" component="h2" fontWeight="600">
                             Share analysis results
@@ -243,7 +230,6 @@ export function ShareButtonWithModal({
                                 }}
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
-                                        bgcolor: 'rgba(0, 0, 0, 0.02)',
                                         fontSize: '0.875rem'
                                     }
                                 }}

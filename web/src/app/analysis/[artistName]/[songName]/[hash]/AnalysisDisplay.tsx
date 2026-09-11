@@ -12,6 +12,8 @@ import ArrowBack from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
+import { EyebrowLabel } from '@/components/EyebrowLabel';
+import { ShareButtonWithModal } from '@/components/ShareButtonWithModal';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { trackEvent } from '@/util/trackEvent';
 import { ThemeBreakdown } from '@/components/ThemeBreakdown';
@@ -30,58 +32,46 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
             <Container maxWidth="md">
                 {/* Back Button */}
                 <Box mb={3}>
-                    <Button
-                        component={Link}
-                        href="/"
-                        startIcon={<ArrowBack />}
-                        variant="contained"
-                    >
+                    <Button component={Link} href="/" startIcon={<ArrowBack />} variant="outlined">
                         Back to Home
                     </Button>
                 </Box>
 
                 {/* Main Content Card */}
-                <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
-                    <Typography variant="h4" fontWeight="700" mb={1}>
-                        Song Analysis Results
-                    </Typography>
-
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                        Lyrics analysis with age appropriateness assessment
-                    </Typography>
-
+                <Paper sx={{ p: { xs: 3, sm: 4 } }}>
                     {/* Song Information */}
-                    {result.song && (
-                        <Box mb={4}>
-                            {result.song.artistName || result.song.songName ? (
-                                <>
-                                    <Typography variant="h5" fontWeight="600" mb={2}>
-                                        {result.song.songName || 'Unknown song'}
-                                    </Typography>
-                                    <Typography variant="body1" color="text.secondary">
-                                        <strong>Artist:</strong>{' '}
-                                        {result.song.artistName && result.song.artistName.toLowerCase() !== 'unknown'
-                                            ? <Link href={`/analysis/${result.songKey.split('/')[0]}`} style={{ color: 'inherit' }}>{result.song.artistName}</Link>
-                                            : (result.song.artistName || 'Unknown artist')}
-                                    </Typography>
-                                </>
-                            ) : <></>}
-                            {result.song.albumName && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Album:</strong> {result.song.albumName}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 3 }}>
+                        <Box>
+                            <EyebrowLabel>Analysis</EyebrowLabel>
+                            <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                                {result.song?.songName || 'Unknown song'}
+                            </Typography>
+                            {result.song?.artistName && result.song.artistName.toLowerCase() !== 'unknown' ? (
+                                <Typography variant="body2" color="text.secondary">
+                                    <Link href={`/analysis/${result.songKey.split('/')[0]}`} style={{ color: 'inherit' }}>
+                                        {result.song.artistName}
+                                    </Link>
+                                    {result.song.albumName && ` · ${result.song.albumName}`}
                                 </Typography>
+                            ) : (
+                                result.song?.albumName && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        {result.song.albumName}
+                                    </Typography>
+                                )
                             )}
                         </Box>
-                    )}
+                        <ShareButtonWithModal
+                            songKey={result.songKey}
+                            songTitle={result.song?.songName || 'Unknown Song'}
+                            artistName={result.song?.artistName || 'Unknown Artist'}
+                        />
+                    </Box>
 
                     {/* Appropriateness Card */}
                     <AppropriatenessCard
                         appropriate={result.appropriate}
                         recommendedAge={result.recommendedAge}
-                        showShareButton={true}
-                        songKey={result.songKey}
-                        songTitle={result.song.songName || 'Unknown Song'}
-                        artistName={result.song.artistName || 'Unknown Artist'}
                         summary={result.summary}
                     />
 
@@ -126,7 +116,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         </Box>
                     )}
 
-                    <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.2)' }} />
+                    <Divider sx={{ my: 3 }} />
 
                     {/* Disclaimer */}
                     <Typography
@@ -153,7 +143,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                     {/* Action Buttons */}
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }} mt={4}>
                         <Button
-                            variant="contained"
+                            variant="outlined"
                             size="large"
                             sx={{ px: 4, py: 1.5 }}
                             onClick={() => {
@@ -174,7 +164,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                         <Button
                             component={Link}
                             href="/about"
-                            variant="contained"
+                            variant="outlined"
                             size="large"
                         >
                             Learn More
