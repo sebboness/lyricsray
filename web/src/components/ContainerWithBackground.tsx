@@ -3,7 +3,6 @@
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { Box, Button, Container, Link, Typography } from '@mui/material';
-import { useTheme as useNextTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 interface ContainerWithBackgroundProps {
@@ -11,18 +10,6 @@ interface ContainerWithBackgroundProps {
 }
 
 export function ContainerWithBackground({ children }: ContainerWithBackgroundProps) {
-
-    const { theme: currentTheme, systemTheme } = useNextTheme();
-    const [mounted, setMounted] = useState(false);
-
-    // Determine the effective theme (accounting for system preference)
-    const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
-    const isDarkMode = effectiveTheme === 'dark';
-
-    // Ensure theme is resolved before rendering theme-dependent content
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     const [isHeaderLogoVisible, setIsHeaderLogoVisible] = useState(true);
 
@@ -135,14 +122,10 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 py: 1.5,
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                boxShadow: mounted && isDarkMode
-                                    ? '0 2px 10px rgba(255, 0, 255, 0.5)'
-                                    : '0 2px 10px rgba(139, 0, 255, 0.4)',
+                                boxShadow: '0 2px 10px rgba(255, 0, 255, 0.5)',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
-                                    boxShadow: mounted && isDarkMode
-                                        ? '0 2px 15px rgba(255, 0, 255, 0.6)'
-                                        : '0 2px 15px rgba(139, 0, 255, 0.5)',
+                                    boxShadow: '0 2px 15px rgba(255, 0, 255, 0.6)',
                                 },
                             }}
                         >
@@ -159,14 +142,10 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                                 py: 1.5,
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                boxShadow: mounted && isDarkMode
-                                    ? '0 2px 10px rgba(255, 0, 255, 0.5)'
-                                    : '0 2px 10px rgba(139, 0, 255, 0.4)',
+                                boxShadow: '0 2px 10px rgba(255, 0, 255, 0.5)',
                                 '&:hover': {
                                     transform: 'translateY(-3px)',
-                                    boxShadow: mounted && isDarkMode
-                                        ? '0 2px 15px rgba(255, 0, 255, 0.6)'
-                                        : '0 2px 15px rgba(139, 0, 255, 0.5)',
+                                    boxShadow: '0 2px 15px rgba(255, 0, 255, 0.6)',
                                 },
                             }}
                         >
@@ -186,17 +165,13 @@ export function ContainerWithBackground({ children }: ContainerWithBackgroundPro
                 >
                     <Box
                         component="img"
-                        src={mounted
-                            ? `/images/logo-transparent-no-text${isDarkMode ? "" : "-light"}-512.png`
-                            : "/images/logo-transparent-no-text-light-512.png" // Default fallback
-                        }
+                        src="/images/logo-transparent-no-text-512.png"
                         alt="LyricsRay Logo"
                         sx={{
                             width: '100%',
                             maxWidth: '512px',
                             height: 'auto',
                             display: 'block',
-                            opacity: mounted ? 1 : 0,
                         }}
                     />
                 </Box>

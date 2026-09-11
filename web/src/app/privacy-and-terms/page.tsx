@@ -99,15 +99,6 @@ export default function PrivacyTerms() {
                                 <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
                             </ListItemIcon>
                             <ListItemText
-                                primary="Theme preference"
-                                secondary="Your light/dark mode preference is stored locally in your browser using localStorage. This data never leaves your device."
-                            />
-                        </ListItem>
-                        <ListItem>
-                            <ListItemIcon>
-                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
-                            </ListItemIcon>
-                            <ListItemText
                                 primary="Human verification"
                                 secondary="When you use the service, we briefly remember that you passed our &quot;are you a human?&quot; check so you don&apos;t have to repeat it on every request, and is stored locally in your browser using localStorage.. This is forgotten after 60 minutes."
                             />

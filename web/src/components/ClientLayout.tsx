@@ -8,14 +8,9 @@ import {
     AppBar,
     Toolbar,
     Link,
-    Switch,
-    FormControlLabel,
     Typography,
 } from '@mui/material';
-import DarkMode from '@mui/icons-material/DarkMode';
-import LightMode from '@mui/icons-material/LightMode';
 import { useTheme } from '@mui/material/styles';
-import { useTheme as useNextTheme } from 'next-themes';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { TrackedExternalLink } from '@/components/TrackedExternalLink';
 
@@ -27,16 +22,10 @@ const bulletPoint = () => <Typography variant="body2" color="text.secondary">•
 
 export function ClientLayout({ children }: ClientLayoutProps) {
     const theme = useTheme();
-    const { theme: currentTheme, setTheme, systemTheme } = useNextTheme();
-    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
     const isHomePage = pathname === "/";
     const isAdminArea = pathname === "/login" || pathname.startsWith("/admin");
     const [showNavbarLogo, setShowNavbarLogo] = useState(!isHomePage);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     // Listen for header logo visibility changes only on Home page
     useEffect(() => {
@@ -46,32 +35,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         };
 
         window.addEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
-        
+
         return () => {
             window.removeEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
         };
     }, [isHomePage]);
-
-    // Determine the effective theme (accounting for system preference)
-    const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
-    const isDarkMode = effectiveTheme === 'dark';
-
-    const handleThemeToggle = (checked: boolean) => {
-        setTheme(checked ? 'dark' : 'light');
-    };
-
-    // Don't render theme-dependent UI until mounted to prevent hydration mismatch
-    if (!mounted) {
-        return (
-            <Box sx={{
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
-                {children}
-            </Box>
-        );
-    }
 
     // Admin area has its own chrome (AdminShell) — skip the public nav/footer entirely.
     if (isAdminArea) {
@@ -145,9 +113,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                         margin: '0 auto',
                                         transition: 'all 0.3s ease-in-out',
                                         '&:hover': {
-                                            filter: isDarkMode  
-                                                ? 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.5))' 
-                                                : 'brightness(1.2) contrast(1.2) drop-shadow(0 3px 10px rgba(139, 0, 255, 0.3))',
+                                            filter: 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.5))',
                                         },
                                     }}
                                 />
@@ -211,36 +177,6 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 Recent Searches
                             </Link>
                         </Box>
-
-                        <FormControlLabel
-                            title={`Turn on ${ !mounted ||isDarkMode  ? 'Light' : 'Dark'} mode`}
-                            control={
-                                <Switch
-                                    checked={isDarkMode }
-                                    onChange={(e) => handleThemeToggle(e.target.checked)}
-                                    sx={{
-                                        '& .MuiSwitch-thumb': {
-                                            backgroundColor: isDarkMode ? '#8b00ff' : '#ff00ff',
-                                        },
-                                        '& .MuiSwitch-track': {
-                                            backgroundColor: isDarkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
-                                        },
-                                    }}
-                                />
-                            }
-                            label={
-                                <Box sx={{
-                                        color: theme.palette.text.primary,
-                                        display: 'flex',
-                                        fontSize: { xs: '0.85rem', sm: '1rem' },
-                                        alignItems: 'center',
-                                        gap: 1 
-                                    }}>
-                                    {isDarkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
-                                    {isDarkMode ? 'Dark' : 'Light'}
-                                </Box>
-                            }
-                        />
                     </Toolbar>
                 </Container>
             </AppBar>

@@ -1,0 +1,128 @@
+# LyricsRay Redesign — Theme + 5-Screen Visual Refresh
+
+**Step 0 (first implementation action):** save this plan as `redesign/TASK_PLAN.md` in the repo, so it persists alongside the mockups as the working reference for this project (checked in, not just a local plan-mode artifact).
+
+## Context
+
+`redesign/` contains new mockups (desktop + mobile) for the home/analyze flow, the "analyzing" loading state, the Recent Searches page, and the Artist page, plus `sample-redesign-theme.ts` — a full dark MUI theme intended to replace the current one. The current theme (`web/src/theme/theme.ts`) is a bright magenta/cyan gradient-and-glow look (Orbitron font, gradient text, glowing shadows everywhere); the new design is a calmer dark, violet-accented, mono-label aesthetic with semantic verdict colors (teal/amber/red) that are never used decoratively. The goal is to swap in the new theme and restyle the five screens to match the mockups, while cleaning up the current codebase's near-total reliance on inline `sx` props (0 `styled()` calls anywhere, `LyricsAnalysisForm.tsx` alone has 42 inline `sx` blocks) into theme-driven styling.
+
+**Agreed scope** (from user Q&A):
+- **Dark mode only, permanently** — no light/dark toggle. Remove the `next-themes` `ThemeProvider`, the `Switch`/`FormControlLabel` toggle UI in `ClientLayout.tsx`, and the `darkMode` boolean branching in `theme.ts`: `getTheme()` becomes a single dark theme (or `createTheme({...})` called directly, no parameter). Remove the "mounted" SSR-flash guards in `ClientLayout.tsx`/`LoadingAnalysisModal.tsx` that exist solely to avoid a light/dark hydration mismatch — no longer needed once there's only one theme.
+- **Logo**: replace the header wordmark image with the new mascot logo. User will drop a refined file in as `web/public/images/logo.png` (and later an SVG) — implementation should reference `/images/logo.png` and fail gracefully if not yet present; don't block on generating the icon.
+- **Analyzing animation**: fully animated waveform + sequential step checklist, no new dependency (no framer-motion/lottie installed today — build with CSS `@keyframes`). Steps are real where cheap, fake/timed otherwise:
+  - Search flow: "Searching for song" (tied to the real `/api/search-song` call) → "Lyrics found" → "Checking themes and context" → "Setting an age" (last two are timed placeholders during the real `/api/analyze-song` call).
+  - Paste-lyrics flow: "Lyrics found" (immediate) → "Checking themes and context" → "Setting an age" (timed placeholders during the real analyze call).
+- **Recent Searches / Artist pages**: mostly a **visual restyle of existing functionality** — no new backend aggregation work. Specifically:
+  - Keep DynamoDB cursor pagination; render it as **Prev / Next** buttons (no numbered page links, since total count/pages aren't available).
+  - The result list already carries `summary` and `themePercentages` on the full analysis (not on `SongListRowItem` today) — reuse what's already computed rather than inventing new fields; extend `SongListRowItem`/`getRecentSearches` to include `summary` only if trivial (it's already stored on the analysis record).
+  - Verdict sidebar filter (Safe / Listen first / Not for kids) and the theme filter chips: **spike only** — implement as a client-side filter over the currently-loaded page of results (no true counts across the whole table, no server-side query changes). Label it accordingly (e.g. no fake aggregate counts like "248 songs" unless that count is real).
+  - Artist page's age-spread stat bar and age-filter tabs: same treatment — computed client-side from the songs already fetched for that artist (already all loaded in one call via `ArtistLandingDisplay`), not a new query.
+
+## 1. Theme replacement
+
+Replace the contents of `web/src/theme/theme.ts` with a single dark theme built from `redesign/sample-redesign-theme.ts` (drop the `darkMode` parameter entirely — see scope note above). Concretely:
+
+- Port the `verdict` export (safe/caution/blocked color tokens) and `labelSx`/`monoFamily` helpers as-is into `theme.ts` (or a new `web/src/theme/verdict.ts` if that's cleaner) — these are the semantic colors every verdict-related component below needs.
+- Port the palette, typography, shape, spacing, and all `components.styleOverrides` blocks from the sample, using only its `darkMode: true` branch values (drop every `darkMode ? x : y` ternary down to just `x`).
+- Fonts: swap the `Geist`/`Geist_Mono` loading in `web/src/app/layout.tsx` for `Space_Grotesk` and `JetBrains_Mono` via `next/font/google`, exposing them as CSS variables the same way Geist is today, and point `typography.fontFamily` / `monoFamily` at those variables instead of hardcoded font-family strings (avoids relying on a system font fallback the way the current unloaded "Orbitron" string does).
+- Delete the gradient-text `h1`/`h2`, gradient buttons, glow shadows, and blur backdrops from the current theme — the new theme carries hierarchy through weight/scale only, no glow effects.
+- `ThemeRegistry.tsx`: remove the `next-themes` `ThemeProvider` wrapper and the `useTheme as useNextTheme` reactivity — just wrap children in the single MUI `ThemeProvider`/`CssBaseline` with the static theme. Any component reading `useNextTheme()`/`currentTheme`/`systemTheme` (e.g. `ClientLayout.tsx`, `LoadingAnalysisModal.tsx`) loses that logic entirely.
+- Check `package.json` for whether `next-themes` becomes fully unused after this and remove the dependency if so.
+- **SSR note (discovered during implementation):** removing `next-themes`' "mounted" gate (which previously delayed themed rendering until after client mount) exposed a latent Emotion/MUI SSR style-insertion-order hydration mismatch under the Next.js App Router. Fix: wrap `ThemeRegistry`'s `MuiThemeProvider` in `AppRouterCacheProvider` from `@mui/material-nextjs/v15-appRouter` (added as a dependency) — this is the standard fix for MUI + Next App Router SSR, not something specific to this redesign, but it only became necessary once the mount-delay workaround was removed.
+
+## 2. Shared chrome: header, footer, background
+
+`web/src/components/ClientLayout.tsx` (22 inline `sx` blocks) needs the biggest structural cleanup since it's shared across all pages:
+
+- Remove the animated radial-gradient background box and the pulsing glow border on the `AppBar`/footer — the new design has a flat dark background with no ambient animation.
+- Replace the logo `<img src="/images/logo-textonly-64.png">` with the new mascot logo at `/images/logo.png` next to a `LYRICSRAY` text wordmark + small accent dot, matching the header in the mockups (this appears identically across all 5 screens — desktop nav row: dot+wordmark, Analyze/Recent/About links, then a right-aligned "Support on Ko-fi" pill button; mobile: dot+wordmark + "FREE" pill, nav links move to a bottom nav bar).
+- Add a mobile bottom navigation bar (Analyze / Recent / About with icons) — there is no `BottomNav` component today; build one using MUI's `BottomNavigation`/`BottomNavigationAction` (already themed in the sample theme's `components.MuiBottomNavigation` override), shown only below the `sm` breakpoint, with the existing top nav links hidden on mobile instead.
+- Move all one-off colors/blurs into theme `styleOverrides` (`MuiAppBar`, `MuiBottomNavigation` — already specced in the ported theme) so `ClientLayout.tsx` itself only composes layout, not colors.
+- Footer: simplify to match the calmer aesthetic — drop the blur/gradient, keep the About / Privacy / attribution / Ko-fi links but restyle via theme (`MuiDivider`, link color from `MuiCssBaseline` `a` override already in the ported theme).
+- Remove the light/dark `Switch`/`FormControlLabel` toggle from the `AppBar` entirely, along with its `handleThemeToggle`/`isDarkMode`/`effectiveTheme` logic — dark is the only mode now.
+
+## 3. Reusable style extraction (cleanup goal)
+
+To satisfy "less inline styles, more theme, avoid copy-paste errors," extract the styling patterns repeated across components into `components.styleOverrides` in `theme.ts` wherever an MUI component is involved (this covers most cases already, per the ported sample theme: `MuiPaper`, `MuiCard`, `MuiChip`, `MuiButton`, `MuiOutlinedInput`, `MuiLinearProgress`, `MuiTableCell` header labels, etc.). Where a pattern isn't a plain MUI component override (e.g. the mono "eyebrow" label style, the age-badge pill, the verdict-colored card), introduce small `styled()` wrapper components (first use of `styled()` in this codebase — `@emotion/styled` is already installed) alongside the component that uses them, e.g.:
+
+- `AgeBadge` (styled `Box`/`Chip`, colored by verdict) — replaces the ad-hoc `sx={{ backgroundColor: `${display.color}15`, ... }}` in `SongListRow.tsx` and the big age number treatment in `AppropriatenessCard.tsx`.
+- `EyebrowLabel` (styled `Typography`, uses `labelSx`) — replaces repeated mono/uppercase caption styling ("VERDICT", "WHAT'S IN IT", "FLAGGED LINES", "SONG", "ARTIST — OPTIONAL").
+- `VerdictCard` (styled `Paper`/`Card` with a colored gradient wash + left/top accent matching verdict) — used by `AppropriatenessCard.tsx`'s big result card.
+
+Target files with the heaviest current inline-`sx` load, in priority order for cleanup: `LyricsAnalysisForm.tsx` (42), `ClientLayout.tsx` (22), `ShareButtonWithModal.tsx` (14), `AnalysisDisplay.tsx` (10), `ContainerWithBackground.tsx` (10), `SongListRow.tsx` (9), `ArtistLandingDisplay.tsx` (8), `AppropriatenessCard.tsx` (8).
+
+## 4. Home page — input form (`LyricsAnalysisForm.tsx`)
+
+Restyle to match `lyricsray-redesign-desktop-home.png` / `-mobile-home.png`:
+
+- Two-column desktop layout: left column is the hero (`h1` "Is this song safe for your kid?", subtitle, the form card) inside `page.tsx`/`ContainerWithBackground.tsx`; right column is the existing `PopularSongsClient` restyled as "What kids are playing" list with age-pill badges, plus a small "Written by a mom, not a label" about blurb card. On mobile these stack vertically, form first.
+- Replace the `Tabs`/`Tab` pill switcher ("Search by Song" / "Paste Lyrics") with the pill-segment control shown in the mockup ("Search a song" / "Paste lyrics") — same MUI `Tabs` component, restyled via `MuiTabs`/`MuiTab` overrides (already in ported theme) rather than the current ad-hoc `sx` on the `Tabs` instance.
+- Restyle the `TextField`s as the boxed mono-label inputs shown (label like "SONG" / "ARTIST — OPTIONAL" in small caps above the value) — this is the `MuiInputLabel` + `MuiOutlinedInput` overrides from the ported theme; drop the icon `startAdornment`s (mockup has none).
+- Restyle submit button to the solid violet "Analyze" / "Run the analysis" button (`MuiButton` `containedPrimary` override).
+- Drop the gradient-card visual treatment on the outer `Paper`; use the flat bordered `MuiPaper` from the new theme.
+- Keep all existing behavior (ALTCHA, rate limiting, tabs, search-then-select modal, error states) — this is a visual pass, not a flow change. The ALTCHA widget's CSS variables (`--altcha-color-base` etc.) should pull from the new theme tokens.
+- Stat row ("41,208 songs checked / ~8s average analysis / 32 languages") is new copy/content in the mockup — confirm with real numbers or mark as a follow-up; don't fabricate stats. Recommend implementing as a small static/config-driven row, or skip if no real numbers exist yet (flag to user during implementation, not now).
+
+## 5. Home page — analyzing animation (`LoadingAnalysisModal.tsx`)
+
+Drop the light/dark logo-swap (`logo-transparent-no-text${isDarkMode ? "" : "-light"}-512.png`) — always use the dark-mode asset. Rebuild as the panel shown in `lyricsray-redesign-mobile-analyzing.png` (a card, not a full backdrop takeover — though whether it's still a `Backdrop`-modal or an inline replacement of the form should follow the mockup: it reads as replacing the form area, not overlaying it, so consider swapping `Backdrop`+`CircularProgress` for an inline state card rendered where the form was):
+
+- Waveform: a row of vertical bars (CSS `@keyframes` scaling `scaleY` randomized per-bar with staggered `animation-delay`), inside a bordered rounded box, matching the pulsing violet bars in the mockup. No canvas/audio needed — purely decorative CSS animation.
+- Status text: mono eyebrow ("READING THE LYRICS") + song title + `Artist · usually about 8 seconds` subtitle.
+- Step checklist: ordered list of steps with a filled/pulsing dot for the active step, checkmark + "OK" for completed steps, dim/greyed for pending — driven by a small state machine in `LyricsAnalysisForm.tsx`:
+  - `search` flow steps: `searching-song` (resolves when `/api/search-song` responds) → `lyrics-found` (immediate on search resolution or immediately for paste flow) → `checking-themes` (timed, e.g. ~40% of an estimated duration) → `setting-age` (timed, remainder) — resolve fully when `/api/analyze-song` responds, snapping any still-pending fake steps to complete.
+  - `lyrics` flow steps: `lyrics-found` (immediate) → `checking-themes` → `setting-age`, same timed approach during the analyze call.
+- Footer line ("We never store your child's name or listening history.") + a `Cancel` button that aborts the in-flight fetch (needs an `AbortController` wired into the existing `fetch` calls — check whether cancellation already exists; if not, this is a small new behavior, acceptable since it's part of matching the mockup's affordance).
+
+## 6. Home page — results (`AppropriatenessCard.tsx`, `ThemeBreakdown.tsx`, results block in `LyricsAnalysisForm.tsx` / `AnalysisDisplay.tsx`)
+
+Matches `lyricsray-redesign-desktop-home-analyze-result.png` / mobile equivalent:
+
+- `AppropriatenessCard.tsx`: rebuild as the `VerdictCard` (section 3) — big age number in verdict color on the left, "VERDICT" eyebrow + verdict label ("Listen first"/"Safe"/"Not for kids" — map from the existing `appropriate` 1/2/3 integer via the existing `getAppropriatenessDisplay`/`getRecommendedAgeDisplay` helpers, extended to also return the new verdict-label copy) + `summary` text, plus the three-segment mini progress bar under the age number (green/amber/red segments — likely a simple 3-`Box` flex bar sized by relative severity, not a real data-bound chart based on the mockup).
+- `ThemeBreakdown.tsx`: restyle the per-theme rows ("Sexual", "Alcohol / drugs", "Language", "Violence") as a 2-column grid on desktop (1-column on mobile) with label + colored `LinearProgress` bar per theme — reuse the existing relative-percentage logic, just restyle via the new `MuiLinearProgress` override and verdict-ish coloring (note: the mockup colors bars by severity per theme, not by a single verdict color — check whether that's derivable from `themePercentages` or needs a simple magnitude→color mapping, e.g. >60% amber/red, else teal).
+- New "Flagged lines" panel (desktop right column) with quoted lyric snippet + short note, and "Disagree with this age? Tell us why" — this is new content not currently in `AnalysisResult`/`AnalysisDisplay`. Since backend changes are out of scope, treat this as **not implemented this pass** unless the analysis payload already secretly contains flagged-line data (check `AnalysisResult`/`storage/AnalysisResultStorage` during implementation) — flag to the user if it requires new Claude-prompt/schema work, since that's a "sensitive area" per `CLAUDE.md` (prompt changes require careful testing).
+- Keep the "Share" / "Save" buttons, but restyle as outlined/text buttons per the mockup instead of solid gradient buttons.
+
+## 7. Recent Searches page
+
+Matches `lyricsray-redesign-desktop-recentspage.png` / mobile:
+
+- `web/src/app/recent-searches/page.tsx`: restyle header, drop the centered gradient `Paper` hero in favor of a left-aligned "Recent" heading.
+- Desktop: add the left filter sidebar (verdict radio-style list with counts, theme chips, "Everyone / Only mine" source toggle) as a **client-side spike** per the agreed scope — filters only the currently-loaded page of `songs`, with honestly-labeled counts (either compute real counts from the loaded page, e.g. "3 of 9 shown," or omit counts entirely if they'd otherwise look like fake totals). "Only mine" has no concept of user accounts today (no auth on the public side) — likely out of scope entirely; flag to user rather than fabricating.
+- Mobile: replace sidebar with the pill-tab row shown ("Everyone / Mine / 18+ only") grouped above a "Today / Yesterday" date-grouped list (date grouping is derivable client-side from the existing `date` field via `moment`).
+- `SongListRow.tsx`: restyle each row as the card-style row in the mockup — age badge left, title/artist/theme-summary stacked, verdict-colored left accent or badge, remove the current alternating-row background tint and hover-glow border color in favor of the flat card style.
+- Prev/Next: replace the current single "More" button (`RecentSearchesClient.tsx`) with a Prev/Next pair — requires threading a "previous cursor" back through `getRecentSearches`/the page component (check `getRecentSearches` return shape; if it only returns `nextCursor` today, going "back" may need cursor history kept in the URL/query stack, e.g. pushing visited cursors onto a client-side stack or query param list, since DynamoDB pagination is forward-only by nature).
+
+## 8. Artist page
+
+Matches `lyricsray-redesign-desktop-artistpage.png` / mobile:
+
+- `ArtistLandingDisplay.tsx`: restyle the header hero (artist name, "K-pop · 32 songs analyzed" meta line, summary blurb) — the summary blurb text is new content; check whether an artist-level summary already exists anywhere (`getRecentSearches`/artist data lib) or needs to be composed client-side from existing song data (e.g. "Most of this catalogue is fine for younger kids...") — if no such summary is computed today, this is new (small) logic, acceptable as it's pure client-side aggregation of already-fetched song data, not a new backend query.
+- Add the age-spread stat bar + legend (All ages/13+/16+ counts) — computed client-side from the `songs` array already passed in (`songs.filter(s => ...).length` per bucket), matching the "visual restyle, client-computed" scope agreed above.
+- Add age-filter pill tabs (All / All ages / 13+ / 16+) filtering the already-fetched `songs` list client-side — same spike treatment as the Recent page's verdict filter.
+- Breadcrumb ("Analyze / Artists / IVE") is new — straightforward to add given the artist name is already a route param.
+- `SongListRow`-equivalent table (desktop) shows an added "Themes" column with plain-text theme summary (not chips) and an "Added" date column — decide whether to reuse `SongListRow` with a table-row variant or accept a divergent presentation for this page; recommend keeping `SongListRow` as the mobile/card variant and building a lightweight desktop table using the same underlying data + a shared row-formatting helper, to avoid duplicating the age/verdict color logic.
+
+## 9. About & Privacy/Terms pages (not covered by mockups — added after theme swap surfaced them)
+
+No mockup covers `/about` or `/privacy-and-terms`, but they share `ClientLayout`'s chrome and are reachable from the header/footer on every screen, so leaving them in the old magenta/cyan gradient look would visibly clash with the rest of the redesign. Both are long-form content pages built almost entirely from stock MUI components (`Card`, `Paper`, `Accordion`, `Alert`, `List`), so most of the restyle is "falls out for free" once the theme is swapped (step 1, done) — the remaining work is stripping the hardcoded inline colors that don't come from the theme:
+
+- `web/src/app/about/page.tsx`: remove the `rgba(255, 0, 255, ...)` / `rgba(0, 204, 255, ...)` hardcoded backgrounds, borders, and the scroll-driven parallax gradient background (`scrollY` state + `transform: translateY(...)` on a fixed background box) — this animated-background pattern is being removed app-wide per section 2, so drop it here too rather than leaving one page with it. Divider colors (`rgba(255, 0, 255, 0.3)`) should use the theme's default `MuiDivider` styling instead. The alternating pink/cyan card tinting in the "How It Works" and "research" sections should be replaced with the new theme's flat bordered `MuiCard` styling (no per-index color alternation needed).
+- `web/src/app/privacy-and-terms/page.tsx`: same background/divider cleanup. Additionally, **the copy is now factually wrong** and needs a content fix independent of visual styling: the "Information we collect" list's first bullet ("Theme preference... light/dark mode preference is stored locally...") no longer applies now that the app is dark-mode-only with no toggle (section 1) — remove that bullet rather than restyle it.
+- Both pages' `useTheme()` + `scrollY` scroll-listener parallax effect can be dropped entirely (`useState`/`useEffect` for `scrollY` becomes dead code once the fixed gradient background is removed) — check whether `useTheme()` is still needed for anything else on the page (e.g. `theme.palette.primary.main` inline color on source links in `about/page.tsx`) before removing the import.
+- No new content/functionality here — this is a straight visual cleanup pass plus the one factual copy correction above.
+
+## Cross-cutting notes
+
+- **Copy**: per `CLAUDE.md`, no em-dashes in UI text. The mockup's flagged-line copy ("read in context, the verse turns explicit") uses one — rewrite with a comma/colon when implementing actual copy.
+- **Mobile-first**: build each component's default (no breakpoint) styles for the mobile layout first, then add `sm`/`md` overrides for desktop, per the mockups' own mobile-first framing.
+- **Tests**: per `CLAUDE.md`, don't add/modify UI tests asserting on CSS/text for purely visual changes; only touch tests where behavior actually changes (e.g. new Prev/Next cursor-history logic, any new client-side filter logic worth unit testing).
+- **No copyrighted lyric content** was reproduced in this plan or should be reproduced in implementation beyond what the app already stores/display server-side.
+
+## Verification
+
+- `npm run dev` in `web/`, visually compare each of the 5 screens (desktop + mobile via browser devtools responsive mode or the in-app Browser tool) against the corresponding `redesign/*.png` file.
+- Exercise the full analyze flow (search tab and paste-lyrics tab) end to end to confirm the new step-checklist animation resolves correctly for both real-step and timed-step cases, including the cancel button.
+- `npm run lint` and `npm run build` in `web/` after changes.
+- Recent Searches: confirm Prev/Next both work (Next then Prev returns to the same first page).
+- Artist page: confirm age-filter tabs and age-spread bar reflect the actual `songs` array counts.

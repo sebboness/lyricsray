@@ -545,6 +545,12 @@ export default function About() {
                                     </ListItem>
                                     <ListItem sx={{ py: 0 }}>
                                         <ListItemText 
+                                            primary="• Multiple analyses for the same lyrics may yield slightly different results"
+                                            sx={{ margin: 0 }}
+                                        />
+                                    </ListItem>
+                                    <ListItem sx={{ py: 0 }}>
+                                        <ListItemText 
                                             primary="• Cannot account for individual family values and standards"
                                             sx={{ margin: 0 }}
                                         />
