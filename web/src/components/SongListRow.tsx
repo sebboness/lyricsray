@@ -2,7 +2,6 @@
 
 import NextLink from 'next/link';
 import { Typography, ListItem, ListItemButton, Box } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import moment from 'moment';
 import { LyricsThemes } from './LyricsThemes';
 import { getRecommendedAgeDisplay, getAppropriatenessDisplay } from '@/util/displayHelpers';
@@ -26,8 +25,7 @@ interface SongListRowProps {
 }
 
 export function SongListRow({ song, index, total, showDate = false }: SongListRowProps) {
-    const theme = useTheme();
-    const display = getAppropriatenessDisplay(song.appropriate, theme);
+    const display = getAppropriatenessDisplay(song.appropriate);
 
     return (
         <ListItem
