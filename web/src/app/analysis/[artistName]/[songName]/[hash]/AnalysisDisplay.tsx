@@ -7,6 +7,7 @@ import {
     Paper,
     Divider,
     Button,
+    Link as MuiLink,
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
@@ -47,11 +48,25 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                                 {result.song?.songName || 'Unknown song'}
                             </Typography>
                             {result.song?.artistName && result.song.artistName.toLowerCase() !== 'unknown' ? (
-                                <Typography variant="body2" color="text.secondary">
-                                    <Link href={`/analysis/${result.songKey.split('/')[0]}`} style={{ color: 'inherit' }}>
+                                <Typography variant="body1" sx={{ mt: 0.25 }}>
+                                    <MuiLink
+                                        component={Link}
+                                        href={`/analysis/${result.songKey.split('/')[0]}`}
+                                        sx={{
+                                            color: 'primary.main',
+                                            fontWeight: 600,
+                                            textDecoration: 'underline',
+                                            textUnderlineOffset: '3px',
+                                            '&:hover': { color: 'primary.light' },
+                                        }}
+                                    >
                                         {result.song.artistName}
-                                    </Link>
-                                    {result.song.albumName && ` · ${result.song.albumName}`}
+                                    </MuiLink>
+                                    {result.song.albumName && (
+                                        <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                                            {' '}· {result.song.albumName}
+                                        </Box>
+                                    )}
                                 </Typography>
                             ) : (
                                 result.song?.albumName && (
