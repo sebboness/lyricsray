@@ -298,7 +298,9 @@ Be conservative in your assessment and err on the side of caution when determini
       .map((song, i) => `<song index="${i + 1}" id="${song.id}">\n<lyrics>\n${song.lyrics}\n</lyrics>\n</song>`)
       .join('\n\n');
 
-    return `You are tasked with identifying the content themes in the lyrics of ${songs.length} songs, and writing a short summary of why each song's content might be flagged for parents. You are NOT determining an age rating or writing a long explanation here — only themes, a short summary, and per-theme percentages.
+    return `You are tasked with, for each of the ${songs.length} songs below: (1) identifying the artist and song name from the lyrics, if you recognize the song, and (2) identifying its content themes and writing a short summary of why its content might be flagged for parents. You are NOT determining an age rating or writing a long explanation here — only artist/song identification, themes, a short summary, and per-theme percentages.
+
+Take the artist/song identification seriously and make a real effort on it for every song, the same as you would if asked to identify just one song on its own — don't skip or rush it just because there are multiple songs in this request. Many of these lyrics are from well-known, popular songs you likely recognize; only answer null for artistName/songName when you're genuinely unable to identify the song, not by default.
 
 Here are the songs to analyze:
 

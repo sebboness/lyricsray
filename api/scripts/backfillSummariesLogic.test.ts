@@ -128,7 +128,7 @@ describe('buildResolvedRecord', () => {
       themePercentages: [{ theme: 'pop', percentage: 80 }],
     };
 
-    const result = buildResolvedRecord(original, resolution, analysis);
+    const result = buildResolvedRecord(original, resolution, analysis, '2026-06-15T12:00:00.000Z');
 
     // Overridden fields
     expect(result.songKey).toBe('Taylor-Swift/Shake-It-Off/xyz789');
@@ -138,17 +138,35 @@ describe('buildResolvedRecord', () => {
     expect(result.song.artistName).toBe('Taylor Swift');
     expect(result.song.songName).toBe('Shake It Off');
 
+    // date is a NEW creation date, not carried over from the original — otherwise this
+    // brand-new record would silently sort as old on the RecentAnalysesIndex GSI and
+    // never show up as "recent" on the recent-searches/popular-songs pages.
+    expect(result.date).toBe('2026-06-15T12:00:00.000Z');
+    expect(result.date).not.toBe(original.date);
+
     // Untouched rating/identity fields
     expect(result.recommendedAge).toBe(16);
     expect(result.appropriate).toBe(2);
     expect(result.analysis).toBe('Original long analysis text');
-    expect(result.date).toBe(original.date);
     expect(result.entityType).toBe(original.entityType);
 
     // Other song fields preserved
     expect(result.song.lyrics).toBe('la la la');
     expect(result.song.albumName).toBe('Some Album');
     expect(result.song.thumbnailUrl).toBe('http://thumb');
+  });
+
+  it('defaults date to now (a valid, recent ISO timestamp) when no date is given', () => {
+    const original = makeRecord({ date: '2020-01-01T00:00:00.000Z' });
+    const resolution = { resolvedArtistName: 'A', resolvedSongName: 'S', resolvedSongKey: 'A/S/xyz', keyChanged: true };
+
+    const before = Date.now();
+    const result = buildResolvedRecord(original, resolution, { themes: [], summary: '', themePercentages: [] });
+    const after = Date.now();
+
+    const resultTime = new Date(result.date).getTime();
+    expect(resultTime).toBeGreaterThanOrEqual(before);
+    expect(resultTime).toBeLessThanOrEqual(after);
   });
 
   it('does not mutate the original record', () => {

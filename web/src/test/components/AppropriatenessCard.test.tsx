@@ -23,33 +23,26 @@ describe('AppropriatenessCard', () => {
         expect(emptySummary.querySelectorAll('p').length).toBe(noSummary.querySelectorAll('p').length);
     });
 
-    it('shows the recommended age derived from the numeric prop', () => {
+    it('shows the short recommended age derived from the numeric prop', () => {
         render(<AppropriatenessCard appropriate={1} recommendedAge={16} />);
 
-        expect(screen.getByText(/Age 16\+/)).toBeInTheDocument();
+        expect(screen.getByText('16+')).toBeInTheDocument();
     });
 
-    it('shows "All ages" when recommendedAge is the "All" sentinel', () => {
+    it('shows "ALL" when recommendedAge is the "All" sentinel', () => {
         render(<AppropriatenessCard appropriate={1} recommendedAge={'All' as unknown as number} />);
 
-        expect(screen.getByText(/All ages/)).toBeInTheDocument();
+        expect(screen.getByText('ALL')).toBeInTheDocument();
     });
 
-    it('shows the share button only when showShareButton is true and a songKey is provided', () => {
-        render(<AppropriatenessCard appropriate={1} recommendedAge={13} showShareButton songKey="Artist/Song/abc123" />);
+    it('shows the mockup verdict label for each appropriateness level', () => {
+        const { rerender } = render(<AppropriatenessCard appropriate={1} recommendedAge={7} />);
+        expect(screen.getByText('Safe')).toBeInTheDocument();
 
-        expect(screen.getByLabelText('share')).toBeInTheDocument();
-    });
+        rerender(<AppropriatenessCard appropriate={2} recommendedAge={13} />);
+        expect(screen.getByText('Listen first')).toBeInTheDocument();
 
-    it('hides the share button when showShareButton is true but songKey is missing', () => {
-        render(<AppropriatenessCard appropriate={1} recommendedAge={13} showShareButton />);
-
-        expect(screen.queryByLabelText('share')).not.toBeInTheDocument();
-    });
-
-    it('hides the share button when showShareButton is false even with a songKey', () => {
-        render(<AppropriatenessCard appropriate={1} recommendedAge={13} songKey="Artist/Song/abc123" />);
-
-        expect(screen.queryByLabelText('share')).not.toBeInTheDocument();
+        rerender(<AppropriatenessCard appropriate={3} recommendedAge={18} />);
+        expect(screen.getByText('Not for kids')).toBeInTheDocument();
     });
 });

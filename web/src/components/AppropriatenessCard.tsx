@@ -1,136 +1,65 @@
-import { Box, Card, CardContent, Typography } from '@mui/material';
-import CheckCircle from '@mui/icons-material/CheckCircle';
-import Error from '@mui/icons-material/Error';
-import WarningRounded from '@mui/icons-material/WarningRounded';
-import { ShareButtonWithModal } from './ShareButtonWithModal';
-import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
+import { Box, Typography } from '@mui/material';
+import { AgeBadge } from '@/components/AgeBadge';
+import { EyebrowLabel } from '@/components/EyebrowLabel';
+import { VerdictCard } from '@/components/VerdictCard';
+import { getAppropriatenessDisplay, getShortAgeDisplay } from '@/util/displayHelpers';
+import type { VerdictKey } from '@/util/displayHelpers';
+import { verdict } from '@/theme/theme';
 
 interface AppropriatenessCardProps {
     appropriate: number;
     recommendedAge: number;
-    size?: 'small' | 'medium' | 'large';
-    songKey?: string;
-    showShareButton?: boolean;
-    songTitle?: string;
-    artistName?: string;
     summary?: string;
 }
 
-interface AppropriateData {
-    icon: React.JSX.Element;
-    color: string;
-    text: string;
-}
+const severitySegments: { key: VerdictKey; color: string }[] = [
+    { key: 'safe', color: verdict.safe.main },
+    { key: 'caution', color: verdict.caution.main },
+    { key: 'blocked', color: verdict.blocked.main },
+];
 
 /**
- * Gets display data based on appropriateness level
- * @param appropriate The appropriateness level as an integer
- * @param iconSize
- * @returns Data based on appropriateness level
+ * The big result card: age + verdict + summary, plus a small severity-scale
+ * indicator (the segment matching this result's verdict is highlighted).
  */
-const getAppropriateData = (appropriate: number, iconSize: number): AppropriateData => {
-    let icon = <></>;
-    let color = '';
-    let text = '';
-
-    switch (appropriate) {
-        case 1:
-            icon = <CheckCircle sx={{ color: 'success.main', fontSize: iconSize }} />;
-            color = 'success.main';
-            text = 'Generally appropriate content';
-            break;
-        case 2:
-            icon = <WarningRounded sx={{ color: 'warning.main', fontSize: iconSize }} />;
-            color = 'warning.main';
-            text = 'Contains themes requiring parental guidance';
-            break;
-        case 3:
-            icon = <Error sx={{ color: 'error.main', fontSize: iconSize }} />;
-            color = 'error.main';
-            text = 'Contains mature content for mature audiences';
-            break;
-        default:
-            icon = <Error sx={{ color: 'text.secondary', fontSize: iconSize }} />;
-            color = 'text.secondary';
-            text = 'Unable to determine appropriateness';
-            break;
-    }
-
-    return { icon, color, text };
-};
-
-export function AppropriatenessCard({
-    appropriate,
-    recommendedAge,
-    size = 'medium',
-    songKey,
-    showShareButton = false,
-    songTitle = 'this song',
-    artistName = 'Unknown Artist',
-    summary,
-}: AppropriatenessCardProps) {
-    // Size configurations
-    const sizeConfig = {
-        small: { icon: 36, titleVariant: 'h6' as const, gap: 2 },
-        medium: { icon: 48, titleVariant: 'h5' as const, gap: 3 },
-        large: { icon: 64, titleVariant: 'h4' as const, gap: 4 },
-    };
-
-    const config = sizeConfig[size];
-    const appropriatenessData = getAppropriateData(appropriate, config.icon);
+export function AppropriatenessCard({ appropriate, recommendedAge, summary }: AppropriatenessCardProps) {
+    const display = getAppropriatenessDisplay(appropriate);
 
     return (
-        <>
-            <Card sx={{ mb: 2 }}>
-                <CardContent>
-                    {/* Mobile: label full-width on top */}
-                    <Typography
-                        variant="h6"
-                        color={appropriatenessData.color}
-                        fontWeight="600"
-                        sx={{ display: { xs: 'block', sm: 'none' }, mb: 1 }}
-                    >
-                        {appropriatenessData.text}
-                    </Typography>
-
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                        {/* Left: icon + text */}
-                        <Box display="flex" alignItems="center" gap={2}>
-                            <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
-                                {appropriatenessData.icon}
-                            </Box>
-                            <Box>
-                                {/* Desktop: label inline */}
-                                <Typography
-                                    variant="h6"
-                                    color={appropriatenessData.color}
-                                    fontWeight="600"
-                                    sx={{ display: { xs: 'none', sm: 'block' } }}
-                                >
-                                    {appropriatenessData.text}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    <strong>Minimum age:</strong> {getRecommendedAgeDisplay(recommendedAge)}
-                                </Typography>
-                                {summary && (
-                                    <Typography variant="body2" color="text.secondary">
-                                        {summary}
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Box>
-
-                        {/* Right: Share button */}
-                        {showShareButton && songKey && (
-                            <ShareButtonWithModal
-                                songKey={songKey}
-                                songTitle={songTitle}
-                                artistName={artistName}
+        <VerdictCard verdictKey={display.verdictKey} sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                <Box>
+                    <AgeBadge verdictKey={display.verdictKey} size="large">
+                        {getShortAgeDisplay(recommendedAge)}
+                    </AgeBadge>
+                    <Box sx={{ display: 'flex', gap: 0.5, mt: 1, width: 96 }}>
+                        {severitySegments.map((segment) => (
+                            <Box
+                                key={segment.key}
+                                sx={{
+                                    flex: 1,
+                                    height: 4,
+                                    borderRadius: 2,
+                                    backgroundColor: segment.color,
+                                    opacity: segment.key === display.verdictKey ? 1 : 0.25,
+                                }}
                             />
-                        )}
+                        ))}
                     </Box>
-                </CardContent>
-            </Card>
-        </>
+                </Box>
+
+                <Box sx={{ flex: 1, minWidth: 200 }}>
+                    <EyebrowLabel sx={{ color: display.color }}>Verdict</EyebrowLabel>
+                    <Typography variant="h6" fontWeight={700} sx={{ color: display.color, mb: 1 }}>
+                        {display.label}
+                    </Typography>
+                    {summary && (
+                        <Typography variant="body2" color="text.secondary">
+                            {summary}
+                        </Typography>
+                    )}
+                </Box>
+            </Box>
+        </VerdictCard>
     );
 }

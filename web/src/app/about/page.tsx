@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -69,33 +68,10 @@ const researchItems = [
 
 export default function About() {
     const theme = useTheme();
-    const [scrollY, setScrollY] = useState(0);
-
-    // Handle scroll events for subtle parallax effect
-    useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     return (
-        <Box sx={{ position: 'relative', minHeight: '100vh' }}>
-            {/* Subtle animated background elements */}
-            <Box
-                sx={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `radial-gradient(circle at 10% 20%, rgba(255, 0, 255, 0.05) 0%, transparent 50%),
-                               radial-gradient(circle at 90% 80%, rgba(0, 204, 255, 0.05) 0%, transparent 50%)`,
-                    transform: `translateY(${scrollY * 0.1}px)`,
-                    zIndex: 1,
-                }}
-            />
-
-            <Container maxWidth="md" sx={{ position: 'relative', zIndex: 10, py: 8 }}>
+        <Box sx={{ minHeight: '100vh' }}>
+            <Container maxWidth="lg" sx={{ py: 8 }}>
                 {/* Header Section */}
                 <Paper 
                     elevation={3} 
@@ -116,7 +92,7 @@ export default function About() {
                     <CardContent sx={{ p: 4 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                             <Typography variant="h4" fontWeight="600">
-                                Our Mission
+                                The Mission
                             </Typography>
                         </Box>
                         <Typography variant="body1" sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>
@@ -145,13 +121,7 @@ export default function About() {
                     {/* Content Analysis Expandable Cards */}
                     <Grid container spacing={3} sx={{ mb: 4 }}>
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <Accordion 
-                                expanded={true}
-                                sx={{ 
-                                    background: 'rgba(255, 0, 255, 0.05)',
-                                    border: '1px solid rgba(255, 0, 255, 0.2)',
-                                }}
-                            >
+                            <Accordion expanded={true}>
                                 <AccordionSummary expandIcon={<ExpandMore />}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <AutoAwesome sx={{ color: theme.palette.primary.main }} />
@@ -204,13 +174,7 @@ export default function About() {
                         </Grid>
 
                         <Grid size={{ xs: 12, md: 6 }}>
-                            <Accordion 
-                                expanded={true}
-                                sx={{ 
-                                    background: 'rgba(0, 204, 255, 0.05)',
-                                    border: '1px solid rgba(0, 204, 255, 0.2)',
-                                }}
-                            >
+                            <Accordion expanded={true}>
                                 <AccordionSummary expandIcon={<ExpandMore />}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <School sx={{ color: theme.palette.secondary.main }} />
@@ -296,15 +260,13 @@ export default function About() {
                                 }
                             ].map((step, index) => (
                                 <Grid size={{ xs: 12, sm: 6 }} key={index}>
-                                    <Card 
-                                        sx={{ 
+                                    <Card
+                                        sx={{
                                             height: '100%',
-                                            background: `linear-gradient(135deg, rgba(${index % 2 === 0 ? '255, 0, 255' : '0, 204, 255'}, 0.05), transparent)`,
-                                            border: `1px solid rgba(${index % 2 === 0 ? '255, 0, 255' : '0, 204, 255'}, 0.2)`,
                                             transition: 'transform 0.2s ease-in-out',
                                             '&:hover': {
                                                 transform: 'translateY(-4px)',
-                                            }
+                                            },
                                         }}
                                     >
                                         <CardContent>
@@ -380,7 +342,7 @@ export default function About() {
                             decisions for their own families.
                         </Typography>
                         
-                        <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
+                        <Divider sx={{ my: 3 }} />
                         
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                             <Typography variant="h4" fontWeight="600">
@@ -396,11 +358,6 @@ export default function About() {
                                 <Grid size={{ xs: 12 }} key={index}>
                                     <Card
                                         sx={{
-                                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                                            background:
-                                                index % 2 === 0
-                                                    ? 'rgba(255, 0, 255, 0.04)'
-                                                    : 'rgba(0, 204, 255, 0.04)',
                                             transition: 'transform 0.2s ease-in-out',
                                             '&:hover': {
                                                 transform: 'translateY(-2px)',
@@ -456,7 +413,7 @@ export default function About() {
                             children encounter while respecting your role as the ultimate decision-maker for your family.
                         </Typography>
                         
-                        <Divider sx={{ my: 3, borderColor: 'rgba(255, 0, 255, 0.3)' }} />
+                        <Divider sx={{ my: 3 }} />
                         
                         <Typography 
                             variant="h6" 
@@ -540,6 +497,12 @@ export default function About() {
                                     <ListItem sx={{ py: 0 }}>
                                         <ListItemText 
                                             primary="• May occasionally miss subtle references or cultural nuances"
+                                            sx={{ margin: 0 }}
+                                        />
+                                    </ListItem>
+                                    <ListItem sx={{ py: 0 }}>
+                                        <ListItemText 
+                                            primary="• Multiple analyses for the same lyrics may yield slightly different results"
                                             sx={{ margin: 0 }}
                                         />
                                     </ListItem>

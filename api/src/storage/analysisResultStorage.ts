@@ -106,18 +106,27 @@ export class AnalysisResultStorage {
    * @param limit The maximum number of raw results to return
    * @param entityType The entity type to query for
    * @param exclusiveStartKey The DynamoDB key to resume from, if paginating
+   * @param appropriate Optional appropriateness level (1/2/3) to filter to. Applied as a
+   *   post-query FilterExpression — there's no GSI on `appropriate`, so this doesn't reduce
+   *   the read cost of the underlying query, only which items are returned. Callers that need
+   *   a full page of matches should loop on `lastEvaluatedKey` the same way recentSearchesHandler does.
    */
   async getRecentAnalysesPage(
     limit: number,
     entityType: EntityType,
     exclusiveStartKey?: Record<string, unknown>,
+    appropriate?: number,
   ): Promise<AnalysesPage> {
     try {
       const { Items, LastEvaluatedKey } = await this.dbClient.send(new QueryCommand({
         TableName: tableName,
         IndexName: 'RecentAnalysesIndex',
         KeyConditionExpression: 'entityType = :entityType',
-        ExpressionAttributeValues: { ':entityType': entityType },
+        FilterExpression: appropriate !== undefined ? 'appropriate = :appropriate' : undefined,
+        ExpressionAttributeValues: {
+          ':entityType': entityType,
+          ...(appropriate !== undefined ? { ':appropriate': appropriate } : {}),
+        },
         ScanIndexForward: false,
         Limit: limit,
         ExclusiveStartKey: exclusiveStartKey,
@@ -126,7 +135,7 @@ export class AnalysisResultStorage {
       }));
       return { items: (Items as AnalysisResult[]) ?? [], lastEvaluatedKey: LastEvaluatedKey };
     } catch (err) {
-      logger.error('getRecentAnalysesPage failed', { err, entityType });
+      logger.error('getRecentAnalysesPage failed', { err, entityType, appropriate });
       throw err;
     }
   }

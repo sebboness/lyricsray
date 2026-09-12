@@ -150,6 +150,26 @@ describe('AnalysisResultStorage', () => {
 
       await expect(storage.getRecentAnalysesPage(20, 'ANALYSIS')).rejects.toThrow('ddb down');
     });
+
+    it('applies a FilterExpression on appropriate when given', async () => {
+      mockSend.mockResolvedValueOnce({ Items: [] });
+
+      await storage.getRecentAnalysesPage(20, 'ANALYSIS', undefined, 2);
+
+      const command = mockSend.mock.calls[0][0];
+      expect(command.input.FilterExpression).toBe('appropriate = :appropriate');
+      expect(command.input.ExpressionAttributeValues[':appropriate']).toBe(2);
+    });
+
+    it('omits the FilterExpression when appropriate is not given', async () => {
+      mockSend.mockResolvedValueOnce({ Items: [] });
+
+      await storage.getRecentAnalysesPage(20, 'ANALYSIS');
+
+      const command = mockSend.mock.calls[0][0];
+      expect(command.input.FilterExpression).toBeUndefined();
+      expect(command.input.ExpressionAttributeValues[':appropriate']).toBeUndefined();
+    });
   });
 
   describe('getBatchAnalysisResults', () => {

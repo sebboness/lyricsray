@@ -1,161 +1,280 @@
 import { createTheme } from "@mui/material/styles";
 
 /**
- * Gets the theme of the app.
- * @param darkMode Whether dark mode is enabled or not
+ * Verdict colors. These are semantic, not decorative: teal/amber/red mean
+ * safe / listen first / not for kids and are never used for branding.
+ * Violet is the app's own voice and never carries a verdict.
+ */
+export const verdict = {
+    safe: { main: '#46d6c4', border: '#1f4a45', surface: '#101d1c' },
+    caution: { main: '#f2b74a', border: '#4a3c1c', surface: '#1a1710' },
+    blocked: { main: '#ff5c47', border: '#4a2420', surface: '#1a1011' },
+} as const;
+
+/** Fixed-width family used for labels, ages and metadata. */
+export const monoFamily = 'var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace';
+
+/** Reusable style for the small mono eyebrow labels ("WHAT'S IN IT", "VERDICT"). */
+export const labelSx = {
+    fontFamily: monoFamily,
+    fontSize: 12,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase' as const,
+};
+
+/**
+ * Gets the app's theme. Dark mode only — there is no light-mode variant.
  * @returns The theme
  */
-export const getTheme = (darkMode: boolean) => createTheme({
+export const getTheme = () => createTheme({
     palette: {
-        mode: darkMode ? 'dark' : 'light',
+        mode: 'dark',
         primary: {
-            main: darkMode ? '#ff00ff' : '#8b00ff', // Magenta/Purple from logo
-            light: '#ff66ff',
-            dark: '#cc00cc',
+            main: '#9d90ff',
+            light: '#c3baff',
+            dark: '#7c6bff',
+            contrastText: '#0a0a10',
         },
         secondary: {
-            main: darkMode ? '#00ccff' : '#0066cc', // Cyan blue from logo
-            light: '#66d9ff',
-            dark: '#0099cc',
+            main: verdict.safe.main,
+            light: '#7ce7da',
+            dark: '#27a898',
+            contrastText: '#0a0a10',
         },
         background: {
-            default: darkMode ? '#000015' : '#f8f9ff',
-            paper: darkMode ? '#1a1a2e' : '#ffffff',
+            default: '#0a0a10',
+            paper: '#14151d',
         },
         text: {
-            primary: darkMode ? '#ffffff' : '#1a1a2e',
-            secondary: darkMode ? '#ccccff' : '#666699',
+            primary: '#eef1f4',
+            secondary: '#8a939e',
+            disabled: '#5b636d',
         },
-        info: {
-            main: darkMode ? '#9933ff' : '#6600cc', // Purple accent from logo
-        },
-        success: {
-            main: darkMode ? '#00ff88' : '#00cc66',
-        },
-        error: {
-            main: darkMode ? '#ff3366' : '#cc0033',
-        },
-        warning: {
-            main: darkMode ? '#ffaa00' : '#ff8800',
+        divider: '#23242f',
+        info: { main: '#9d90ff' },
+        success: { main: verdict.safe.main },
+        warning: { main: verdict.caution.main },
+        error: { main: verdict.blocked.main },
+        action: {
+            hover: 'rgba(157, 144, 255, 0.08)',
+            selected: 'rgba(157, 144, 255, 0.14)',
         },
     },
+    shape: { borderRadius: 11 },
+    spacing: 8,
     typography: {
-        fontFamily: '"Orbitron", "Roboto", "Arial", sans-serif',
-        h1: {
-            fontWeight: 700,
-            fontSize: '3rem',
-            background: darkMode 
-                ? 'linear-gradient(45deg, #ff00ff 30%, #00ccff 90%)'
-                : 'linear-gradient(45deg, #8b00ff 30%, #0066cc 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            textShadow: darkMode ? '0 0 20px rgba(255, 0, 255, 0.5)' : 'none',
-        },
-        h2: {
-            fontWeight: 600,
-            color: darkMode ? '#ff00ff' : '#8b00ff',
-        },
-        h4: {
-            fontWeight: 600,
-            color: darkMode ? '#00ccff' : '#0066cc',
-        },
-        h5: {
-            fontWeight: 600,
-            color: darkMode ? '#ff00ff' : '#8b00ff',
-        },
-        h6: {
-            fontWeight: 600,
-        },
-        body1: {
-            lineHeight: 1.6,
-        },
+        fontFamily: 'var(--font-space-grotesk), system-ui, -apple-system, sans-serif',
+        // No gradient text, no glow. Weight and scale carry the hierarchy.
+        h1: { fontWeight: 500, fontSize: '2.75rem', lineHeight: 1.08, letterSpacing: '-0.03em' },
+        h2: { fontWeight: 500, fontSize: '2.125rem', lineHeight: 1.1, letterSpacing: '-0.025em' },
+        h3: { fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.15, letterSpacing: '-0.02em' },
+        h4: { fontWeight: 700, fontSize: '1.5rem', lineHeight: 1.2, letterSpacing: '-0.015em' },
+        h5: { fontWeight: 500, fontSize: '1.25rem', lineHeight: 1.25 },
+        h6: { fontWeight: 500, fontSize: '1.0625rem', lineHeight: 1.3 },
+        body1: { fontSize: '0.9375rem', lineHeight: 1.5 },
+        body2: { fontSize: '0.8125rem', lineHeight: 1.5 },
+        subtitle2: { fontSize: '0.78125rem', lineHeight: 1.4, fontWeight: 400 },
+        button: { fontWeight: 700, fontSize: '0.9375rem', textTransform: 'none' },
+        overline: { ...labelSx, fontWeight: 400, lineHeight: 1.4 },
+        caption: { fontFamily: monoFamily, fontSize: '0.6875rem', letterSpacing: '0.04em' },
     },
     components: {
-        MuiBackdrop: {
+        MuiCssBaseline: {
             styleOverrides: {
-                root: {
-                    backdropFilter: 'blur(10px)',
-                }
-            }
+                body: { textWrap: 'pretty' },
+                'a': {
+                    color: '#9d90ff',
+                    textDecoration: 'none',
+                },
+                'a:hover': { color: '#c3baff' },
+            },
         },
         MuiPaper: {
+            defaultProps: { elevation: 0 },
+            styleOverrides: {
+                // Translucent so the ScanField glow behind the app shell reads through
+                // cards as depth. Anything overlaying a lot of text (dialogs, menus,
+                // the bottom nav) re-solidifies itself below.
+                root: {
+                    backgroundImage: 'none',
+                    backgroundColor: 'rgba(20, 21, 29, 0.72)',
+                    backdropFilter: 'blur(6px)',
+                    border: '1px solid #23242f',
+                },
+                outlined: { borderColor: '#23242f' },
+            },
+        },
+        MuiAppBar: {
+            defaultProps: { elevation: 0, color: 'transparent' },
             styleOverrides: {
                 root: {
-                    backgroundImage: darkMode 
-                        ? 'linear-gradient(135deg, rgba(255, 0, 255, 0.1) 0%, rgba(0, 204, 255, 0.1) 100%)'
-                        : 'linear-gradient(135deg, rgba(139, 0, 255, 0.05) 0%, rgba(0, 102, 204, 0.05) 100%)',
-                    backdropFilter: 'blur(10px)',
-                    border: darkMode 
-                        ? '1px solid rgba(255, 0, 255, 0.2)'
-                        : '1px solid rgba(139, 0, 255, 0.2)',
-                    boxShadow: darkMode
-                        ? '0 8px 32px rgba(255, 0, 255, 0.1)'
-                        : '0 4px 16px rgba(0, 0, 0, 0.1)',
+                    backgroundImage: 'none',
+                    backgroundColor: '#0a0a10',
+                    borderBottom: '1px solid #1c1d26',
                 },
             },
         },
+        MuiToolbar: { styleOverrides: { root: { minHeight: 60, '@media (min-width:600px)': { minHeight: 60 } } } },
         MuiButton: {
+            defaultProps: { disableElevation: true },
             styleOverrides: {
-                root: {
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    background: darkMode
-                        ? 'linear-gradient(45deg, #ff00ff 30%, #00ccff 90%)'
-                        : 'linear-gradient(45deg, #8b00ff 30%, #0066cc 90%)',
-                    boxShadow: darkMode
-                        ? '0 4px 20px rgba(255, 0, 255, 0.3)'
-                        : '0 4px 15px rgba(139, 0, 255, 0.2)',
+                root: { borderRadius: 11, paddingInline: 18, minHeight: 44 },
+                containedPrimary: {
+                    backgroundColor: '#7c6bff',
+                    color: '#f4f2ff',
+                    '&:hover': { backgroundColor: '#9d90ff' },
+                },
+                outlined: {
+                    borderColor: '#23242f',
+                    color: '#eef1f4',
+                    fontWeight: 500,
                     '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: darkMode
-                            ? '0 6px 25px rgba(255, 0, 255, 0.4)'
-                            : '0 6px 20px rgba(139, 0, 255, 0.3)',
+                        borderColor: '#3b3480',
+                        backgroundColor: 'rgba(157,144,255,0.06)',
                     },
                 },
+                text: { fontWeight: 500 },
             },
         },
-        MuiTextField: {
+        MuiTextField: { defaultProps: { variant: 'outlined', size: 'medium' } },
+        MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                            borderColor: darkMode ? 'rgba(255, 0, 255, 0.3)' : 'rgba(139, 0, 255, 0.3)',
-                        },
-                        '&:hover fieldset': {
-                            borderColor: darkMode ? '#ff00ff' : '#8b00ff',
-                        },
-                        '&.Mui-focused fieldset': {
-                            borderColor: darkMode ? '#00ccff' : '#0066cc',
-                            boxShadow: darkMode 
-                                ? '0 0 10px rgba(0, 204, 255, 0.3)'
-                                : '0 0 5px rgba(0, 102, 204, 0.3)',
-                        },
+                    backgroundColor: '#14151d',
+                    borderRadius: 11,
+                    '& fieldset': { borderColor: '#23242f' },
+                    '&:hover fieldset': { borderColor: '#2c2760' },
+                    '&.Mui-focused fieldset': {
+                        borderWidth: 1,
+                        borderColor: '#9d90ff',
                     },
                 },
+                input: { fontSize: '1rem' },
+            },
+        },
+        MuiInputLabel: {
+            styleOverrides: {
+                root: { ...labelSx, color: '#6d757f', '&.Mui-focused': { color: '#9d90ff' } },
             },
         },
         MuiCard: {
+            defaultProps: { elevation: 0 },
             styleOverrides: {
                 root: {
-                    transition: 'all 0.3s ease-in-out',
-                    '&:hover': {
-                        boxShadow: darkMode
-                            ? '0 12px 40px rgba(255, 0, 255, 0.2)'
-                            : '0 8px 30px rgba(139, 0, 255, 0.15)',
+                    borderRadius: 14,
+                    backgroundImage: 'none',
+                    transition: 'border-color 0.18s ease',
+                    '&:hover': { borderColor: '#2c2760' },
+                },
+            },
+        },
+        MuiChip: {
+            styleOverrides: {
+                root: { borderRadius: 999, fontSize: '0.78125rem', height: 28 },
+                outlined: { borderColor: '#23242f', color: '#8a939e' },
+                filledPrimary: { backgroundColor: '#7c6bff', color: '#f4f2ff', fontWeight: 500 },
+            },
+        },
+        MuiTabs: {
+            styleOverrides: {
+                root: { minHeight: 40 },
+                indicator: { height: 2, backgroundColor: '#9d90ff' },
+            },
+        },
+        MuiToggleButtonGroup: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#14151d',
+                    border: '1px solid #23242f',
+                    borderRadius: 11,
+                    padding: 4,
+                    gap: 4,
+                },
+            },
+        },
+        MuiToggleButton: {
+            styleOverrides: {
+                root: {
+                    border: 'none',
+                    borderRadius: 8,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    color: '#8a939e',
+                    padding: '8px 16px',
+                    '&.Mui-selected': {
+                        backgroundColor: '#23242f',
+                        color: '#eef1f4',
+                        '&:hover': { backgroundColor: '#23242f' },
                     },
                 },
             },
         },
-        MuiModal: {
+        MuiTab: {
             styleOverrides: {
                 root: {
-                    '& .MuiPaper-root': {
-                        border: darkMode 
-                            ? '2px solid rgba(255, 0, 255, 0.3)'
-                            : '2px solid rgba(139, 0, 255, 0.3)',
-                    },
+                    textTransform: 'none',
+                    fontSize: '0.84375rem',
+                    minHeight: 40,
+                    color: '#8a939e',
+                    '&.Mui-selected': { color: '#eef1f4', fontWeight: 500 },
+                },
+            },
+        },
+        MuiLinearProgress: {
+            // Used for the severity bars on the result screen.
+            styleOverrides: {
+                root: { height: 6, borderRadius: 3, backgroundColor: '#1c1d26' },
+                bar: { borderRadius: 3 },
+            },
+        },
+        MuiTableCell: {
+            styleOverrides: {
+                root: {
+                    borderBottomColor: '#14151d',
+                    paddingBlock: 12,
+                },
+                head: { ...labelSx, color: '#6d757f', borderBottomColor: '#1c1d26' },
+            },
+        },
+        MuiListItemButton: {
+            styleOverrides: { root: { minHeight: 52, borderRadius: 0 } },
+        },
+        MuiDivider: { styleOverrides: { root: { borderColor: '#1c1d26' } } },
+        MuiBottomNavigation: {
+            styleOverrides: {
+                root: {
+                    height: 68,
+                    backgroundColor: '#0a0a10',
+                    borderTop: '1px solid #1c1d26',
+                },
+            },
+        },
+        MuiBottomNavigationAction: {
+            styleOverrides: {
+                root: { minWidth: 64, color: '#5b636d' },
+                label: { fontSize: 10, letterSpacing: '0.06em', '&.Mui-selected': { fontSize: 10 } },
+            },
+        },
+        MuiTooltip: {
+            styleOverrides: {
+                tooltip: {
+                    backgroundColor: '#23242f',
+                    fontSize: '0.75rem',
+                    borderRadius: 8,
+                },
+            },
+        },
+        MuiBackdrop: { styleOverrides: { root: { backgroundColor: 'rgba(10, 10, 16, 0.72)' } } },
+        MuiDialog: {
+            // Solid — a dialog overlays other content, so it shouldn't be translucent
+            // like the generic MuiPaper root above.
+            styleOverrides: {
+                paper: {
+                    borderRadius: 16,
+                    border: '1px solid #2c2d3a',
+                    backgroundColor: '#14151d',
+                    backdropFilter: 'none',
                 },
             },
         },
