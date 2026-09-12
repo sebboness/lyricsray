@@ -71,7 +71,7 @@ export function AdminSideNav({ variant, open, onClose }: AdminSideNavProps) {
             >
                 <Box
                     component="img"
-                    src="/images/logo-textonly-64.png"
+                    src="/images/logo-shield-64.png"
                     alt="LyricsRay"
                     sx={{ maxHeight: 32, width: 'auto' }}
                 />

@@ -46,7 +46,7 @@ export default async function RecentSearches({ searchParams }: RecentSearchesPag
         : undefined;
 
     return (
-        <Container maxWidth="md" sx={{ py: { xs: 4, sm: 8 } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 4, sm: 8 } }}>
             <Typography variant="h1" sx={{ fontSize: { xs: '2rem', sm: '2.75rem' }, mb: 1 }}>
                 Recent
             </Typography>

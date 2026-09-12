@@ -62,7 +62,7 @@ export function ArtistLandingDisplay({ artistName, songs }: ArtistLandingDisplay
     const totalCount = songs.length;
 
     return (
-        <Container maxWidth="md" sx={{ py: { xs: 4, sm: 8 } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 4, sm: 8 } }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 <Link component={NextLink} href="/" color="inherit">Analyze</Link>
                 {' / '}Artists{' / '}{artistName}

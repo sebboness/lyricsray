@@ -44,7 +44,7 @@ export default function LoginPage() {
         <Container maxWidth="xs" sx={{ position: 'relative', zIndex: 10, py: 8 }}>
             <Box
                 component="img"
-                src="/images/logo-textonly-768.png"
+                src="/images/logo.svg"
                 alt="LyricsRay"
                 sx={{ display: 'block', width: '100%', height: 'auto', mb: 3 }}
             />

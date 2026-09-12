@@ -71,7 +71,7 @@ export default function About() {
 
     return (
         <Box sx={{ minHeight: '100vh' }}>
-            <Container maxWidth="md" sx={{ py: 8 }}>
+            <Container maxWidth="lg" sx={{ py: 8 }}>
                 {/* Header Section */}
                 <Paper 
                     elevation={3} 
@@ -92,7 +92,7 @@ export default function About() {
                     <CardContent sx={{ p: 4 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                             <Typography variant="h4" fontWeight="600">
-                                Our Mission
+                                The Mission
                             </Typography>
                         </Box>
                         <Typography variant="body1" sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>

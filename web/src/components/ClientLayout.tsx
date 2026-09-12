@@ -66,9 +66,27 @@ export function ClientLayout({ children }: ClientLayoutProps) {
         }}>
             <ScanField variant={isMobile ? 'mobile' : 'desktop'} />
 
+            {/* Dim logo watermark, top-right, fixed so it stays put while the page scrolls */}
+            <Box
+                component="img"
+                src="/images/logo.svg"
+                alt=""
+                aria-hidden
+                sx={{
+                    position: 'fixed',
+                    top: { xs: 20, sm: 10, md: 0 },
+                    right: { xs: 0, sm: 10, md: 30 },
+                    width: { xs: 200, sm: 300, md: 420 },
+                    height: 'auto',
+                    opacity: 0.06,
+                    zIndex: -1,
+                    pointerEvents: 'none',
+                }}
+            />
+
             {/* Header */}
             <AppBar position="sticky" sx={{ top: 0 }}>
-                <Container maxWidth="md">
+                <Container maxWidth="lg">
                     <Toolbar sx={{ justifyContent: 'space-between', gap: 2, px: { xs: 0 } }}>
                         <Link
                             href="/"
@@ -82,7 +100,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                         >
                             <Box
                                 component="img"
-                                src="/images/logo.png"
+                                src="/images/logo-shield-64.png"
                                 alt=""
                                 sx={{
                                     width: 28,
@@ -100,7 +118,10 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                     letterSpacing: '0.04em',
                                 }}
                             >
-                                LYRICSRAY
+                                Lyrics
+                                <Box component="span" sx={{ color: '#9d90ff' }}>
+                                    Ray
+                                </Box>
                             </Typography>
                         </Link>
 
@@ -170,7 +191,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                     display: { xs: 'none', sm: 'block' },
                 }}
             >
-                <Container maxWidth="md">
+                <Container maxWidth="lg">
                     <Box sx={{
                         display: 'flex',
                         justifyContent: 'center',

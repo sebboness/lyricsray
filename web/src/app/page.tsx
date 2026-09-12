@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
 
     // Fetch popular songs data on the server
-    const popularSongs = await getPopularSongs(5);
+    const popularSongs = await getPopularSongs(7);
 
     return (
         <HomeHero

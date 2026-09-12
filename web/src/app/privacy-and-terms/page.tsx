@@ -22,7 +22,7 @@ export default function PrivacyTerms() {
 
     return (
         <Box sx={{ minHeight: '100vh' }}>
-            <Container maxWidth="md" sx={{ py: 8 }}>
+            <Container maxWidth="lg" sx={{ py: 8 }}>
                 {/* Header */}
                 <Paper 
                     elevation={3} 
@@ -37,7 +37,7 @@ export default function PrivacyTerms() {
                         Privacy Policy & Terms of Service
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                        Last updated: August 5, 2026
+                        Last updated: September 12, 2026
                     </Typography>
                 </Paper>
 

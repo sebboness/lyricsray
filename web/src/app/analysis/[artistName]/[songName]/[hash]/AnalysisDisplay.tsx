@@ -30,7 +30,7 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
 
     return (
         <Box sx={{ minHeight: '100vh', py: 8 }}>
-            <Container maxWidth="md">
+            <Container maxWidth="lg">
                 {/* Back Button */}
                 <Box mb={3}>
                     <Button component={Link} href="/" startIcon={<ArrowBack />} variant="outlined">

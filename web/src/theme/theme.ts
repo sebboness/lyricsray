@@ -17,7 +17,7 @@ export const monoFamily = 'var(--font-jetbrains-mono), ui-monospace, SFMono-Regu
 /** Reusable style for the small mono eyebrow labels ("WHAT'S IN IT", "VERDICT"). */
 export const labelSx = {
     fontFamily: monoFamily,
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: '0.14em',
     textTransform: 'uppercase' as const,
 };
