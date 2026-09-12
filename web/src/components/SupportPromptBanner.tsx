@@ -28,7 +28,7 @@ export function SupportPromptBanner({ onDismiss }: SupportPromptBannerProps) {
                     pr: 6,
                     mb: 4,
                     borderRadius: 3,
-                    borderColor: 'rgba(255, 0, 255, 0.3)',
+                    borderColor: 'divider',
                     display: 'flex',
                     flexDirection: { xs: 'column', sm: 'row' },
                     alignItems: { xs: 'stretch', sm: 'center' },

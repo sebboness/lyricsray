@@ -31,7 +31,7 @@ export function PopularSongsClient({
     }
 
     return (
-        <Paper elevation={2} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+        <Paper sx={{ p: 3 }}>
             {showTitle && (
                 <Typography variant="h5" fontWeight="600" mb={2}>
                     {title}
@@ -43,8 +43,7 @@ export function PopularSongsClient({
                     <SongListRow
                         key={song.songKey}
                         song={song}
-                        index={index}
-                        total={songs.length}
+                        isLastRow={index === songs.length - 1}
                     />
                 ))}
             </List>
@@ -53,7 +52,7 @@ export function PopularSongsClient({
                 <Button
                     component={NextLink}
                     href={actionHref}
-                    variant="contained"
+                    variant="outlined"
                     endIcon={<ArrowForward />}
                 >
                     {actionLabel}

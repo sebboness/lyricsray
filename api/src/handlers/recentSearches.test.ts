@@ -46,7 +46,7 @@ describe('recentSearchesHandler', () => {
 
     await call();
 
-    expect(mockGetRecentAnalysesPage).toHaveBeenCalledWith(100, 'ANALYSIS', undefined);
+    expect(mockGetRecentAnalysesPage).toHaveBeenCalledWith(100, 'ANALYSIS', undefined, undefined);
   });
 
   it('excludes analyses submitted via raw lyrics (no song/artist name)', async () => {
@@ -92,7 +92,7 @@ describe('recentSearchesHandler', () => {
     const { body } = await call({ limit: '1' });
 
     expect(mockGetRecentAnalysesPage).toHaveBeenCalledTimes(2);
-    expect(mockGetRecentAnalysesPage).toHaveBeenNthCalledWith(2, 100, 'ANALYSIS', { songKey: 'invalid' });
+    expect(mockGetRecentAnalysesPage).toHaveBeenNthCalledWith(2, 100, 'ANALYSIS', { songKey: 'invalid' }, undefined);
     expect(body.data.songs).toHaveLength(1);
     expect(body.data.songs[0].songKey).toBe('valid');
   });
@@ -107,7 +107,7 @@ describe('recentSearchesHandler', () => {
       entityType: 'ANALYSIS',
       date: '2026-07-01',
       songKey: 'k',
-    });
+    }, undefined);
   });
 
   it('ignores a malformed cursor and starts from the beginning', async () => {
@@ -115,7 +115,23 @@ describe('recentSearchesHandler', () => {
 
     await call({ cursor: 'not-valid-base64url-json' });
 
-    expect(mockGetRecentAnalysesPage).toHaveBeenCalledWith(100, 'ANALYSIS', undefined);
+    expect(mockGetRecentAnalysesPage).toHaveBeenCalledWith(100, 'ANALYSIS', undefined, undefined);
+  });
+
+  it('passes a valid appropriate query param through to storage', async () => {
+    mockGetRecentAnalysesPage.mockResolvedValue({ items: [], lastEvaluatedKey: undefined });
+
+    await call({ appropriate: '2' });
+
+    expect(mockGetRecentAnalysesPage).toHaveBeenCalledWith(100, 'ANALYSIS', undefined, 2);
+  });
+
+  it('ignores an invalid appropriate query param', async () => {
+    mockGetRecentAnalysesPage.mockResolvedValue({ items: [], lastEvaluatedKey: undefined });
+
+    await call({ appropriate: '7' });
+
+    expect(mockGetRecentAnalysesPage).toHaveBeenCalledWith(100, 'ANALYSIS', undefined, undefined);
   });
 
   it('returns 500 when the DynamoDB call fails', async () => {

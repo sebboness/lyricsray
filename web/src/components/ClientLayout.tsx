@@ -1,77 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
     Box,
     Container,
     AppBar,
     Toolbar,
     Link,
-    Switch,
-    FormControlLabel,
     Typography,
+    Button,
+    BottomNavigation,
+    BottomNavigationAction,
+    useMediaQuery,
 } from '@mui/material';
-import DarkMode from '@mui/icons-material/DarkMode';
-import LightMode from '@mui/icons-material/LightMode';
 import { useTheme } from '@mui/material/styles';
-import { useTheme as useNextTheme } from 'next-themes';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import CropSquareIcon from '@mui/icons-material/CropSquare';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { TrackedExternalLink } from '@/components/TrackedExternalLink';
+import { trackEvent } from '@/util/trackEvent';
+import ScanField from '@/components/ScanField';
 
 interface ClientLayoutProps {
     children: React.ReactNode;
 }
 
-const bulletPoint = () => <Typography variant="body2" color="text.secondary">•</Typography>;
+const BOTTOM_NAV_HEIGHT = 68;
+
+const navLinks = [
+    { href: '/', label: 'Analyze' },
+    { href: '/recent-searches', label: 'Recent' },
+    { href: '/about', label: 'About' },
+];
+
+const bottomNavItems = [
+    { href: '/', label: 'Analyze', icon: <RadioButtonUncheckedIcon /> },
+    { href: '/recent-searches', label: 'Recent', icon: <CropSquareIcon /> },
+    { href: '/about', label: 'About', icon: <InfoOutlinedIcon /> },
+];
 
 export function ClientLayout({ children }: ClientLayoutProps) {
-    const theme = useTheme();
-    const { theme: currentTheme, setTheme, systemTheme } = useNextTheme();
-    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
-    const isHomePage = pathname === "/";
+    const router = useRouter();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isAdminArea = pathname === "/login" || pathname.startsWith("/admin");
-    const [showNavbarLogo, setShowNavbarLogo] = useState(!isHomePage);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Listen for header logo visibility changes only on Home page
-    useEffect(() => {
-        const handleHeaderLogoVisibility = (event: any) => {
-            // Show navbar logo when header logo is NOT visible
-            setShowNavbarLogo(!isHomePage || (isHomePage && !event.detail.visible));
-        };
-
-        window.addEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
-        
-        return () => {
-            window.removeEventListener('headerLogoVisibility', handleHeaderLogoVisibility);
-        };
-    }, [isHomePage]);
-
-    // Determine the effective theme (accounting for system preference)
-    const effectiveTheme = currentTheme === 'system' ? systemTheme : currentTheme;
-    const isDarkMode = effectiveTheme === 'dark';
-
-    const handleThemeToggle = (checked: boolean) => {
-        setTheme(checked ? 'dark' : 'light');
-    };
-
-    // Don't render theme-dependent UI until mounted to prevent hydration mismatch
-    if (!mounted) {
-        return (
-            <Box sx={{
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column'
-            }}>
-                {children}
-            </Box>
-        );
-    }
+    const activeBottomNavValue = bottomNavItems.find((item) =>
+        item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+    )?.href ?? false;
 
     // Admin area has its own chrome (AdminShell) — skip the public nav/footer entirely.
     if (isAdminArea) {
@@ -79,275 +56,210 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     }
 
     return (
-        <Box sx={{ 
-            minHeight: '100vh',
+        <Box sx={{
             position: 'relative',
+            zIndex: 0,
             overflow: 'hidden',
+            minHeight: '100vh',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
         }}>
-            {/* Animated background elements */}
+            <ScanField variant={isMobile ? 'mobile' : 'desktop'} />
+
+            {/* Dim logo watermark, top-right, fixed so it stays put while the page scrolls */}
             <Box
+                component="img"
+                src="/images/logo.svg"
+                alt=""
+                aria-hidden
                 sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `radial-gradient(circle at 20% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
-                                radial-gradient(circle at 80% 80%, rgba(0, 204, 255, 0.1) 0%, transparent 50%),
-                                radial-gradient(circle at 40% 60%, rgba(153, 51, 255, 0.05) 0%, transparent 50%)`,
-                    animation: 'pulse 4s ease-in-out infinite',
-                    '@keyframes pulse': {
-                        '0%, 100%': { opacity: 0.7 },
-                        '50%': { opacity: 1 },
-                    },
+                    position: 'fixed',
+                    top: { xs: 20, sm: 10, md: 0 },
+                    right: { xs: 0, sm: 10, md: 30 },
+                    width: { xs: 200, sm: 300, md: 420 },
+                    height: 'auto',
+                    opacity: 0.06,
+                    zIndex: -1,
+                    pointerEvents: 'none',
                 }}
             />
 
-            {/* Floating Navigation Bar */}
-            <AppBar 
-                position="fixed" 
-                sx={{ 
-                    background: theme.palette.background.paper,
-                    backdropFilter: 'blur(15px)',
-                    borderBottom: '1px solid rgba(255, 0, 255, 0.2)',
-                    boxShadow: '0 4px 20px rgba(255, 0, 255, 0.15)',
-                    zIndex: 1000,
-                    top: 0,
-                }}
-            >
-                <Container maxWidth="md">
-                    <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 0, sm: 2 } }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Link 
-                                href="/" 
-                                sx={{ 
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: '1rem',
-                                    fontWeight: 500,
-                                    transition: 'all 0.3s ease',
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
-                                }}
-                            >
-                                <Box
-                                    component="img"
-                                    src="/images/logo-textonly-64.png"
-                                    alt="LyricsRay"
-                                    sx={{
-                                        width: '100%',
-                                        maxHeight: '32px',
-                                        height: 'auto',
-                                        display: 'block',
-                                        margin: '0 auto',
-                                        transition: 'all 0.3s ease-in-out',
-                                        '&:hover': {
-                                            filter: isDarkMode  
-                                                ? 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.5))' 
-                                                : 'brightness(1.2) contrast(1.2) drop-shadow(0 3px 10px rgba(139, 0, 255, 0.3))',
-                                        },
-                                    }}
-                                />
-                            </Link>
-
-                            <Link 
-                                href="/about" 
-                                sx={{ 
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: { xs: '0.85rem', sm: '1rem' },
-                                    fontWeight: 500,
-                                    transition: 'color 0.3s ease',
-                                    '&:hover': {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
-                                }}
-                            >
-                                About
-                            </Link>
-
-                            <Link
-                                href="/privacy-and-terms"
+            {/* Header */}
+            <AppBar position="sticky" sx={{ top: 0 }}>
+                <Container maxWidth="lg">
+                    <Toolbar sx={{ justifyContent: 'space-between', gap: 2, px: { xs: 0 } }}>
+                        <Link
+                            href="/"
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                color: 'text.primary',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            <Box
+                                component="img"
+                                src="/images/logo-shield-64.png"
+                                alt=""
                                 sx={{
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: { xs: '0.85rem', sm: '1rem' },
-                                    fontWeight: 500,
-                                    transition: 'color 0.3s ease',
-                                    '&:hover': {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'top',
+                                    flexShrink: 0,
                                 }}
-                            >
-                                Privacy
-                            </Link>
-
-                            <Link
-                                href="/recent-searches"
+                            />
+                            <Typography
                                 sx={{
-                                    display: { xs: 'none', sm: 'inline' },
-                                    color: theme.palette.text.primary,
-                                    textDecoration: 'none',
-                                    fontSize: { xs: '0.85rem', sm: '1rem' },
-                                    fontWeight: 500,
-                                    transition: 'color 0.3s ease',
-                                    '&:hover': {
-                                        color: theme.palette.primary.main,
-                                    },
-                                    opacity: showNavbarLogo ? 1 : 0,
-                                    visibility: showNavbarLogo ? 'visible' : 'hidden',
-                                    transform: showNavbarLogo ? 'translateY(0)' : 'translateY(-10px)',
+                                    fontWeight: 700,
+                                    fontSize: '0.9375rem',
+                                    letterSpacing: '0.04em',
                                 }}
                             >
-                                Recent Searches
-                            </Link>
+                                Lyrics
+                                <Box component="span" sx={{ color: '#9d90ff' }}>
+                                    Ray
+                                </Box>
+                            </Typography>
+                        </Link>
+
+                        <Box
+                            sx={{
+                                display: { xs: 'none', sm: 'flex' },
+                                alignItems: 'center',
+                                gap: 3,
+                                flex: 1,
+                                ml: 2,
+                            }}
+                        >
+                            {navLinks.map((navLink) => {
+                                const isActive = navLink.href === '/'
+                                    ? pathname === '/'
+                                    : pathname.startsWith(navLink.href);
+
+                                return (
+                                    <Link
+                                        key={navLink.href}
+                                        href={navLink.href}
+                                        sx={{
+                                            color: isActive ? 'text.primary' : 'text.secondary',
+                                            fontWeight: isActive ? 600 : 500,
+                                            fontSize: '0.875rem',
+                                            textDecoration: isActive ? 'underline' : 'none',
+                                            textUnderlineOffset: '6px',
+                                            '&:hover': { color: 'text.primary' },
+                                        }}
+                                    >
+                                        {navLink.label}
+                                    </Link>
+                                );
+                            })}
                         </Box>
 
-                        <FormControlLabel
-                            title={`Turn on ${ !mounted ||isDarkMode  ? 'Light' : 'Dark'} mode`}
-                            control={
-                                <Switch
-                                    checked={isDarkMode }
-                                    onChange={(e) => handleThemeToggle(e.target.checked)}
-                                    sx={{
-                                        '& .MuiSwitch-thumb': {
-                                            backgroundColor: isDarkMode ? '#8b00ff' : '#ff00ff',
-                                        },
-                                        '& .MuiSwitch-track': {
-                                            backgroundColor: isDarkMode ? 'rgba(139, 0, 255, 0.3)' : 'rgba(255, 0, 255, 0.3)',
-                                        },
-                                    }}
-                                />
-                            }
-                            label={
-                                <Box sx={{
-                                        color: theme.palette.text.primary,
-                                        display: 'flex',
-                                        fontSize: { xs: '0.85rem', sm: '1rem' },
-                                        alignItems: 'center',
-                                        gap: 1 
-                                    }}>
-                                    {isDarkMode ? <DarkMode /> : <LightMode sx={{ color: '#ffd440' }} />}
-                                    {isDarkMode ? 'Dark' : 'Light'}
-                                </Box>
-                            }
-                        />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                    trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'header' });
+                                    window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                                }}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                            >
+                                Support on Ko-fi
+                            </Button>
+                        </Box>
                     </Toolbar>
                 </Container>
             </AppBar>
 
-            {/* Main Content with padding to account for fixed navbar */}
-            <Box sx={{ flex: 1, pt: 0, my: 4 }}>
+            {/* Main Content */}
+            <Box sx={{ flex: 1, pb: { xs: `${BOTTOM_NAV_HEIGHT}px`, sm: 0 } }}>
                 {children}
             </Box>
 
             {/* Footer */}
-            <Box 
+            <Box
                 component="footer"
-                sx={{ 
+                sx={{
                     mt: 'auto',
-                    background: 'rgba(26, 26, 46, 0.9)',
-                    backdropFilter: 'blur(10px)',
-                    borderTop: '1px solid rgba(255, 0, 255, 0.2)',
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
                     py: 3,
-                    position: 'relative',
-                    zIndex: 20
+                    display: { xs: 'none', sm: 'block' },
                 }}
             >
-                <Container maxWidth="md">
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
+                <Container maxWidth="lg">
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
                         alignItems: 'center',
-                        gap: 4,
-                        flexWrap: 'wrap'
+                        flexWrap: 'wrap',
+                        gap: 1,
                     }}>
-                        <Link 
-                            href="/about"
-                            sx={{ 
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.primary.main,
-                                }
-                            }}
-                        >
+                        <Link href="/about" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                             About
                         </Link>
-                        <Link 
-                            href="/privacy-and-terms"
-                            sx={{ 
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.primary.main,
-                                }
-                            }}
-                        >
+                        <Typography color="text.secondary">·</Typography>
+                        <Link href="/privacy-and-terms" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                             Privacy &amp; Terms
                         </Link>
-                        {bulletPoint()}
+                        <Typography color="text.secondary">·</Typography>
                         <TrackedExternalLink
                             href="https://www.hexonite.net/sebastian"
                             linkTarget="hexonite"
                             linkContext="footer"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.secondary.main,
-                                }
-                            }}
+                            color="text.secondary"
+                            sx={{ fontSize: '0.875rem' }}
                         >
                             Created by Sebastian Stefaniuk
                         </TrackedExternalLink>
-                        {bulletPoint()}
+                        <Typography color="text.secondary">·</Typography>
                         <TrackedExternalLink
                             href={KO_FI_LINK}
                             linkTarget="kofi-profile"
                             linkContext="footer"
-                            sx={{
-                                color: theme.palette.text.secondary,
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                transition: 'color 0.3s ease',
-                                '&:hover': {
-                                    color: theme.palette.secondary.main,
-                                }
-                            }}
+                            color="text.secondary"
+                            sx={{ fontSize: '0.875rem' }}
                         >
-                            ☕ Help keep this free
+                            Help keep this free
                         </TrackedExternalLink>
                     </Box>
-                    <Typography 
-                        variant="caption" 
-                        color="text.secondary" 
-                        sx={{ 
-                            display: 'block',
-                            textAlign: 'center',
-                            mt: 2,
-                            opacity: 0.7
-                        }}
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', textAlign: 'center', mt: 2 }}
                     >
                         © {new Date().getFullYear()} LyricsRay. AI-powered lyric analysis for child safety.
                     </Typography>
                 </Container>
             </Box>
+
+            {/* Mobile bottom navigation */}
+            <BottomNavigation
+                showLabels
+                value={activeBottomNavValue}
+                onChange={(_, value) => router.push(value)}
+                sx={{
+                    display: { xs: 'flex', sm: 'none' },
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: (theme) => theme.zIndex.appBar,
+                }}
+            >
+                {bottomNavItems.map((item) => (
+                    <BottomNavigationAction
+                        key={item.href}
+                        label={item.label}
+                        icon={item.icon}
+                        value={item.href}
+                    />
+                ))}
+            </BottomNavigation>
         </Box>
     );
 }

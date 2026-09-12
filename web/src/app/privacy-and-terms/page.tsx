@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
     Box,
     Container,
@@ -20,32 +19,10 @@ import { useTheme } from '@mui/material/styles';
 
 export default function PrivacyTerms() {
     const theme = useTheme();
-    const [scrollY, setScrollY] = useState(0);
-
-    useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     return (
-        <Box sx={{ position: 'relative', minHeight: '100vh' }}>
-            {/* Subtle animated background */}
-            <Box
-                sx={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: `radial-gradient(circle at 10% 20%, rgba(255, 0, 255, 0.05) 0%, transparent 50%),
-                               radial-gradient(circle at 90% 80%, rgba(0, 204, 255, 0.05) 0%, transparent 50%)`,
-                    transform: `translateY(${scrollY * 0.1}px)`,
-                    zIndex: 1,
-                }}
-            />
-
-            <Container maxWidth="md" sx={{ position: 'relative', zIndex: 10, py: 8 }}>
+        <Box sx={{ minHeight: '100vh' }}>
+            <Container maxWidth="lg" sx={{ py: 8 }}>
                 {/* Header */}
                 <Paper 
                     elevation={3} 
@@ -60,7 +37,7 @@ export default function PrivacyTerms() {
                         Privacy Policy & Terms of Service
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                        Last updated: August 5, 2026
+                        Last updated: September 12, 2026
                     </Typography>
                 </Paper>
 
@@ -94,15 +71,6 @@ export default function PrivacyTerms() {
                         necessary to provide our service:
                     </Typography>
                     <List>
-                        <ListItem>
-                            <ListItemIcon>
-                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Theme preference"
-                                secondary="Your light/dark mode preference is stored locally in your browser using localStorage. This data never leaves your device."
-                            />
-                        </ListItem>
                         <ListItem>
                             <ListItemIcon>
                                 <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />

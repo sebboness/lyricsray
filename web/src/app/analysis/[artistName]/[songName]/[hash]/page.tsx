@@ -94,7 +94,7 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
         <>
             <AnalysisDisplay result={result} />
             {randomSongs.length > 0 && (
-                <Container maxWidth="md" sx={{ pb: 4 }}>
+                <Container maxWidth="lg" sx={{ pb: 4 }}>
                     <PopularSongsClient title="More analyzed lyrics" showTitle songs={randomSongs} />
                 </Container>
             )}
