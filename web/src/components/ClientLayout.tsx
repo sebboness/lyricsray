@@ -14,8 +14,8 @@ import {
     useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import CropSquareIcon from '@mui/icons-material/CropSquare';
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { TrackedExternalLink } from '@/components/TrackedExternalLink';
@@ -35,8 +35,8 @@ const navLinks = [
 ];
 
 const bottomNavItems = [
-    { href: '/', label: 'Analyze', icon: <RadioButtonUncheckedIcon /> },
-    { href: '/recent-searches', label: 'Recent', icon: <CropSquareIcon /> },
+    { href: '/', label: 'Analyze', icon: <DocumentScannerIcon /> },
+    { href: '/recent-searches', label: 'Recent', icon: <StarBorderIcon /> },
     { href: '/about', label: 'About', icon: <InfoOutlinedIcon /> },
 ];
 
@@ -56,17 +56,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     }
 
     return (
-        <Box sx={{
-            position: 'relative',
-            zIndex: 0,
-            overflow: 'hidden',
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-        }}>
-            <ScanField variant={isMobile ? 'mobile' : 'desktop'} />
-
-            {/* Dim logo watermark, top-right, fixed so it stays put while the page scrolls */}
+        <>
+            {/* Dim logo watermark, top-right, fixed so it stays put while the page scrolls.
+                Rendered outside the overflow:hidden shell below — an overflow:hidden ancestor
+                clips fixed-position descendants to its own box in every major browser, which
+                would otherwise make this disappear/stop tracking on pages taller than one screen. */}
             <Box
                 component="img"
                 src="/images/logo.svg"
@@ -84,182 +78,213 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                 }}
             />
 
-            {/* Header */}
-            <AppBar position="sticky" sx={{ top: 0 }}>
-                <Container maxWidth="lg">
-                    <Toolbar sx={{ justifyContent: 'space-between', gap: 2, px: { xs: 0 } }}>
-                        <Link
-                            href="/"
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                color: 'text.primary',
-                                textDecoration: 'none',
-                            }}
-                        >
+            <Box sx={{
+                position: 'relative',
+                zIndex: 0,
+                overflow: 'hidden',
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+            }}>
+                <ScanField variant={isMobile ? 'mobile' : 'desktop'} />
+
+                {/* Header */}
+                <AppBar position="sticky" sx={{ top: 0 }}>
+                    <Container maxWidth="lg">
+                        <Toolbar sx={{ justifyContent: 'space-between', gap: 2, px: { xs: 0 } }}>
+                            <Link
+                                href="/"
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    color: 'text.primary',
+                                    textDecoration: 'none',
+                                }}
+                            >
+                                <Box
+                                    component="img"
+                                    src="/images/logo-shield-64.png"
+                                    alt=""
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        objectPosition: 'top',
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontSize: '0.9375rem',
+                                        letterSpacing: '0.04em',
+                                    }}
+                                >
+                                    Lyrics
+                                    <Box component="span" sx={{ color: '#9d90ff' }}>
+                                        Ray
+                                    </Box>
+                                </Typography>
+                            </Link>
+
                             <Box
-                                component="img"
-                                src="/images/logo-shield-64.png"
-                                alt=""
                                 sx={{
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: '50%',
-                                    objectFit: 'cover',
-                                    objectPosition: 'top',
-                                    flexShrink: 0,
-                                }}
-                            />
-                            <Typography
-                                sx={{
-                                    fontWeight: 700,
-                                    fontSize: '0.9375rem',
-                                    letterSpacing: '0.04em',
+                                    display: { xs: 'none', sm: 'flex' },
+                                    alignItems: 'center',
+                                    gap: 3,
+                                    flex: 1,
+                                    ml: 2,
                                 }}
                             >
-                                Lyrics
-                                <Box component="span" sx={{ color: '#9d90ff' }}>
-                                    Ray
-                                </Box>
-                            </Typography>
-                        </Link>
+                                {navLinks.map((navLink) => {
+                                    const isActive = navLink.href === '/'
+                                        ? pathname === '/'
+                                        : pathname.startsWith(navLink.href);
 
-                        <Box
-                            sx={{
-                                display: { xs: 'none', sm: 'flex' },
-                                alignItems: 'center',
-                                gap: 3,
-                                flex: 1,
-                                ml: 2,
-                            }}
-                        >
-                            {navLinks.map((navLink) => {
-                                const isActive = navLink.href === '/'
-                                    ? pathname === '/'
-                                    : pathname.startsWith(navLink.href);
+                                    return (
+                                        <Link
+                                            key={navLink.href}
+                                            href={navLink.href}
+                                            sx={{
+                                                color: isActive ? 'text.primary' : 'text.secondary',
+                                                fontWeight: isActive ? 600 : 500,
+                                                fontSize: '0.875rem',
+                                                textDecoration: isActive ? 'underline' : 'none',
+                                                textUnderlineOffset: '6px',
+                                                '&:hover': { color: 'text.primary' },
+                                            }}
+                                        >
+                                            {navLink.label}
+                                        </Link>
+                                    );
+                                })}
+                            </Box>
 
-                                return (
-                                    <Link
-                                        key={navLink.href}
-                                        href={navLink.href}
-                                        sx={{
-                                            color: isActive ? 'text.primary' : 'text.secondary',
-                                            fontWeight: isActive ? 600 : 500,
-                                            fontSize: '0.875rem',
-                                            textDecoration: isActive ? 'underline' : 'none',
-                                            textUnderlineOffset: '6px',
-                                            '&:hover': { color: 'text.primary' },
-                                        }}
-                                    >
-                                        {navLink.label}
-                                    </Link>
-                                );
-                            })}
-                        </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => {
+                                        trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'header' });
+                                        window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                                    }}
+                                    sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                                >
+                                    Support on Ko-fi
+                                </Button>
+                            </Box>
+                        </Toolbar>
+                    </Container>
+                </AppBar>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => {
-                                    trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'header' });
-                                    window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
-                                }}
-                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                {/* Main Content */}
+                <Box sx={{ flex: 1, pb: { xs: `${BOTTOM_NAV_HEIGHT}px`, sm: 0 } }}>
+                    {children}
+                </Box>
+
+                {/* Footer */}
+                <Box
+                    component="footer"
+                    sx={{
+                        mt: 'auto',
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
+                        pt: 3,
+                        pb: { xs: `${BOTTOM_NAV_HEIGHT + 24}px`, sm: 3 },
+                    }}
+                >
+                    <Container maxWidth="lg">
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            rowGap: 0.5,
+                            columnGap: 1,
+                            textAlign: 'center',
+                        }}>
+                            <Link
+                                href="/about"
+                                color="text.secondary"
+                                sx={{ fontSize: '0.875rem', '&::after': { content: '"·"', ml: 1, color: 'text.secondary' } }}
                             >
-                                Support on Ko-fi
-                            </Button>
+                                About
+                            </Link>
+                            <Link
+                                href="/privacy-and-terms"
+                                color="text.secondary"
+                                sx={{ fontSize: '0.875rem', '&::after': { content: '"·"', ml: 1, color: 'text.secondary' } }}
+                            >
+                                Privacy &amp; Terms
+                            </Link>
+                            <TrackedExternalLink
+                                href="https://www.hexonite.net/sebastian"
+                                linkTarget="hexonite"
+                                linkContext="footer"
+                                color="text.secondary"
+                                sx={{
+                                    fontSize: '0.875rem',
+                                    display: { xs: 'none', sm: 'inline' },
+                                    '&::after': { content: '"·"', ml: 1, color: 'text.secondary' },
+                                }}
+                            >
+                                Thoughtfully created by Sebastian Stefaniuk
+                            </TrackedExternalLink>
+                            <TrackedExternalLink
+                                href={KO_FI_LINK}
+                                linkTarget="kofi-profile"
+                                linkContext="footer"
+                                color="text.secondary"
+                                sx={{ fontSize: '0.875rem' }}
+                            >
+                                Help keep this free
+                            </TrackedExternalLink>
                         </Box>
-                    </Toolbar>
-                </Container>
-            </AppBar>
-
-            {/* Main Content */}
-            <Box sx={{ flex: 1, pb: { xs: `${BOTTOM_NAV_HEIGHT}px`, sm: 0 } }}>
-                {children}
-            </Box>
-
-            {/* Footer */}
-            <Box
-                component="footer"
-                sx={{
-                    mt: 'auto',
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
-                    py: 3,
-                    display: { xs: 'none', sm: 'block' },
-                }}
-            >
-                <Container maxWidth="lg">
-                    <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: 1,
-                    }}>
-                        <Link href="/about" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                            About
-                        </Link>
-                        <Typography color="text.secondary">·</Typography>
-                        <Link href="/privacy-and-terms" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                            Privacy &amp; Terms
-                        </Link>
-                        <Typography color="text.secondary">·</Typography>
                         <TrackedExternalLink
                             href="https://www.hexonite.net/sebastian"
                             linkTarget="hexonite"
                             linkContext="footer"
                             color="text.secondary"
-                            sx={{ fontSize: '0.875rem' }}
+                            sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.875rem', textAlign: 'center', mt: 0.5 }}
                         >
-                            Created by Sebastian Stefaniuk
+                            Thoughtfully created by Sebastian Stefaniuk
                         </TrackedExternalLink>
-                        <Typography color="text.secondary">·</Typography>
-                        <TrackedExternalLink
-                            href={KO_FI_LINK}
-                            linkTarget="kofi-profile"
-                            linkContext="footer"
+                        <Typography
+                            variant="caption"
                             color="text.secondary"
-                            sx={{ fontSize: '0.875rem' }}
+                            sx={{ display: 'block', textAlign: 'center', mt: 2 }}
                         >
-                            Help keep this free
-                        </TrackedExternalLink>
-                    </Box>
-                    <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', textAlign: 'center', mt: 2 }}
-                    >
-                        © {new Date().getFullYear()} LyricsRay. AI-powered lyric analysis for child safety.
-                    </Typography>
-                </Container>
-            </Box>
+                            © {new Date().getFullYear()} LyricsRay. AI-powered lyric analysis for child safety.
+                        </Typography>
+                    </Container>
+                </Box>
 
-            {/* Mobile bottom navigation */}
-            <BottomNavigation
-                showLabels
-                value={activeBottomNavValue}
-                onChange={(_, value) => router.push(value)}
-                sx={{
-                    display: { xs: 'flex', sm: 'none' },
-                    position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: (theme) => theme.zIndex.appBar,
-                }}
-            >
-                {bottomNavItems.map((item) => (
-                    <BottomNavigationAction
-                        key={item.href}
-                        label={item.label}
-                        icon={item.icon}
-                        value={item.href}
-                    />
-                ))}
-            </BottomNavigation>
-        </Box>
+                {/* Mobile bottom navigation */}
+                <BottomNavigation
+                    showLabels
+                    value={activeBottomNavValue}
+                    onChange={(_, value) => router.push(value)}
+                    sx={{
+                        display: { xs: 'flex', sm: 'none' },
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: (theme) => theme.zIndex.appBar,
+                    }}
+                >
+                    {bottomNavItems.map((item) => (
+                        <BottomNavigationAction
+                            key={item.href}
+                            label={item.label}
+                            icon={item.icon}
+                            value={item.href}
+                        />
+                    ))}
+                </BottomNavigation>
+            </Box>
+        </>
     );
 }
