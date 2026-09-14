@@ -92,9 +92,20 @@ describe('ArtistLandingPage', () => {
 });
 
 describe('generateMetadata', () => {
-    it('returns a title with the decoded artist name', async () => {
+    it('returns a title with the decoded artist name when no analyses are found', async () => {
+        mockGetArtistAnalyses.mockResolvedValue([]);
+
         const metadata = await generateMetadata({ params: Promise.resolve({ artistName: 'Taylor-Swift' }) });
         expect(metadata.title).toContain('Taylor Swift');
         expect(metadata.title).toContain('LyricsRay');
+    });
+
+    it('uses the fetched artist name and includes a data-derived description when analyses exist', async () => {
+        mockGetArtistAnalyses.mockResolvedValue([makeSong('Taylor Swift'), makeSong('Taylor Swift')]);
+
+        const metadata = await generateMetadata({ params: Promise.resolve({ artistName: 'Taylor-Swift' }) });
+        expect(metadata.title).toContain('Taylor Swift');
+        expect(metadata.description).toContain('2 songs');
+        expect(metadata.openGraph.images[0].url).toContain('logo-256.png');
     });
 });

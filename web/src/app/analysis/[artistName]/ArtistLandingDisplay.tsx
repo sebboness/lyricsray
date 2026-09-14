@@ -6,52 +6,12 @@ import { Box, Button, Container, Link, List, Paper, Stack, ToggleButton, ToggleB
 import HomeIcon from '@mui/icons-material/Home';
 import { EyebrowLabel } from '@/components/EyebrowLabel';
 import { SongListRow, SongListRowItem } from '@/components/SongListRow';
-import { getAppropriatenessDisplay, getShortAgeDisplay } from '@/util/displayHelpers';
+import { getShortAgeDisplay } from '@/util/displayHelpers';
+import { buildAgeBuckets, buildArtistSummary } from '@/util/artistSummary';
 
 interface ArtistLandingDisplayProps {
     artistName: string;
     songs: SongListRowItem[];
-}
-
-interface AgeBucket {
-    label: string;
-    count: number;
-    color: string;
-}
-
-/** Groups songs by their short age label, coloring each bucket by its most common verdict. */
-function buildAgeBuckets(songs: SongListRowItem[]): AgeBucket[] {
-    const byLabel = new Map<string, Map<number, number>>();
-
-    for (const song of songs) {
-        const label = getShortAgeDisplay(song.recommendedAge);
-        if (!byLabel.has(label)) byLabel.set(label, new Map());
-        const appropriateCounts = byLabel.get(label)!;
-        appropriateCounts.set(song.appropriate, (appropriateCounts.get(song.appropriate) ?? 0) + 1);
-    }
-
-    const buckets: AgeBucket[] = Array.from(byLabel.entries()).map(([label, appropriateCounts]) => {
-        const [mostCommonAppropriate] = Array.from(appropriateCounts.entries()).sort((a, b) => b[1] - a[1])[0];
-        const count = Array.from(appropriateCounts.values()).reduce((sum, n) => sum + n, 0);
-        const display = getAppropriatenessDisplay(mostCommonAppropriate);
-        return { label, count, color: display.color };
-    });
-
-    return buckets.sort((a, b) => {
-        if (a.label === 'ALL') return -1;
-        if (b.label === 'ALL') return 1;
-        return parseInt(a.label, 10) - parseInt(b.label, 10);
-    });
-}
-
-/** A short, honest, data-derived summary — not a fabricated claim. */
-function buildSummary(songs: SongListRowItem[]): string {
-    const total = songs.length;
-    const safeCount = songs.filter((s) => s.appropriate === 1).length;
-
-    if (safeCount === total) return `All ${total} analyzed songs are safe for all ages.`;
-    if (safeCount === 0) return `None of the ${total} analyzed songs are rated safe for all ages — worth a listen yourself first.`;
-    return `${safeCount} of ${total} analyzed songs are safe for all ages; the rest are worth a listen first.`;
 }
 
 export function ArtistLandingDisplay({ artistName, songs }: ArtistLandingDisplayProps) {
@@ -79,7 +39,7 @@ export function ArtistLandingDisplay({ artistName, songs }: ArtistLandingDisplay
                     </Typography>
 
                     <Paper sx={{ p: 3, mb: 3 }}>
-                        <Typography sx={{ mb: 2 }}>{buildSummary(songs)}</Typography>
+                        <Typography sx={{ mb: 2 }}>{buildArtistSummary(songs)}</Typography>
 
                         <EyebrowLabel sx={{ display: 'block', mb: 1 }}>Age spread</EyebrowLabel>
 

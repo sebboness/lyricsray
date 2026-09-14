@@ -15,6 +15,8 @@ export interface SongListRowItem {
     themes: string[];
     appropriate: number;
     date: string;
+    /** Not shown in this row — used for SEO/social-share images on the artist page. */
+    thumbnailUrl?: string;
 }
 
 interface SongListRowProps {

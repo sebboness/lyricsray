@@ -1,0 +1,529 @@
+'use client';
+
+import {
+    Box,
+    Container,
+    Typography,
+    Paper,
+    Card,
+    CardContent,
+    Grid,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Alert,
+    Divider,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Button,
+} from '@mui/material';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import Security from '@mui/icons-material/Security';
+import Psychology from '@mui/icons-material/Psychology';
+import CheckCircle from '@mui/icons-material/CheckCircle';
+import AutoAwesome from '@mui/icons-material/AutoAwesome';
+import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
+import School from '@mui/icons-material/School';
+import Visibility from '@mui/icons-material/Visibility';
+import { useTheme } from '@mui/material/styles';
+import { KO_FI_LINK } from '@/util/supportDev';
+import { trackEvent } from '@/util/trackEvent';
+
+const researchItems = [
+    {
+        title: 'Music influences mood, identity, and social behavior',
+        summary:
+            'Research from the American Academy of Pediatrics highlights how music plays an important role in emotional regulation, identity formation, and social development.',
+        sourceLabel:
+            'Impact of Music, Music Lyrics, and Music Videos on Children and Youth (Pediatrics, 2009)',
+        url: 'https://publications.aap.org/pediatrics/article/124/5/1488/72119/Impact-of-Music-Music-Lyrics-and-Music-Videos-on',
+    },
+    {
+        title: 'Exposure to certain lyrical themes is linked to behavior patterns',
+        summary:
+            'A longitudinal study found that adolescents exposed to degrading sexual lyrics were more likely to initiate and progress in sexual behavior over time (association, not causation).',
+        sourceLabel:
+            'Exposure to Degrading Versus Nondegrading Music Lyrics and Sexual Behavior Among Youth (Pediatrics, 2006)',
+        url: 'https://publications.aap.org/pediatrics/article/118/2/e430/68914/Exposure-to-Degrading-Versus-Nondegrading-Music',
+    },
+    {
+        title: 'Content matters, especially repeated exposure',
+        summary:
+            'Research suggests repeated exposure to lyrics involving sex, drugs, or violence can shape attitudes and influence what young listeners perceive as normal or acceptable.',
+        sourceLabel:
+            'AAP Policy Statement on Music, Music Lyrics, and Music Videos',
+        url: 'https://publications.aap.org/pediatrics/article/124/5/1488/72119/Impact-of-Music-Music-Lyrics-and-Music-Videos-on',
+    },
+    {
+        title: 'Younger listeners may misinterpret lyrical content',
+        summary:
+            'Developmental psychology research shows children and pre-teens may not fully understand or may misinterpret lyrical meaning due to cognitive development stages.',
+        sourceLabel:
+            'Children\'s comprehension of media messages (Journal of Early Adolescence)',
+        url: 'https://journals.sagepub.com/doi/10.1177/0272431687073007',
+    },
+];
+
+export function AboutContent() {
+    const theme = useTheme();
+
+    return (
+        <Box sx={{ minHeight: '100vh' }}>
+            <Container maxWidth="lg" sx={{ py: 8 }}>
+                {/* Header Section */}
+                <Paper 
+                    elevation={3} 
+                    sx={{ 
+                        p: 3, 
+                        mb: 3, 
+                        borderRadius: 3,
+                        textAlign: 'center'
+                    }}
+                >
+                    <Typography variant="h1" sx={{ mb: 0, fontSize: { xs: '2.5rem', md: '3rem' } }}>
+                        About
+                    </Typography>
+                </Paper>
+
+                {/* Mission Section */}
+                <Card sx={{ mb: 4, overflow: 'visible' }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                The Mission
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>
+                            LyricsRay was created to empower parents with the tools they need to make informed decisions
+                            about the media their children consume. In today&apos;s digital age, music is more accessible 
+                            than ever, but not all content is suitable for young listeners. Our mission is to shed light 
+                            on lyrical themes that may not be immediately apparent, helping parents navigate the complex 
+                            landscape of modern music.
+                        </Typography>
+                    </CardContent>
+                </Card>
+
+                {/* Technology Section */}
+                <Paper elevation={2} sx={{ p: 4, mb: 4, borderRadius: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h4" fontWeight="600">
+                            The Technology Behind Our Analysis
+                        </Typography>
+                    </Box>
+                    <Typography variant="body1" sx={{ mb: 4, fontSize: '1.1rem' }}>
+                        LyricsRay leverages AI, an advanced artificial intelligence system, 
+                        to perform comprehensive lyrical analysis. Our AI-powered approach examines songs across 
+                        multiple dimensions:
+                    </Typography>
+
+                    {/* Content Analysis Expandable Cards */}
+                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Accordion expanded={true}>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <AutoAwesome sx={{ color: theme.palette.primary.main }} />
+                                        <Typography variant="h6" fontWeight="600">
+                                            Content Analysis
+                                        </Typography>
+                                    </Box>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <List dense>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Explicit Language Detection"
+                                                secondary="Identifies profanity, vulgar expressions, and inappropriate language"
+                                            />
+                                        </ListItem>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Mature Theme Recognition"
+                                                secondary="Analyzes content for references to violence, substance abuse, sexual content, and other adult themes"
+                                            />
+                                        </ListItem>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Contextual Understanding"
+                                                secondary="Goes beyond keyword matching to understand meaning, metaphors, and implied content"
+                                            />
+                                        </ListItem>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Cultural Sensitivity"
+                                                secondary="Recognizes potentially offensive or inappropriate cultural references"
+                                            />
+                                        </ListItem>
+                                    </List>
+                                </AccordionDetails>
+                            </Accordion>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Accordion expanded={true}>
+                                <AccordionSummary expandIcon={<ExpandMore />}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <School sx={{ color: theme.palette.secondary.main }} />
+                                        <Typography variant="h6" fontWeight="600">
+                                            Age-Appropriate Recommendations
+                                        </Typography>
+                                    </Box>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Typography variant="body2" sx={{ mb: 2 }}>
+                                        Our system provides age-based recommendations by evaluating the complexity and 
+                                        maturity of lyrical content, considering factors such as:
+                                    </Typography>
+                                    <List dense>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Emotional maturity required"
+                                            />
+                                        </ListItem>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Psychological impact"
+                                            />
+                                        </ListItem>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Educational value"
+                                            />
+                                        </ListItem>
+                                        <ListItem>
+                                            <ListItemIcon>
+                                                <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary="Potentially harmful content"
+                                            />
+                                        </ListItem>
+                                    </List>
+                                </AccordionDetails>
+                            </Accordion>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* How It Works Section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                How It Works
+                            </Typography>
+                        </Box>
+                        <Grid container spacing={3}>
+                            {[
+                                {
+                                    title: 'Song Analysis',
+                                    description: 'When you search for a song or paste lyrics, our AI system processes the text using natural language understanding',
+                                    icon: <Visibility />
+                                },
+                                {
+                                    title: 'Multi-Factor Evaluation',
+                                    description: 'The system examines language, themes, context, and cultural references',
+                                    icon: <Psychology />
+                                },
+                                {
+                                    title: 'Risk Assessment',
+                                    description: 'Content is evaluated for potential concerns across various categories',
+                                    icon: <Security />
+                                },
+                                {
+                                    title: 'Age Recommendations',
+                                    description: 'Based on the analysis, we provide suggested minimum age ranges and detailed explanations',
+                                    icon: <FamilyRestroom />
+                                }
+                            ].map((step, index) => (
+                                <Grid size={{ xs: 12, sm: 6 }} key={index}>
+                                    <Card
+                                        sx={{
+                                            height: '100%',
+                                            transition: 'transform 0.2s ease-in-out',
+                                            '&:hover': {
+                                                transform: 'translateY(-4px)',
+                                            },
+                                        }}
+                                    >
+                                        <CardContent>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                {step.icon}
+                                                <Typography variant="h6" fontWeight="600" sx={{ ml: 1 }}>
+                                                    {step.title}
+                                                </Typography>
+                                            </Box>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {step.description}
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </CardContent>
+                </Card>
+
+                {/* Why This Matters Section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Why This Matters
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            Modern media moves fast, and keeping up with every song, artist, and trend can be 
+                            overwhelming for parents. Many popular songs contain mature themes wrapped in catchy 
+                            melodies, making potentially inappropriate content appealing to young listeners. LyricsRay 
+                            helps bridge this gap by:
+                        </Typography>
+                        <Grid container spacing={2}>
+                            {[
+                                'Revealing hidden or subtle mature themes in popular music',
+                                'Providing objective analysis free from marketing influence',
+                                'Offering age-appropriate guidance based on content analysis',
+                                'Empowering parents to make informed decisions quickly and efficiently'
+                            ].map((benefit, index) => (
+                                <Grid size={{ xs: 12, sm: 6 }} key={index}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <CheckCircle sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                                        <Typography variant="body2">
+                                            {benefit}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </CardContent>
+                </Card>
+
+                {/* Inspired by research section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Why LyricsRay exists
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            As a parent, I started wondering how much the lyrics in today’s music actually matter for
+                            kids. After digging into research from pediatric and behavioral experts, one thing became clear:
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem', fontWeight: 600 }}>
+                            Music itself isn’t the problem — but lyrical content can play a meaningful role in how kids
+                            think, feel, and develop.
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            LyricsRay was built to help parents better understand that content and make informed
+                            decisions for their own families.
+                        </Typography>
+                        
+                        <Divider sx={{ my: 3 }} />
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                What research suggests
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            Here are a few research-backed insights that shaped the idea behind LyricsRay:
+                        </Typography>
+
+                        <Grid container spacing={3}>
+                            {researchItems.map((item, index) => (
+                                <Grid size={{ xs: 12 }} key={index}>
+                                    <Card
+                                        sx={{
+                                            transition: 'transform 0.2s ease-in-out',
+                                            '&:hover': {
+                                                transform: 'translateY(-2px)',
+                                            },
+                                        }}
+                                    >
+                                        <CardContent>
+                                            <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                                                {item.title}
+                                            </Typography>
+
+                                            <Typography
+                                                variant="body2"
+                                                sx={{ mb: 2, fontSize: '1rem', lineHeight: 1.6 }}
+                                                color="text.secondary"
+                                            >
+                                                {item.summary}
+                                            </Typography>
+
+                                            <Typography variant="caption" color="text.secondary">
+                                                Source:{' '}
+                                                <a
+                                                    href={item.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        color: theme.palette.primary.main,
+                                                        textDecoration: 'none',
+                                                    }}
+                                                >
+                                                    {item.sourceLabel}
+                                                </a>
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </CardContent>
+                </Card>
+
+                {/* Final Commitment Section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Our Commitment
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            We believe that informed parents make better decisions. LyricsRay is designed to be a 
+                            helpful resource in your parenting journey, providing transparency about the content your 
+                            children encounter while respecting your role as the ultimate decision-maker for your family.
+                        </Typography>
+                        
+                        <Divider sx={{ my: 3 }} />
+                        
+                        <Typography 
+                            variant="h6" 
+                            sx={{ fontWeight: 600 }}
+                        >
+                            Remember: You know your child best. Use LyricsRay as a tool to inform your decisions, but 
+                            always trust your parental instincts and family values when determining what&apos;s right 
+                            for your children, and consider whether the themes portraied in popular media is appropriate.
+                        </Typography>
+                    </CardContent>
+                </Card>
+
+                {/* Support section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Support the work
+                            </Typography>
+                        </Box>
+                        <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
+                            If analyzing lyrics helped you make a decision, consider supporting the project to cover
+                            some of the development and hosting costs, and to keep this tool free for parents and
+                            guardians who are looking to keep their kids, well, kids ❤️
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            sx={{
+                                textTransform: "none",
+                                borderRadius: 2,
+                            }}
+                            onClick={() => {
+                                trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'aboutPage' });
+                                window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                            }}
+                        >
+                            Support on Ko-fi ☕
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Important Disclaimers Section */}
+                <Card sx={{ mb: 4 }}>
+                    <CardContent sx={{ p: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h4" fontWeight="600">
+                                Important Disclaimers
+                            </Typography>
+                        </Box>
+
+                        <Box sx={{ mb: 4 }}>
+                            <Alert severity="warning" sx={{ mb: 3, fontSize: '1rem' }}>
+                                <Typography variant="h6" sx={{ mb: 1 }}>
+                                    Parental Judgment is Essential
+                                </Typography>
+                                While LyricsRay provides valuable insights into lyrical content, <strong>parents should 
+                                    always use their own judgment</strong> when making decisions about what is 
+                                    appropriate for their children. Every child is unique, with different maturity 
+                                    levels, sensitivities, and family values that our technology cannot fully account for.
+                            </Alert>
+
+                            <Alert severity="info" sx={{ mb: 3, fontSize: '1rem' }}>
+                                <Typography variant="h6" sx={{ mb: 1 }}>
+                                    Not a Substitute for Professional Guidance
+                                </Typography>
+                                LyricsRay and the AI technology behind it <strong>are not replacements for therapists, 
+                                counselors, or other mental health professionals</strong>. If you have concerns about 
+                                how media content might affect your child&apos;s emotional or psychological well-being, 
+                                we encourage you to consult with qualified professionals.
+                            </Alert>
+
+                            <Alert severity="error" sx={{ fontSize: '1rem' }}>
+                                <Typography variant="h6" sx={{ mb: 1 }}>
+                                    Technology Limitations
+                                </Typography>
+                                <Typography variant="body2">
+                                    While AI is highly advanced, no automated system is perfect. Our analysis:
+                                </Typography>
+                                <List dense sx={{ mt: 1 }}>
+                                    <ListItem sx={{ py: 0 }}>
+                                        <ListItemText 
+                                            primary="• May occasionally miss subtle references or cultural nuances"
+                                            sx={{ margin: 0 }}
+                                        />
+                                    </ListItem>
+                                    <ListItem sx={{ py: 0 }}>
+                                        <ListItemText 
+                                            primary="• Multiple analyses for the same lyrics may yield slightly different results"
+                                            sx={{ margin: 0 }}
+                                        />
+                                    </ListItem>
+                                    <ListItem sx={{ py: 0 }}>
+                                        <ListItemText 
+                                            primary="• Cannot account for individual family values and standards"
+                                            sx={{ margin: 0 }}
+                                        />
+                                    </ListItem>
+                                    <ListItem sx={{ py: 0 }}>
+                                        <ListItemText 
+                                            primary="• Should be considered one tool among many in your parenting toolkit"
+                                            sx={{ margin: 0 }}
+                                        />
+                                    </ListItem>
+                                </List>
+                            </Alert>
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Container>
+        </Box>
+    );
+}

@@ -6,4 +6,5 @@ export interface SongItem {
   themes: string[];
   appropriate: number;
   date: string;
+  thumbnailUrl?: string;
 }
