@@ -2,6 +2,8 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getArtistAnalyses } from '@/lib/getArtistAnalyses';
 import { ArtistLandingDisplay } from './ArtistLandingDisplay';
+import { buildArtistSummary, buildTopThemes } from '@/util/artistSummary';
+import { buildMetadata } from '@/util/seo';
 import { getDynamoDbClient } from '@/storage/dynamodb';
 import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
 import { hashValue } from '@/util/hash';
@@ -88,8 +90,43 @@ export default async function ArtistLandingPage({ params }: PageProps) {
 export async function generateMetadata({ params }: PageProps) {
     const { artistName } = await params;
     const decoded = safeDecodeSegment(artistName).replace(/-/g, ' ');
-    return {
-        title: `${decoded} Song Analysis | LyricsRay`,
-        description: `Browse LyricsRay's age-appropriateness analysis for songs by ${decoded}.`,
-    };
+
+    const artistKey = reEncodeSegment(artistName);
+    const songs = await getArtistAnalyses(artistKey);
+
+    if (songs.length === 0) {
+        return buildMetadata({
+            title: `${decoded} Song Analysis | LyricsRay`,
+            description: `Browse LyricsRay's age-appropriateness analysis for songs by ${decoded}.`,
+            path: `/analysis/${artistName}`,
+        });
+    }
+
+    const displayName = songs[0]?.artistName ?? decoded;
+    const title = `${displayName} Song Analysis | LyricsRay`;
+
+    // Same idea as the song detail page's metadata: a data-derived summary plus the
+    // most common themes across this artist's analyzed songs, so search results and
+    // social-share previews describe the actual catalogue, not a generic blurb.
+    const descriptionParts = [
+        `Browse LyricsRay's age-appropriateness analysis for ${songs.length} ${songs.length === 1 ? 'song' : 'songs'} by ${displayName}.`,
+        buildArtistSummary(songs),
+    ];
+    const topThemes = buildTopThemes(songs);
+    if (topThemes.length > 0) {
+        descriptionParts.push(`Common themes: ${topThemes.join(', ')}.`);
+    }
+
+    // Use a song's own thumbnail as the artist page's share image when one is
+    // available; otherwise buildMetadata falls back to the site logo.
+    const thumbnailUrl = songs.find((s) => s.thumbnailUrl)?.thumbnailUrl;
+
+    return buildMetadata({
+        title,
+        description: descriptionParts.join(' '),
+        path: `/analysis/${artistName}`,
+        image: thumbnailUrl
+            ? { url: thumbnailUrl, width: 512, height: 512, alt: `${displayName} on LyricsRay` }
+            : undefined,
+    });
 }

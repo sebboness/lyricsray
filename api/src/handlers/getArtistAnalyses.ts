@@ -43,6 +43,7 @@ export async function getArtistAnalysesHandler(event: APIGatewayProxyEvent): Pro
         themes: item.themes ?? [],
         appropriate: item.appropriate,
         date: item.date,
+        ...(item.song.thumbnailUrl ? { thumbnailUrl: item.song.thumbnailUrl } : {}),
       }));
 
     return ok({ songs }, origin);

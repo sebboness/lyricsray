@@ -6,6 +6,8 @@ import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
 import { logger } from '@/logger/logger';
 import { getAnalysisDetailsPath } from '@/util/routeHelper';
+import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
+import { buildMetadata } from '@/util/seo';
 import { apiGetPublic, ApiRequestError } from '@/lib/api';
 import { getDynamoDbClient } from '@/storage/dynamodb';
 import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
@@ -108,26 +110,40 @@ export async function generateMetadata({ params }: PageProps) {
     const result = await getAnalysisResult(songKey);
 
     if (!result.result) {
-        return { title: 'Analysis Not Found | LyricsRay' };
+        return buildMetadata({
+            title: 'Analysis Not Found | LyricsRay',
+            description: 'This song analysis could not be found on LyricsRay.',
+            path: getAnalysisDetailsPath(songKey),
+        });
     }
 
     const { result: analysis } = result;
     const songTitle = analysis.song?.songName || 'Unknown Song';
     const artist = analysis.song?.artistName || 'Unknown Artist';
     const title = `LyricsRay Analysis for ${songTitle} by ${artist}`;
-    const description = `Age-appropriate lyrics analysis for "${songTitle}" by ${artist}. `
-        + `Minimum age: ${analysis.recommendedAge}. `
-        + `Analysis: ${analysis.analysis.length > 100 ? (analysis.analysis.substring(0, 100) + '...') : analysis.analysis}`;
 
-    return {
+    // Combine the short summary, a long-analysis excerpt, themes, and the minimum
+    // recommended age into one description — the fullest picture we can give search
+    // results and social-share previews without duplicating the whole page.
+    const descriptionParts: string[] = [`Age-appropriate lyrics analysis for "${songTitle}" by ${artist}.`];
+    if (analysis.summary) descriptionParts.push(analysis.summary);
+    if (analysis.analysis) {
+        descriptionParts.push(
+            analysis.analysis.length > 200 ? `${analysis.analysis.substring(0, 200)}...` : analysis.analysis
+        );
+    }
+    if (analysis.themes?.length) {
+        descriptionParts.push(`Themes: ${analysis.themes.map((t) => t.replace(/_/g, ' ')).join(', ')}.`);
+    }
+    descriptionParts.push(`Minimum recommended age: ${getRecommendedAgeDisplay(analysis.recommendedAge)}.`);
+    const description = descriptionParts.join(' ');
+
+    return buildMetadata({
         title,
         description,
-        openGraph: {
-            title,
-            description,
-            url: getAnalysisDetailsPath(songKey),
-            siteName: 'LyricsRay - Is this song safe for my child?',
-            type: 'website',
-        },
-    };
+        path: getAnalysisDetailsPath(songKey),
+        image: analysis.song?.thumbnailUrl
+            ? { url: analysis.song.thumbnailUrl, width: 512, height: 512, alt: `${songTitle} by ${artist}` }
+            : undefined,
+    });
 }

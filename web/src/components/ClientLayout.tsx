@@ -202,21 +202,13 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             alignItems: 'center',
                             flexWrap: 'wrap',
                             rowGap: 0.5,
-                            columnGap: 1,
+                            columnGap: 3,
                             textAlign: 'center',
                         }}>
-                            <Link
-                                href="/about"
-                                color="text.secondary"
-                                sx={{ fontSize: '0.875rem', '&::after': { content: '"·"', ml: 1, color: 'text.secondary' } }}
-                            >
+                            <Link href="/about" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                                 About
                             </Link>
-                            <Link
-                                href="/privacy-and-terms"
-                                color="text.secondary"
-                                sx={{ fontSize: '0.875rem', '&::after': { content: '"·"', ml: 1, color: 'text.secondary' } }}
-                            >
+                            <Link href="/privacy-and-terms" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                                 Privacy &amp; Terms
                             </Link>
                             <TrackedExternalLink
@@ -224,11 +216,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                                 linkTarget="hexonite"
                                 linkContext="footer"
                                 color="text.secondary"
-                                sx={{
-                                    fontSize: '0.875rem',
-                                    display: { xs: 'none', sm: 'inline' },
-                                    '&::after': { content: '"·"', ml: 1, color: 'text.secondary' },
-                                }}
+                                sx={{ fontSize: '0.875rem', display: { xs: 'none', sm: 'inline' } }}
                             >
                                 Thoughtfully created by Sebastian Stefaniuk
                             </TrackedExternalLink>

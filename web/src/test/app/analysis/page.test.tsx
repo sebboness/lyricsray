@@ -245,7 +245,9 @@ describe('generateMetadata', () => {
 
         const metadata = await generateMetadata({ params: Promise.resolve({ artistName: 'Guster', songName: 'Terrified', hash: 'abc123' }) });
 
-        expect(metadata).toEqual({ title: 'Analysis Not Found | LyricsRay' });
+        expect(metadata.title).toBe('Analysis Not Found | LyricsRay');
+        expect(metadata.description).toBe('This song analysis could not be found on LyricsRay.');
+        expect(metadata.openGraph.images[0].url).toContain('logo-256.png');
     });
 
     it('fetches by the full reconstructed songKey', async () => {
