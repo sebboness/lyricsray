@@ -28,7 +28,7 @@ const UA_LABELS: Record<string, string> = {
 
 function mergeIps(stats: DailyStat[]): TopIp[] {
     const merged = new Map<string, TopIp>();
-    for (const s of stats) {
+    for (const s of stats.slice(0, 2)) {
         for (const ip of s.topIps ?? []) {
             const existing = merged.get(ip.hashedIp);
             if (!existing) {
@@ -60,7 +60,7 @@ export function TopIpsTable({ stats }: TopIpsTableProps) {
     return (
         <Box>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-                Top IPs by activity
+                Top IPs by activity (last 2 days)
             </Typography>
             <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 340, overflow: 'auto' }}>
                 <Table size="small" stickyHeader>
