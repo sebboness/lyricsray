@@ -24,6 +24,18 @@ export interface UaBreakdown {
     person: number;
 }
 
+export interface TopIp {
+    hashedIp: string;
+    eventCount: number;
+    uaBreakdown: {
+        person: number;
+        bot: number;
+        searchEngine: number;
+        aiCrawler: number;
+        unknown: number;
+    };
+}
+
 export interface ShareBreakdown {
     whatsapp: number;
     facebook: number;
@@ -49,6 +61,7 @@ export interface DailyStat {
     totalExternalLinkClicks?: number;
     externalLinkBreakdown?: { 'kofi-profile': number; hexonite: number };
     notFoundSongKeys?: { songKey: string; count: number }[];
+    topIps?: TopIp[];
     hourlyBreakdown?: HourlyBucket[];
     ipRateLimitHits?: number;
     globalRateLimitHits?: number;

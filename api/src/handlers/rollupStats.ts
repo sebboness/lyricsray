@@ -35,6 +35,19 @@ interface SongCounts {
     shareCount: number;
 }
 
+interface IpUaBreakdown {
+    person: number;
+    bot: number;
+    searchEngine: number;
+    aiCrawler: number;
+    unknown: number;
+}
+
+interface IpCounts {
+    eventCount: number;
+    uaBreakdown: IpUaBreakdown;
+}
+
 async function fetchEventsForDate(dbClient: DynamoDBDocumentClient, date: string): Promise<RawEvent[]> {
     const events: RawEvent[] = [];
     let lastKey: Record<string, unknown> | undefined;
@@ -74,12 +87,24 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
     const externalLinkBreakdown = { 'kofi-profile': 0, hexonite: 0 };
     const uaBreakdown = { bot: 0, searchEngine: 0, aiCrawler: 0, person: 0 };
     const uniqueIps = new Set<string>();
+    const ipMap = new Map<string, IpCounts>();
     const songMap = new Map<string, SongCounts>();
     const notFoundMap = new Map<string, number>();
     const hourlyBreakdown = Array.from({ length: 24 }, () => ({ pageViews: 0, analyses: 0 }));
 
     for (const event of events) {
-        if (event.hashedIp) uniqueIps.add(event.hashedIp);
+        if (event.hashedIp) {
+            uniqueIps.add(event.hashedIp);
+            const ipEntry = ipMap.get(event.hashedIp) ?? {
+                eventCount: 0,
+                uaBreakdown: { person: 0, bot: 0, searchEngine: 0, aiCrawler: 0, unknown: 0 },
+            };
+            ipEntry.eventCount++;
+            const uaKey = event.uaType as keyof IpUaBreakdown | undefined;
+            if (uaKey && uaKey in ipEntry.uaBreakdown) ipEntry.uaBreakdown[uaKey]++;
+            else ipEntry.uaBreakdown.unknown++;
+            ipMap.set(event.hashedIp, ipEntry);
+        }
 
         const hour = parseInt(event.timestamp.slice(11, 13), 10);
         if (event.eventType === 'analysis') {
@@ -133,6 +158,11 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
         .sort((a, b) => b.count - a.count)
         .slice(0, 20);
 
+    const topIps = Array.from(ipMap.entries())
+        .map(([hashedIp, counts]) => ({ hashedIp, ...counts }))
+        .sort((a, b) => b.eventCount - a.eventCount)
+        .slice(0, 20);
+
     await dbClient.send(new PutCommand({
         TableName: statsTable,
         Item: {
@@ -150,6 +180,7 @@ async function computeAndStoreStats(dbClient: DynamoDBDocumentClient, date: stri
             uniqueHashedIps: uniqueIps.size,
             topSongs,
             notFoundSongKeys,
+            topIps,
             hourlyBreakdown,
             uaBreakdown,
             ipRateLimitHits,

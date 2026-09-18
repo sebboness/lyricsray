@@ -404,6 +404,60 @@ describe('rollupStatsHandler', () => {
         expect(todayPut.globalRateLimitHits).toBe(0);
     });
 
+    it('builds topIps sorted by eventCount with uaBreakdown per IP', async () => {
+        const events = [
+            makeEvent({ hashedIp: 'ip001', uaType: 'person', eventType: 'pageView' }),
+            makeEvent({ hashedIp: 'ip001', uaType: 'person', eventType: 'analysis', cacheHit: false }),
+            makeEvent({ hashedIp: 'ip001', uaType: 'bot', eventType: 'pageView' }),
+            makeEvent({ hashedIp: 'ip002', uaType: 'aiCrawler', eventType: 'pageView' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.topIps).toHaveLength(2);
+        const ip1 = todayPut.topIps[0];
+        expect(ip1.hashedIp).toBe('ip001');
+        expect(ip1.eventCount).toBe(3);
+        expect(ip1.uaBreakdown.person).toBe(2);
+        expect(ip1.uaBreakdown.bot).toBe(1);
+        expect(ip1.uaBreakdown.aiCrawler).toBe(0);
+        const ip2 = todayPut.topIps[1];
+        expect(ip2.hashedIp).toBe('ip002');
+        expect(ip2.eventCount).toBe(1);
+        expect(ip2.uaBreakdown.aiCrawler).toBe(1);
+    });
+
+    it('counts unknown uaType in topIps uaBreakdown when uaType is absent', async () => {
+        const events = [
+            makeEvent({ hashedIp: 'ip001', uaType: undefined, eventType: 'pageView' }),
+        ];
+
+        mockSend
+            .mockResolvedValueOnce({ Items: [], LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({})
+            .mockResolvedValueOnce({ Items: events, LastEvaluatedKey: undefined })
+            .mockResolvedValueOnce({});
+
+        await rollupStatsHandler();
+
+        const todayPut = mockSend.mock.calls
+            .filter((c) => c[0] instanceof PutCommand)
+            .map((c) => c[0].input.Item)[1];
+
+        expect(todayPut.topIps[0].uaBreakdown.unknown).toBe(1);
+        expect(todayPut.topIps[0].uaBreakdown.person).toBe(0);
+    });
+
     it('continues to process today if yesterday fails', async () => {
         mockSend
             .mockRejectedValueOnce(new Error('query failed')) // yesterday query
