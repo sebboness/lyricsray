@@ -5,6 +5,7 @@ import { makeSongKey } from '../util/songKey';
 import { AnalysisResult, AnalysisResultStorage } from '../storage/analysisResultStorage';
 import { AiClient } from '../services/aiClient';
 import { RateLimiter } from '../services/rateLimiter';
+import { getBotRateLimitConfig } from '../config/rateLimitConfig';
 import { getDynamoDbClient } from '../storage/dynamodb';
 import { getClientIp } from '../util/request';
 import { hashIp } from '../util/hash';
@@ -17,6 +18,7 @@ const LYRICS_MAX_LENGTH = 4500;
 const ddbClient = getDynamoDbClient();
 const analysisResultDb = new AnalysisResultStorage(ddbClient);
 const rateLimiter = new RateLimiter(ddbClient);
+const botRateLimiter = new RateLimiter(ddbClient, getBotRateLimitConfig());
 const aiClient = new AiClient(process.env.ANTHROPIC_MODEL!, process.env.ANTHROPIC_API_KEY!);
 
 interface AnalyzeSongRequest {
@@ -25,6 +27,7 @@ interface AnalyzeSongRequest {
   albumName?: string;
   songName?: string;
   artistName?: string;
+  uaType?: string;
 }
 
 /**
@@ -44,7 +47,7 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
   const origin = event.headers?.Origin ?? event.headers?.origin;
   try {
     const body: AnalyzeSongRequest = JSON.parse(event.body || '{}');
-    const { albumName, altchaPayload, songName, artistName } = body;
+    const { albumName, altchaPayload, songName, artistName, uaType } = body;
     let { lyrics } = body;
 
     if (!altchaPayload || !(await verifyAltchaSolution(altchaPayload))) {
@@ -90,7 +93,9 @@ export async function analyzeSongHandler(event: APIGatewayProxyEvent): Promise<A
     }
 
     const clientIp = getClientIp(event);
-    const rateLimitResult = await rateLimiter.checkAndIncrementRateLimit(clientIp);
+    const isNonPerson = uaType && uaType !== 'person';
+    const limiter = isNonPerson ? botRateLimiter : rateLimiter;
+    const rateLimitResult = await limiter.checkAndIncrementRateLimit(clientIp);
 
     if (!rateLimitResult.allowed) {
       logger.warn('rate limit exceeded', {

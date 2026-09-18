@@ -32,13 +32,15 @@ const RATE_LIMIT_HEADERS = ['X-RateLimit-Remaining-Hourly', 'X-RateLimit-Remaini
 const analyticsStorage = new AnalyticsEventStorage(getDynamoDbClient());
 
 export async function POST(request: NextRequest) {
+    const ua = request.headers.get('user-agent') ?? '';
+    const { uaType } = parseUserAgent(ua);
+
     try {
         const body: AnalyzeSongRequest = await request.json();
 
-        const { data, headers } = await apiPostPublic<AnalyzeSongResponse>('/v1/analyze-song', body);
+        const { data, headers } = await apiPostPublic<AnalyzeSongResponse>('/v1/analyze-song', { ...body, uaType });
 
         const now = new Date();
-        const ua = request.headers.get('user-agent') ?? '';
         void analyticsStorage.writeAnalysisEvent({
             date: now.toISOString().split('T')[0],
             timestamp: now.toISOString(),
@@ -58,7 +60,6 @@ export async function POST(request: NextRequest) {
             if (error.statusCode === 429) {
                 const limitType = (error.headers.get('X-RateLimit-Limit-Type') ?? 'ip') as 'ip' | 'global';
                 const now = new Date();
-                const ua = request.headers.get('user-agent') ?? '';
                 void analyticsStorage.writeRateLimitEvent({
                     date: now.toISOString().split('T')[0],
                     timestamp: now.toISOString(),
