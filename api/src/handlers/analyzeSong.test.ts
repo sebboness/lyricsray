@@ -8,6 +8,7 @@ const {
   mockGetAnalysesByArtist,
   mockSaveAnalysisResult,
   mockCheckAndIncrementRateLimit,
+  mockBotCheckAndIncrementRateLimit,
   mockGetLyricsPrompt,
   mockGetTokenInputEstimate,
   mockAnalyzeLyrics,
@@ -18,6 +19,7 @@ const {
   mockGetAnalysesByArtist: vi.fn(),
   mockSaveAnalysisResult: vi.fn(),
   mockCheckAndIncrementRateLimit: vi.fn(),
+  mockBotCheckAndIncrementRateLimit: vi.fn(),
   mockGetLyricsPrompt: vi.fn(),
   mockGetTokenInputEstimate: vi.fn(),
   mockAnalyzeLyrics: vi.fn(),
@@ -34,9 +36,10 @@ vi.mock('../storage/analysisResultStorage', () => ({
   })),
 }));
 vi.mock('../services/rateLimiter', () => ({
-  RateLimiter: vi.fn().mockImplementation(() => ({
-    checkAndIncrementRateLimit: mockCheckAndIncrementRateLimit,
-  })),
+  // First constructor call → person limiter; second → bot limiter (matches module-level ordering).
+  RateLimiter: vi.fn()
+    .mockImplementationOnce(() => ({ checkAndIncrementRateLimit: mockCheckAndIncrementRateLimit }))
+    .mockImplementation(() => ({ checkAndIncrementRateLimit: mockBotCheckAndIncrementRateLimit })),
 }));
 vi.mock('../services/aiClient', () => ({
   AiClient: vi.fn().mockImplementation(() => ({
@@ -68,6 +71,10 @@ beforeEach(() => {
   mockCheckAndIncrementRateLimit.mockResolvedValue({
     allowed: true,
     remaining: { hourly: 9, daily: 99, burst: 4 },
+  });
+  mockBotCheckAndIncrementRateLimit.mockResolvedValue({
+    allowed: true,
+    remaining: { hourly: 1, daily: 1, burst: 1 },
   });
   mockGetAnalysesByArtist.mockResolvedValue([]);
   mockGetLyricsPrompt.mockReturnValue('prompt');
@@ -421,6 +428,52 @@ describe('analyzeSongHandler', () => {
       const saved = mockSaveAnalysisResult.mock.calls[0][0];
       expect(saved.song.artistName).toBeUndefined();
       expect(saved.song.songName).toBeUndefined();
+    });
+  });
+
+  describe('bot rate limiting', () => {
+    it('routes bot uaType to the bot limiter', async () => {
+      await callHandler({ ...VALID_BODY, uaType: 'bot' });
+      expect(mockBotCheckAndIncrementRateLimit).toHaveBeenCalledTimes(1);
+      expect(mockCheckAndIncrementRateLimit).not.toHaveBeenCalled();
+    });
+
+    it('routes aiCrawler uaType to the bot limiter', async () => {
+      await callHandler({ ...VALID_BODY, uaType: 'aiCrawler' });
+      expect(mockBotCheckAndIncrementRateLimit).toHaveBeenCalledTimes(1);
+      expect(mockCheckAndIncrementRateLimit).not.toHaveBeenCalled();
+    });
+
+    it('routes searchEngine uaType to the bot limiter', async () => {
+      await callHandler({ ...VALID_BODY, uaType: 'searchEngine' });
+      expect(mockBotCheckAndIncrementRateLimit).toHaveBeenCalledTimes(1);
+      expect(mockCheckAndIncrementRateLimit).not.toHaveBeenCalled();
+    });
+
+    it('routes person uaType to the person limiter', async () => {
+      await callHandler({ ...VALID_BODY, uaType: 'person' });
+      expect(mockCheckAndIncrementRateLimit).toHaveBeenCalledTimes(1);
+      expect(mockBotCheckAndIncrementRateLimit).not.toHaveBeenCalled();
+    });
+
+    it('routes missing uaType to the person limiter', async () => {
+      await callHandler(VALID_BODY);
+      expect(mockCheckAndIncrementRateLimit).toHaveBeenCalledTimes(1);
+      expect(mockBotCheckAndIncrementRateLimit).not.toHaveBeenCalled();
+    });
+
+    it('returns 429 when the bot limiter blocks a request', async () => {
+      mockBotCheckAndIncrementRateLimit.mockResolvedValue({
+        allowed: false,
+        reason: 'Daily limit exceeded. Please try again tomorrow.',
+        retryAfter: 3600,
+        remaining: { hourly: 0, daily: 0, burst: 0 },
+      });
+
+      const { status } = await callHandler({ ...VALID_BODY, uaType: 'bot' });
+
+      expect(status).toBe(429);
+      expect(mockAnalyzeLyrics).not.toHaveBeenCalled();
     });
   });
 

@@ -17,3 +17,13 @@ export interface RateLimitConfig {
 export function getDefaultRateLimitConfig(): RateLimitConfig {
   return { ...defaults };
 }
+
+/** Strict config for bots, crawlers, and search engines: 1 analysis per day. */
+export function getBotRateLimitConfig(): RateLimitConfig {
+  return {
+    ...getDefaultRateLimitConfig(),
+    dailyLimit: 1,
+    hourlyLimit: 1,
+    burstLimit: 1,
+  };
+}
