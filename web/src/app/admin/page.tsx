@@ -10,6 +10,7 @@ import { TopSongsTable } from '@/components/admin/TopSongsTable';
 import { VisitorsChart } from '@/components/admin/VisitorsChart';
 import { HourlyActivityChart } from '@/components/admin/HourlyActivityChart';
 import { NotFoundSongKeysTable } from '@/components/admin/NotFoundSongKeysTable';
+import { TopIpsTable } from '@/components/admin/TopIpsTable';
 import { DayRangeFilter } from '@/components/admin/DayRangeFilter';
 import { EngagementChart } from '@/components/admin/EngagementChart';
 import { UniqueViewsChart } from '@/components/admin/UniqueViewsChart';
@@ -151,6 +152,9 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                     <NotFoundSongKeysTable stats={stats} />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                    <TopIpsTable stats={stats} />
                 </Grid>
             </Grid>
         </>
