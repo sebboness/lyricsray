@@ -43,8 +43,8 @@ describe('shouldShowSupportPrompt', () => {
 
     it('falls back to the default when the env value is invalid', () => {
         vi.stubEnv('NEXT_PUBLIC_SUPPORT_PROMPT_FIRST_THRESHOLD', 'not-a-number');
-        expect(shouldShowSupportPrompt(4)).toBe(false);
-        expect(shouldShowSupportPrompt(5)).toBe(true);
+        expect(shouldShowSupportPrompt(2)).toBe(false);
+        expect(shouldShowSupportPrompt(3)).toBe(true);
     });
 });
 
@@ -66,7 +66,7 @@ describe('dismissSupportPrompt', () => {
     it('falls back to the default cooldown when the env value is invalid', () => {
         vi.stubEnv('NEXT_PUBLIC_SUPPORT_PROMPT_COOLDOWN', '-1');
         dismissSupportPrompt(5);
-        expect(shouldShowSupportPrompt(14)).toBe(false);
-        expect(shouldShowSupportPrompt(15)).toBe(true);
+        expect(shouldShowSupportPrompt(9)).toBe(false);
+        expect(shouldShowSupportPrompt(10)).toBe(true);
     });
 });

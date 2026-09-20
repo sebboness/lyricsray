@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Box, Button, Collapse, IconButton, Paper, Typography } from '@mui/material';
 import Close from '@mui/icons-material/Close';
 import { KO_FI_LINK } from '@/util/supportDev';
@@ -6,20 +5,39 @@ import { trackEvent } from '@/util/trackEvent';
 
 interface SupportPromptBannerProps {
     onDismiss: () => void;
+    showCount: number;
+    analysisCount: number;
 }
 
-const APPEARANCE_DELAY_MS = 3000;
+interface BannerCopy {
+    heading: string;
+    body: string;
+}
 
-export function SupportPromptBanner({ onDismiss }: SupportPromptBannerProps) {
-    const [visible, setVisible] = useState(false);
+function getBannerCopy(showCount: number, analysisCount: number): BannerCopy {
+    if (showCount <= 1) {
+        return {
+            heading: 'You just saved yourself from a bad song choice.',
+            body: 'LyricsRay is free, and a coffee keeps it that way for other parents.',
+        };
+    }
+    if (showCount === 2) {
+        return {
+            heading: `You've checked ${analysisCount} songs with LyricsRay.`,
+            body: 'If it\'s been useful, a coffee goes a long way. ☕',
+        };
+    }
+    return {
+        heading: 'You\'re a LyricsRay regular now.',
+        body: 'If it\'s saving you from awkward car-ride moments, a coffee helps keep it free for everyone. ☕',
+    };
+}
 
-    useEffect(() => {
-        const timer = setTimeout(() => setVisible(true), APPEARANCE_DELAY_MS);
-        return () => clearTimeout(timer);
-    }, []);
+export function SupportPromptBanner({ onDismiss, showCount, analysisCount }: SupportPromptBannerProps) {
+    const { heading, body } = getBannerCopy(showCount, analysisCount);
 
     return (
-        <Collapse in={visible} timeout={500}>
+        <Collapse in timeout={500}>
             <Paper
                 variant="outlined"
                 sx={{
@@ -46,11 +64,10 @@ export function SupportPromptBanner({ onDismiss }: SupportPromptBannerProps) {
 
                 <Box flex={1}>
                     <Typography variant="body1" fontWeight="600" mb={0.5}>
-                        We hope this helped
+                        {heading}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        We hope this analysis helped you make a great choice for your child. LyricsRay stays
-                        free thanks to people who chip in a little to help cover the hosting costs.
+                        {body}
                     </Typography>
                 </Box>
 
