@@ -17,6 +17,7 @@ import { useTheme } from '@mui/material/styles';
 import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { TrackedExternalLink } from '@/components/TrackedExternalLink';
 import { trackEvent } from '@/util/trackEvent';
@@ -271,6 +272,14 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             value={item.href}
                         />
                     ))}
+                    <BottomNavigationAction
+                        label="Ko-fi"
+                        icon={<LocalCafeIcon />}
+                        onClick={() => {
+                            trackEvent('externalLink', { linkTarget: 'kofi-profile', linkContext: 'mobileNav' });
+                            window.open(KO_FI_LINK, '_blank', 'noopener,noreferrer');
+                        }}
+                    />
                 </BottomNavigation>
             </Box>
         </>

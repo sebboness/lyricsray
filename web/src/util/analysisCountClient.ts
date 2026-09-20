@@ -1,8 +1,9 @@
 const ANALYSIS_COUNT_STORAGE_KEY = 'lyricsray_analysis_count';
 const NEXT_PROMPT_STORAGE_KEY = 'lyricsray_support_prompt_next_at';
+const SUPPORT_PROMPT_SHOW_COUNT_KEY = 'lyricsray_support_prompt_show_count';
 
-const DEFAULT_FIRST_THRESHOLD = 5;
-const DEFAULT_COOLDOWN = 10;
+const DEFAULT_FIRST_THRESHOLD = 3;
+const DEFAULT_COOLDOWN = 5;
 
 function parsePositiveIntEnv(value: string | undefined, fallback: number): number {
     const parsed = Number(value);
@@ -55,5 +56,33 @@ export function dismissSupportPrompt(count: number): void {
         localStorage.setItem(NEXT_PROMPT_STORAGE_KEY, (count + getCooldown()).toString());
     } catch {
         // ignore storage errors (e.g. private browsing with storage disabled)
+    }
+}
+
+/**
+ * Returns the number of times the support prompt banner has been shown on this device.
+ */
+export function getSupportPromptShowCount(): number {
+    if (typeof window === 'undefined') return 0;
+    try {
+        const raw = localStorage.getItem(SUPPORT_PROMPT_SHOW_COUNT_KEY);
+        const parsed = parseInt(raw ?? '0', 10);
+        return isNaN(parsed) ? 0 : parsed;
+    } catch {
+        return 0;
+    }
+}
+
+/**
+ * Increments and persists the number of times the support prompt banner has been shown.
+ */
+export function incrementSupportPromptShowCount(): number {
+    if (typeof window === 'undefined') return 0;
+    try {
+        const next = getSupportPromptShowCount() + 1;
+        localStorage.setItem(SUPPORT_PROMPT_SHOW_COUNT_KEY, next.toString());
+        return next;
+    } catch {
+        return 0;
     }
 }

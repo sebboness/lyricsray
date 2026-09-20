@@ -39,7 +39,7 @@ import { LYRICS_MAX_LENGTH } from '@/util/defaults';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { trackEvent } from '@/util/trackEvent';
 import { clearRateLimitedUntil, formatRemainingTime, getRateLimitedUntil, setRateLimitedUntil } from '@/util/rateLimitClient';
-import { incrementAnalysisCount, shouldShowSupportPrompt, dismissSupportPrompt } from '@/util/analysisCountClient';
+import { incrementAnalysisCount, shouldShowSupportPrompt, dismissSupportPrompt, getSupportPromptShowCount, incrementSupportPromptShowCount } from '@/util/analysisCountClient';
 import { encodeSongKeyForPath } from '@/util/routeHelper';
 import { ThemeBreakdown } from '@/components/ThemeBreakdown';
 
@@ -130,6 +130,7 @@ export function LyricsAnalysisForm() {
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [analysisCount, setAnalysisCount] = useState(0);
     const [promptEligible, setPromptEligible] = useState(false);
+    const [supportPromptShowCount, setSupportPromptShowCount] = useState(0);
 
     // Drives the AnalyzingPanel step checklist. See buildSearchPhaseSteps/
     // buildAnalyzePhaseSteps/advanceTimedSteps above.
@@ -403,7 +404,11 @@ export function LyricsAnalysisForm() {
             setResult(data);
             const count = incrementAnalysisCount();
             setAnalysisCount(count);
-            setPromptEligible(shouldShowSupportPrompt(count));
+            const eligible = shouldShowSupportPrompt(count);
+            setPromptEligible(eligible);
+            if (eligible) {
+                setSupportPromptShowCount(incrementSupportPromptShowCount());
+            }
         } catch (error) {
             if ((error as { name?: string })?.name === 'AbortError') return; // user cancelled
 
@@ -487,6 +492,7 @@ export function LyricsAnalysisForm() {
     const handleDismissPrompt = () => {
         dismissSupportPrompt(analysisCount);
         setPromptEligible(false);
+        setSupportPromptShowCount(getSupportPromptShowCount());
     };
 
     const resetAltcha = () => {
@@ -724,7 +730,7 @@ export function LyricsAnalysisForm() {
                                     summary={result.summary}
                                 />
 
-                                {promptEligible && <SupportPromptBanner onDismiss={handleDismissPrompt} />}
+                                {promptEligible && <SupportPromptBanner onDismiss={handleDismissPrompt} showCount={supportPromptShowCount} analysisCount={analysisCount} />}
 
                                 <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                                     {result.analysis}
@@ -758,12 +764,12 @@ export function LyricsAnalysisForm() {
                                 {!promptEligible && (
                                     <>
                                         <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                                            Did this analysis help you?
+                                            Enjoying LyricsRay? Keep it free for everyone.
                                         </Typography>
 
                                         <Typography variant="body2" color="text.secondary">
-                                            If so, consider supporting the project to cover some of the development and
-                                            hosting costs ❤️
+                                            A small Ko-fi donation helps cover the hosting costs behind every
+                                            analysis. ☕
                                         </Typography>
                                     </>
                                 )}

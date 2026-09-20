@@ -44,8 +44,8 @@ describe('LyricsAnalysisForm support prompt', () => {
     it('does not show the banner and shows the bottom Ko-fi CTA below the threshold', async () => {
         await submitLyrics();
 
-        await waitFor(() => expect(screen.getByText(/Did this analysis help you\?/i)).toBeInTheDocument());
-        expect(screen.queryByText(/We hope this analysis helped you/i)).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText(/Enjoying LyricsRay\? Keep it free for everyone/i)).toBeInTheDocument());
+        expect(screen.queryByText(/You just saved yourself from a bad song choice/i)).not.toBeInTheDocument();
         expect(localStorage.getItem('lyricsray_analysis_count')).toBe('1');
     });
 
@@ -54,8 +54,8 @@ describe('LyricsAnalysisForm support prompt', () => {
 
         await submitLyrics();
 
-        await waitFor(() => expect(screen.getByText(/We hope this analysis helped you/i)).toBeInTheDocument());
-        expect(screen.queryByText(/Did this analysis help you\?/i)).not.toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText(/You just saved yourself from a bad song choice/i)).toBeInTheDocument());
+        expect(screen.queryByText(/Enjoying LyricsRay\? Keep it free for everyone/i)).not.toBeInTheDocument();
     });
 
     it('hides the banner and restores the bottom CTA once dismissed', async () => {
@@ -63,20 +63,15 @@ describe('LyricsAnalysisForm support prompt', () => {
 
         await submitLyrics();
 
-        await waitFor(() => expect(screen.getByText(/We hope this analysis helped you/i)).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByText(/You just saved yourself from a bad song choice/i)).toBeInTheDocument());
 
-        // The banner reveals itself 3s after mounting (via MUI Collapse); until then it's
-        // treated as inaccessible by role queries, so wait past that delay before clicking.
-        const dismissButton = await waitFor(
-            () => screen.getByRole('button', { name: /dismiss/i }),
-            { timeout: 4000 }
-        );
+        const dismissButton = screen.getByRole('button', { name: /dismiss/i });
         await userEvent.click(dismissButton);
 
-        expect(screen.queryByText(/We hope this analysis helped you/i)).not.toBeInTheDocument();
-        expect(screen.getByText(/Did this analysis help you\?/i)).toBeInTheDocument();
+        expect(screen.queryByText(/You just saved yourself from a bad song choice/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/Enjoying LyricsRay\? Keep it free for everyone/i)).toBeInTheDocument();
         expect(localStorage.getItem('lyricsray_support_prompt_next_at')).toBe('12');
-    }, 10000);
+    });
 });
 
 describe('LyricsAnalysisForm inline result', () => {
@@ -91,7 +86,7 @@ describe('LyricsAnalysisForm inline result', () => {
     it('renders no summary line when the API omits it (e.g. a legacy cached result)', async () => {
         await submitLyrics();
 
-        await waitFor(() => expect(screen.getByText(/Did this analysis help you\?/i)).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByText(/Enjoying LyricsRay\? Keep it free for everyone/i)).toBeInTheDocument());
         expect(screen.queryByText('Mild innuendo')).not.toBeInTheDocument();
     });
 
