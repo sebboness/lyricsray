@@ -99,6 +99,16 @@ The heart of the app is the AI-powered lyrics analysis pipeline. When working in
 - Results include: explicit language detection, mature theme recognition, contextual understanding, cultural sensitivity, and a minimum recommended age.
 - The system should be non-judgmental in tone — it informs, it doesn't moralize.
 
+## Content Attribution Signals
+
+Analysis and artist pages state ownership and credit terms in machine-readable form, never as hidden or user-agent-specific text (that counts as cloaking):
+
+- **JSON-LD** (`web/src/util/jsonLd.ts`, rendered by `JsonLd`): `copyrightHolder`, `copyrightNotice`, `license` (the terms page) and `creditText` on every analysis and artist page.
+- **`/llms.txt`** (`web/src/app/llms.txt/route.ts`, text in `util/llmsTxt.ts`): site summary plus the attribution terms, with absolute URLs from `APP_URL`.
+- **`public/robots.txt`**: comment lines pointing at the terms and `/llms.txt`. Rules are unchanged, so crawlers and AI bots remain allowed.
+
+Keep the wording consistent with the "Content and attribution" section of the terms page when either changes.
+
 ## Social Share Images
 
 Analysis and artist pages get a generated 1200x630 share image via Next's `opengraph-image.tsx` route files (under `web/src/app/analysis/`), which supply `og:image`. Their `generateMetadata` passes `image: null` plus a `twitterImageUrl` pointing at the same route to `buildMetadata`. Don't add `twitter-image.tsx` re-exports: the twin route's build trace intermittently omits the font assets.

@@ -47,6 +47,20 @@ describe('ArtistLandingPage', () => {
         expect(screen.getByTestId('artist-landing')).toHaveAttribute('data-count', '1');
     });
 
+    it('embeds JSON-LD with the artist, song count and credit text', async () => {
+        mockGetArtistAnalyses.mockResolvedValue([makeSong('Guster'), makeSong('Guster')]);
+
+        const element = await ArtistLandingPage({ params: Promise.resolve({ artistName: 'Guster' }) });
+        const { container } = render(element);
+
+        const data = JSON.parse(container.querySelector('script[type="application/ld+json"]')!.innerHTML);
+        expect(data['@type']).toBe('CollectionPage');
+        expect(data.about.name).toBe('Guster');
+        expect(data.description).toContain('2 songs');
+        expect(data.url).toContain('/analysis/Guster');
+        expect(data.creditText).toContain('LyricsRay');
+    });
+
     it('calls notFound() when artist has no analyses', async () => {
         mockGetArtistAnalyses.mockResolvedValue([]);
 

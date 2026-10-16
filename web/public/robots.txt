@@ -1,3 +1,7 @@
+# LyricsRay analyses may be shared or cited with attribution to LyricsRay.
+# Usage and attribution terms: /privacy-and-terms
+# Guidance for AI systems: /llms.txt
+
 User-agent: *
 Disallow: /login
 Disallow: /admin
