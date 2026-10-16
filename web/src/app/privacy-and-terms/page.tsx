@@ -37,7 +37,7 @@ export default function PrivacyTerms() {
                         Privacy Policy & Terms of Service
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                        Last updated: September 12, 2026
+                        Last updated: October 15, 2026
                     </Typography>
                 </Paper>
 
@@ -204,9 +204,41 @@ export default function PrivacyTerms() {
                             <ListItemIcon>
                                 <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
                             </ListItemIcon>
+                            <ListItemText primary="Copying or republishing analysis results without crediting LyricsRay" />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
+                            </ListItemIcon>
+                            <ListItemText primary="Bulk-collecting analysis results to build a competing product or dataset" />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <CheckCircle sx={{ color: 'primary.main', fontSize: 20 }} />
+                            </ListItemIcon>
                             <ListItemText primary="Using the service for any illegal or unauthorized purpose" />
                         </ListItem>
                     </List>
+
+                    <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
+                        Content and attribution
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        The analyses, scores, recommendations, and written explanations produced by LyricsRay
+                        (&quot;LyricsRay Content&quot;) are owned by LyricsRay and its creators. Song lyrics are
+                        excluded and belong to their respective rightsholders.
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        You may use LyricsRay Content for personal, non-commercial purposes, such as making
+                        decisions for your own family. You may share a result with others only if you clearly
+                        credit LyricsRay and link back to the original analysis page.
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        Without written permission, you may not present LyricsRay Content as your own work,
+                        republish it on another website, app, or service, use it in a commercial product, or
+                        collect it in bulk to build or train a competing product or dataset. We may suspend
+                        access for violations.
+                    </Typography>
 
                     <Typography variant="h6" fontWeight="600" sx={{ mt: 2, mb: 2 }}>
                         Service limitations

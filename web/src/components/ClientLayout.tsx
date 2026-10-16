@@ -246,6 +246,7 @@ export function ClientLayout({ children }: ClientLayoutProps) {
                             sx={{ display: 'block', textAlign: 'center', mt: 2 }}
                         >
                             © {new Date().getFullYear()} LyricsRay. AI-powered lyric analysis for child safety.
+                            Analyses may not be republished without attribution.
                         </Typography>
                     </Container>
                 </Box>

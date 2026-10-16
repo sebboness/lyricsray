@@ -15,6 +15,7 @@ import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { EyebrowLabel } from '@/components/EyebrowLabel';
 import { ShareButtonWithModal } from '@/components/ShareButtonWithModal';
+import { AttributionNotice } from '@/components/AttributionNotice';
 import { KO_FI_LINK } from '@/util/supportDev';
 import { trackEvent } from '@/util/trackEvent';
 import { ThemeBreakdown } from '@/components/ThemeBreakdown';
@@ -130,6 +131,8 @@ export function AnalysisDisplay({ result }: AnalysisDisplayProps) {
                             )}
                         </Box>
                     )}
+
+                    <AttributionNotice />
 
                     <Divider sx={{ my: 3 }} />
 
