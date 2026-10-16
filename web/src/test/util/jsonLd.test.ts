@@ -37,6 +37,43 @@ describe('buildAnalysisJsonLd', () => {
         });
     });
 
+    it('includes the full analysis as text and the themes as readable keywords', () => {
+        const data = buildAnalysisJsonLd({
+            result: makeResult({ analysis: '  Paragraph one.\n\nParagraph two.  ', themes: ['sexual_innuendo', 'party_culture'] }),
+            pageUrl,
+            baseUrl,
+        });
+
+        expect(data.text).toBe('Paragraph one.\n\nParagraph two.');
+        expect(data.keywords).toEqual(['sexual innuendo', 'party culture']);
+        expect(data.description).toBe('Mild themes');
+    });
+
+    it('omits text and keywords when the analysis is blank and there are no themes', () => {
+        const blank = JSON.parse(serializeJsonLd(buildAnalysisJsonLd({ result: makeResult({ analysis: '   ', themes: [] }), pageUrl, baseUrl })));
+        expect(blank).not.toHaveProperty('text');
+        expect(blank).not.toHaveProperty('keywords');
+
+        const missing = JSON.parse(
+            serializeJsonLd(buildAnalysisJsonLd({ result: makeResult({ analysis: undefined as never, themes: undefined as never }), pageUrl, baseUrl })),
+        );
+        expect(missing).not.toHaveProperty('text');
+        expect(missing).not.toHaveProperty('keywords');
+    });
+
+    it('drops empty theme entries and keeps markup in the analysis safely serializable', () => {
+        const data = buildAnalysisJsonLd({
+            result: makeResult({ analysis: 'Uses </script> in lyrics', themes: ['romance', '', '  '] }),
+            pageUrl,
+            baseUrl,
+        });
+
+        expect(data.keywords).toEqual(['romance']);
+        const json = serializeJsonLd(data);
+        expect(json).not.toContain('</script>');
+        expect(JSON.parse(json).text).toBe('Uses </script> in lyrics');
+    });
+
     it('falls back to a generated description when there is no summary', () => {
         const data = buildAnalysisJsonLd({ result: makeResult({ summary: undefined }), pageUrl, baseUrl });
 

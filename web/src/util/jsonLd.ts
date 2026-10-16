@@ -41,12 +41,15 @@ export function buildAnalysisJsonLd({ result, pageUrl, baseUrl }: AnalysisJsonLd
     const artistName = result.song?.artistName;
     const { iso, year } = parseDate(result.date);
     const byLine = artistName ? ` by ${artistName}` : '';
+    const keywords = (result.themes ?? []).map((theme) => theme.replace(/_/g, ' ').trim()).filter(Boolean);
 
     return {
         '@context': 'https://schema.org',
         '@type': 'CreativeWork',
         name: `LyricsRay analysis of "${songName}"${byLine}`,
         description: result.summary || `Age-appropriateness analysis of "${songName}"${byLine}.`,
+        text: result.analysis?.trim() || undefined,
+        keywords: keywords.length > 0 ? keywords : undefined,
         url: pageUrl,
         inLanguage: 'en',
         datePublished: iso,
