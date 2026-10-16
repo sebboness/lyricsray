@@ -9,11 +9,7 @@ import {
 } from '@mui/material';
 import { getAppropriatenessDisplay } from '@/util/displayHelpers';
 import type { VerdictKey } from '@/util/displayHelpers';
-
-interface ThemePercentage {
-    theme: string;
-    percentage: number;
-}
+import { buildThemeBars, hasThemePercentages, type ThemePercentage } from '@/util/themeBars';
 
 interface ThemeBreakdownProps {
     themes: string[];
@@ -34,11 +30,7 @@ export function ThemeBreakdown({ themes, themePercentages, appropriate = 0 }: Th
         return null;
     }
 
-    const percentageByTheme = new Map(
-        (themePercentages ?? []).map((tp) => [tp.theme.toLowerCase(), tp.percentage])
-    );
-
-    if (percentageByTheme.size === 0) {
+    if (!hasThemePercentages(themePercentages)) {
         // Legacy/cached results with no percentage data — plain theme chips.
         return (
             <Stack direction="row" flexWrap="wrap" gap={1}>
@@ -49,37 +41,19 @@ export function ThemeBreakdown({ themes, themePercentages, appropriate = 0 }: Th
         );
     }
 
-    // Scale bars relative to the highest theme percentage in this song, so the most
-    // prevalent theme always renders as a full bar rather than sitting at its raw value.
-    const maxPercentage = Math.max(0, ...Array.from(percentageByTheme.values()));
     const barColor = verdictToBarColor[getAppropriatenessDisplay(appropriate).verdictKey];
-
-    // Highest percentage first; themes with no percentage data sort last.
-    const sortedThemes = [...themes].sort((a, b) => {
-        const pa = percentageByTheme.get(a.toLowerCase());
-        const pb = percentageByTheme.get(b.toLowerCase());
-        if (pa === undefined && pb === undefined) return 0;
-        if (pa === undefined) return 1;
-        if (pb === undefined) return -1;
-        return pb - pa;
-    });
 
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, columnGap: 4, rowGap: 2 }}>
-            {sortedThemes.map((t) => {
-                const percentage = percentageByTheme.get(t.toLowerCase());
-                const label = t.replace(/_/g, ' ');
-
+            {buildThemeBars(themes, themePercentages).map(({ theme, label, percentage, relativeValue }) => {
                 if (percentage === undefined) {
                     return (
-                        <Chip key={t} label={label} size="small" sx={{ textTransform: 'capitalize', alignSelf: 'start' }} />
+                        <Chip key={theme} label={label} size="small" sx={{ textTransform: 'capitalize', alignSelf: 'start' }} />
                     );
                 }
 
-                const relativeValue = maxPercentage > 0 ? (percentage / maxPercentage) * 100 : 0;
-
                 return (
-                    <Box key={t}>
+                    <Box key={theme}>
                         <Typography variant="body2" sx={{ textTransform: 'capitalize', mb: 0.5 }}>
                             {label}
                         </Typography>

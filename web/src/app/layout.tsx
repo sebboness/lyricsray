@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ClientLayout } from "@/components/ClientLayout";
 import { ThemeRegistry } from "@/components/ThemeRegistry";
-import { buildMetadata } from "@/util/seo";
+import { buildMetadata, getMetadataBase } from "@/util/seo";
 
 const spaceGrotesk = Space_Grotesk({
     variable: "--font-space-grotesk",
@@ -17,7 +17,10 @@ const jetbrainsMono = JetBrains_Mono({
 const title = 'LyricsRay - Is This Song Safe for My Child?';
 const description = 'LyricsRay helps parents check if songs are appropriate for their children based on lyrics analysis and age recommendations';
 
-export const metadata: Metadata = buildMetadata({ title, description, path: '/' });
+export const metadata: Metadata = {
+    ...buildMetadata({ title, description, path: '/' }),
+    metadataBase: getMetadataBase(),
+};
 
 export default function RootLayout({
     children,

@@ -247,7 +247,8 @@ describe('generateMetadata', () => {
 
         expect(metadata.title).toBe('Analysis Not Found | LyricsRay');
         expect(metadata.description).toBe('This song analysis could not be found on LyricsRay.');
-        expect(metadata.openGraph.images[0].url).toContain('logo-256.png');
+        expect(metadata.openGraph.images).toBeUndefined();
+        expect(metadata.twitter).not.toHaveProperty('images');
     });
 
     it('fetches by the full reconstructed songKey', async () => {
@@ -267,5 +268,23 @@ describe('generateMetadata', () => {
 
         expect(mockApiGetPublic).toHaveBeenCalledWith('/v1/analyze-song?songKey=Guster%2FTerrified%2Fabc123');
         expect(metadata.title).toContain('Terrified');
+    });
+
+    it('points og and twitter images at the generated image route, not a thumbnail or logo', async () => {
+        mockApiGetPublic.mockResolvedValue({
+            data: {
+                result: {
+                    songKey: 'Guster/Terrified/abc123',
+                    song: { songName: 'Terrified', artistName: 'Guster', thumbnailUrl: 'https://cdn/thumb.jpg' },
+                    recommendedAge: 13,
+                },
+            },
+            headers: new Headers(),
+        });
+
+        const metadata = await generateMetadata({ params: Promise.resolve({ artistName: 'Guster', songName: 'Terrified', hash: 'abc123' }) });
+
+        expect(metadata.openGraph.images).toBeUndefined();
+        expect(metadata.twitter.images).toEqual([expect.stringMatching(/\/analysis\/Guster\/Terrified\/abc123\/opengraph-image$/)]);
     });
 });

@@ -99,6 +99,14 @@ The heart of the app is the AI-powered lyrics analysis pipeline. When working in
 - Results include: explicit language detection, mature theme recognition, contextual understanding, cultural sensitivity, and a minimum recommended age.
 - The system should be non-judgmental in tone — it informs, it doesn't moralize.
 
+## Social Share Images
+
+Analysis and artist pages get a generated 1200x630 share image via Next's `opengraph-image.tsx` route files (under `web/src/app/analysis/`), which supply `og:image`. Their `generateMetadata` passes `image: null` plus a `twitterImageUrl` pointing at the same route to `buildMetadata`. Don't add `twitter-image.tsx` re-exports: the twin route's build trace intermittently omits the font assets.
+
+- Card layout lives in `web/src/og/` (`AnalysisOgCard`, `ArtistOgCard`, shared `OgFrame`). Satori only supports a CSS subset: every element with more than one child needs `display: 'flex'`, and text must be a single string child (use template literals).
+- Fonts are the site's Space Grotesk and JetBrains Mono as static `.woff` files in `web/src/assets/og/` (the renderer can't read the `.woff2` that `next/font` emits), plus the logo. They are embedded as base64 in the generated `web/src/og/ogAssetData.ts` (Next's file tracing for runtime-read assets proved unreliable); after changing anything in `src/assets/og/`, run `node scripts/generate-og-assets.mjs` from `web/`. A test fails if the generated file is stale.
+- `renderOgImage` sets `Cache-Control: public, s-maxage=N, stale-while-revalidate=7N`. Analysis images cache for 1 day and artist images for 1 hour. Unknown songs or artists get an empty 404 (cached 60 seconds) so random URLs never cost a render. Verify `x-cache` on the deployed site, since Amplify's CDN behavior for these routes is untested.
+
 ## Code Conventions
 
 - **Language**: TypeScript throughout. Avoid `any` types where possible.

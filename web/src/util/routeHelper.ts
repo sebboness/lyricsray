@@ -17,6 +17,14 @@ export const getBaseUrl = () => {
  */
 export const encodeSongKeyForPath = (songKey: string) => (songKey.includes('#') ? encodeURIComponent(songKey) : songKey);
 
+/** Normalizes a URL path segment to a single level of percent-encoding, whether or not it arrived encoded. */
+export const reEncodeSegment = (segment: string): string => {
+    if (/%[0-9a-fA-F]{2}/.test(segment)) {
+        try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
+    }
+    return encodeURIComponent(segment);
+};
+
 /**
  * Gets the route path for a song analysis result.
  * @param songKey The song key.

@@ -4,11 +4,10 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
-import { logger } from '@/logger/logger';
-import { getAnalysisDetailsPath } from '@/util/routeHelper';
+import { getAnalysisDetailsPath, reEncodeSegment } from '@/util/routeHelper';
 import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
 import { buildMetadata } from '@/util/seo';
-import { apiGetPublic, ApiRequestError } from '@/lib/api';
+import { fetchAnalysisResult } from '@/lib/fetchAnalysisResult';
 import { getDynamoDbClient } from '@/storage/dynamodb';
 import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
 import { hashValue } from '@/util/hash';
@@ -28,30 +27,12 @@ interface PageProps {
     }>;
 }
 
-function reEncodeSegment(segment: string): string {
-    if (/%[0-9a-fA-F]{2}/.test(segment)) {
-        try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
-    }
-    return encodeURIComponent(segment);
-}
-
-async function fetchResult(songKey: string): Promise<AnalysisResult | null> {
-    try {
-        const { data } = await apiGetPublic<{ result: AnalysisResult }>(`/v1/analyze-song?songKey=${encodeURIComponent(songKey)}`);
-        return data.result ?? null;
-    } catch (error) {
-        if (error instanceof ApiRequestError && error.statusCode === 404) return null;
-        logger.error('Error fetching analysis result:', error);
-        return null;
-    }
-}
-
 async function getAnalysisResult(songKey: string): Promise<{ result: AnalysisResult | null; redirectTo: string | null }> {
-    const result = await fetchResult(songKey);
+    const result = await fetchAnalysisResult(songKey);
     if (result) return { result, redirectTo: null };
 
     if (songKey.includes('%2B')) {
-        const retried = await fetchResult(songKey.replaceAll('%2B', '-'));
+        const retried = await fetchAnalysisResult(songKey.replaceAll('%2B', '-'));
         if (retried) return { result: null, redirectTo: `/analysis/${retried.songKey}` };
     }
     return { result: null, redirectTo: null };
@@ -114,6 +95,7 @@ export async function generateMetadata({ params }: PageProps) {
             title: 'Analysis Not Found | LyricsRay',
             description: 'This song analysis could not be found on LyricsRay.',
             path: getAnalysisDetailsPath(songKey),
+            image: null,
         });
     }
 
@@ -142,8 +124,7 @@ export async function generateMetadata({ params }: PageProps) {
         title,
         description,
         path: getAnalysisDetailsPath(songKey),
-        image: analysis.song?.thumbnailUrl
-            ? { url: analysis.song.thumbnailUrl, width: 512, height: 512, alt: `${songTitle} by ${artist}` }
-            : undefined,
+        image: null,
+        twitterImageUrl: `${getAnalysisDetailsPath(songKey)}/opengraph-image`,
     });
 }
