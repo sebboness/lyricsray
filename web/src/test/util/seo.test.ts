@@ -1,5 +1,34 @@
-import { describe, it, expect } from 'vitest';
-import { buildMetadata, DEFAULT_OG_IMAGE } from '@/util/seo';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { buildMetadata, DEFAULT_OG_IMAGE, getMetadataBase } from '@/util/seo';
+
+describe('getMetadataBase', () => {
+    // getBaseUrl reads window.location when a window exists; hide it so the server path (APP_URL) is exercised.
+    beforeEach(() => vi.stubGlobal('window', undefined));
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.unstubAllGlobals();
+    });
+
+    it('returns the APP_URL origin as a URL', () => {
+        vi.stubEnv('APP_URL', 'https://lyricsray.hexonite.net');
+
+        expect(getMetadataBase()?.href).toBe('https://lyricsray.hexonite.net/');
+    });
+
+    it('resolves a relative image path against APP_URL even when it has a path', () => {
+        vi.stubEnv('APP_URL', 'https://example.com/some/path');
+
+        expect(new URL('/analysis/A/B/h/opengraph-image', getMetadataBase()).href).toBe('https://example.com/analysis/A/B/h/opengraph-image');
+    });
+
+    it('returns undefined instead of throwing when APP_URL is empty or invalid', () => {
+        vi.stubEnv('APP_URL', '');
+        expect(getMetadataBase()).toBeUndefined();
+
+        vi.stubEnv('APP_URL', 'not a url');
+        expect(getMetadataBase()).toBeUndefined();
+    });
+});
 
 const args = { title: 'T', description: 'D', path: '/about' };
 

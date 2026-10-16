@@ -17,6 +17,15 @@ export const DEFAULT_OG_IMAGE: OgImage = {
     alt: 'LyricsRay logo',
 };
 
+/** The origin relative metadata URLs (such as `opengraph-image` routes) resolve against; undefined when APP_URL is unset or invalid. */
+export function getMetadataBase(): URL | undefined {
+    try {
+        return new URL(getBaseUrl());
+    } catch {
+        return undefined;
+    }
+}
+
 interface BuildMetadataArgs {
     title: string;
     description: string;
