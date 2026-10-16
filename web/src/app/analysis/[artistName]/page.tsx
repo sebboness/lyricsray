@@ -5,6 +5,8 @@ import { ArtistLandingDisplay } from './ArtistLandingDisplay';
 import { buildArtistSummary, buildTopThemes } from '@/util/artistSummary';
 import { buildMetadata } from '@/util/seo';
 import { getBaseUrl, reEncodeSegment } from '@/util/routeHelper';
+import { buildArtistJsonLd } from '@/util/jsonLd';
+import { JsonLd } from '@/components/JsonLd';
 import { getDynamoDbClient } from '@/storage/dynamodb';
 import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
 import { hashValue } from '@/util/hash';
@@ -78,7 +80,19 @@ export default async function ArtistLandingPage({ params }: PageProps) {
     }
 
     const displayName = songs[0]?.artistName ?? decoded.replace(/-/g, ' ');
-    return <ArtistLandingDisplay artistName={displayName} songs={songs} />;
+    return (
+        <>
+            <JsonLd
+                data={buildArtistJsonLd({
+                    artistName: displayName,
+                    songCount: songs.length,
+                    pageUrl: `${getBaseUrl()}/analysis/${artistName}`,
+                    baseUrl: getBaseUrl(),
+                })}
+            />
+            <ArtistLandingDisplay artistName={displayName} songs={songs} />
+        </>
+    );
 }
 
 export async function generateMetadata({ params }: PageProps) {

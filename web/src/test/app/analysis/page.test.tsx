@@ -82,6 +82,20 @@ describe('AnalysisDetailsPage', () => {
         expect(screen.getByTestId('analysis-display')).toHaveTextContent('Terrified');
     });
 
+    it('embeds JSON-LD carrying the license and credit text for the analysis', async () => {
+        const result = { songKey: 'Guster/Terrified/abc123', song: { songName: 'Terrified', artistName: 'Guster' } };
+        mockApiGetPublic.mockResolvedValue({ data: { result }, headers: new Headers() });
+
+        const element = await AnalysisDetailsPage({ params: Promise.resolve({ artistName: 'Guster', songName: 'Terrified', hash: 'abc123' }) });
+        const { container } = render(element);
+
+        const data = JSON.parse(container.querySelector('script[type="application/ld+json"]')!.innerHTML);
+        expect(data.name).toContain('Terrified');
+        expect(data.url).toContain('/analysis/Guster/Terrified/abc123');
+        expect(data.license).toContain('/privacy-and-terms');
+        expect(data.creditText).toContain('LyricsRay');
+    });
+
     it('calls notFound() when the API reports a 404', async () => {
         const { ApiRequestError } = await import('@/lib/api');
         mockApiGetPublic.mockRejectedValue(new ApiRequestError(404, ['Analysis result not found'], new Headers()));

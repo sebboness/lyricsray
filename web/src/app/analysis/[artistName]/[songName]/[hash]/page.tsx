@@ -4,7 +4,9 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { AnalysisResult } from '@/storage/AnalysisResultStorage';
 import { AnalysisDisplay } from './AnalysisDisplay';
-import { getAnalysisDetailsPath, reEncodeSegment } from '@/util/routeHelper';
+import { getAnalysisDetailsPath, getBaseUrl, reEncodeSegment } from '@/util/routeHelper';
+import { buildAnalysisJsonLd } from '@/util/jsonLd';
+import { JsonLd } from '@/components/JsonLd';
 import { getRecommendedAgeDisplay } from '@/util/displayHelpers';
 import { buildMetadata } from '@/util/seo';
 import { fetchAnalysisResult } from '@/lib/fetchAnalysisResult';
@@ -75,6 +77,7 @@ export default async function AnalysisDetailsPage({ params }: PageProps) {
 
     return (
         <>
+            <JsonLd data={buildAnalysisJsonLd({ result, pageUrl: getAnalysisDetailsPath(songKey), baseUrl: getBaseUrl() })} />
             <AnalysisDisplay result={result} />
             {randomSongs.length > 0 && (
                 <Container maxWidth="lg" sx={{ pb: 4 }}>
