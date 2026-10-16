@@ -106,6 +106,7 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({ params: Promise.resolve({ artistName: 'Taylor-Swift' }) });
         expect(metadata.title).toContain('Taylor Swift');
         expect(metadata.description).toContain('2 songs');
-        expect(metadata.openGraph.images[0].url).toContain('logo-256.png');
+        expect(metadata.openGraph.images).toBeUndefined();
+        expect(metadata.twitter.images).toEqual([expect.stringMatching(/\/analysis\/Taylor-Swift\/opengraph-image$/)]);
     });
 });

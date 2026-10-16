@@ -4,6 +4,7 @@ import { getArtistAnalyses } from '@/lib/getArtistAnalyses';
 import { ArtistLandingDisplay } from './ArtistLandingDisplay';
 import { buildArtistSummary, buildTopThemes } from '@/util/artistSummary';
 import { buildMetadata } from '@/util/seo';
+import { getBaseUrl, reEncodeSegment } from '@/util/routeHelper';
 import { getDynamoDbClient } from '@/storage/dynamodb';
 import { AnalyticsEventStorage } from '@/storage/AnalyticsEventStorage';
 import { hashValue } from '@/util/hash';
@@ -14,13 +15,6 @@ const analyticsStorage = new AnalyticsEventStorage(getDynamoDbClient());
 
 interface PageProps {
     params: Promise<{ artistName: string }>;
-}
-
-function reEncodeSegment(segment: string): string {
-    if (/%[0-9a-fA-F]{2}/.test(segment)) {
-        try { segment = decodeURIComponent(segment); } catch { /* malformed, use as-is */ }
-    }
-    return encodeURIComponent(segment);
 }
 
 function parseLegacyKey(decoded: string): { artist: string; song: string; hash: string } | null {
@@ -99,6 +93,7 @@ export async function generateMetadata({ params }: PageProps) {
             title: `${decoded} Song Analysis | LyricsRay`,
             description: `Browse LyricsRay's age-appropriateness analysis for songs by ${decoded}.`,
             path: `/analysis/${artistName}`,
+            image: null,
         });
     }
 
@@ -117,16 +112,11 @@ export async function generateMetadata({ params }: PageProps) {
         descriptionParts.push(`Common themes: ${topThemes.join(', ')}.`);
     }
 
-    // Use a song's own thumbnail as the artist page's share image when one is
-    // available; otherwise buildMetadata falls back to the site logo.
-    const thumbnailUrl = songs.find((s) => s.thumbnailUrl)?.thumbnailUrl;
-
     return buildMetadata({
         title,
         description: descriptionParts.join(' '),
         path: `/analysis/${artistName}`,
-        image: thumbnailUrl
-            ? { url: thumbnailUrl, width: 512, height: 512, alt: `${displayName} on LyricsRay` }
-            : undefined,
+        image: null,
+        twitterImageUrl: `${getBaseUrl()}/analysis/${artistName}/opengraph-image`,
     });
 }

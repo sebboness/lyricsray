@@ -22,16 +22,19 @@ interface BuildMetadataArgs {
     description: string;
     /** Absolute or site-relative path, e.g. "/about" or a full URL. */
     path: string;
-    /** Falls back to DEFAULT_OG_IMAGE when omitted. */
-    image?: OgImage;
+    /** Falls back to DEFAULT_OG_IMAGE when omitted; pass null when an `opengraph-image` route supplies it. */
+    image?: OgImage | null;
+    /** Absolute URL for `twitter:image` when `image` is null, since `opengraph-image` routes set only `og:image`. */
+    twitterImageUrl?: string;
 }
 
 /**
  * Builds a consistent title/description/openGraph/twitter metadata object for a page.
  * Every page gets the site's logo as its social-share image unless it passes its own.
  */
-export function buildMetadata({ title, description, path, image }: BuildMetadataArgs) {
-    const ogImage = image ?? DEFAULT_OG_IMAGE;
+export function buildMetadata({ title, description, path, image, twitterImageUrl }: BuildMetadataArgs) {
+    const ogImage = image === undefined ? DEFAULT_OG_IMAGE : image;
+    const twitterImage = twitterImageUrl ?? ogImage?.url;
     const url = path.startsWith('http') ? path : `${getBaseUrl()}${path}`;
 
     return {
@@ -43,13 +46,13 @@ export function buildMetadata({ title, description, path, image }: BuildMetadata
             url,
             siteName: SITE_NAME,
             type: 'website' as const,
-            images: [ogImage],
+            ...(ogImage && { images: [ogImage] }),
         },
         twitter: {
             card: 'summary_large_image' as const,
             title,
             description,
-            images: [ogImage.url],
+            ...(twitterImage && { images: [twitterImage] }),
         },
     };
 }

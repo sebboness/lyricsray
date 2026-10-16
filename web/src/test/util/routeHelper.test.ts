@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodeSongKeyForPath, getAnalysisDetailsPath } from '@/util/routeHelper';
+import { encodeSongKeyForPath, getAnalysisDetailsPath, reEncodeSegment } from '@/util/routeHelper';
 
 describe('encodeSongKeyForPath', () => {
     // Current-format keys are already percent-encoded at creation time (see
@@ -57,5 +57,20 @@ describe('getAnalysisDetailsPath', () => {
         const path = getAnalysisDetailsPath('Guster|Terrified#b447180cf8ad8150');
 
         expect(path).toContain('/analysis/Guster%7CTerrified%23b447180cf8ad8150');
+    });
+});
+
+describe('reEncodeSegment', () => {
+    it('encodes a raw segment once', () => {
+        expect(reEncodeSegment('Terrified?')).toBe('Terrified%3F');
+    });
+
+    it('does not double-encode an already-encoded segment', () => {
+        expect(reEncodeSegment('Tommy%2C+Can')).toBe('Tommy%2C%2BCan');
+        expect(reEncodeSegment('Guster%20Band')).toBe('Guster%20Band');
+    });
+
+    it('falls back to encoding as-is when the segment is malformed', () => {
+        expect(reEncodeSegment('100%ZZ%')).toBe('100%25ZZ%25');
     });
 });
