@@ -33,6 +33,7 @@ import { AppropriatenessCard } from '@/components/AppropriatenessCard';
 import { EyebrowLabel } from '@/components/EyebrowLabel';
 import { LyricsModal } from '@/components/LyricsModal';
 import { ShareButtonWithModal } from '@/components/ShareButtonWithModal';
+import { AttributionNotice } from '@/components/AttributionNotice';
 import { SupportPromptBanner } from '@/components/SupportPromptBanner';
 import { clearCachedAltcha, getCachedAltcha, setCachedAltcha } from '@/util/altchaClient';
 import { LYRICS_MAX_LENGTH } from '@/util/defaults';
@@ -752,6 +753,8 @@ export function LyricsAnalysisForm() {
                                         <strong>Read more about this analysis and how we do it &raquo;</strong>
                                     </Link>
                                 </Typography>
+
+                                <AttributionNotice />
 
                                 <Divider sx={{ my: 3 }} />
 

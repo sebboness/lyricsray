@@ -83,7 +83,7 @@ export function EngagementChart({ stats, days }: EngagementChartProps) {
                     />
                     <Bar dataKey="Shares" hide={hidden.has('Shares')} stackId="a" fill="#EC4899" radius={[0, 0, 3, 3]} />
                     <Bar dataKey="Ko-fi clicks" hide={hidden.has('Ko-fi clicks')} stackId="a" fill="#F59E0B" radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="External links" hide={hidden.has('External links')} stackId="a" fill="#8B5CF6" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="External links" hide={hidden.has('External links')} stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="IP rate limits" hide={hidden.has('IP rate limits')} stackId="a" fill="#EF4444" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="Global rate limits" hide={hidden.has('Global rate limits')} stackId="a" fill="#7C3AED" radius={[3, 3, 0, 0]} />
                 </BarChart>
